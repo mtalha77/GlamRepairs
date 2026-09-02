@@ -17,8 +17,10 @@ const pageLinks = [
 ];
 
 const resourceLinks = [
-  { label: "Terms & condition", href: "#" },
-  { label: "Privacy policy", href: "#" },
+  { label: "Terms & Conditions", href: "/terms" },
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Editorial policy", href: "/editorial-policy" },
+  { label: "Blog", href: "/blog" },
 ];
 
 const socialLinks = [
@@ -200,10 +202,10 @@ export default function Footer() {
             <div className="flex flex-col gap-2 text-xs text-[#242424] sm:flex-row sm:items-center sm:justify-between">
               <p>© 2026 Glam Repair, LLC. All rights reserved.</p>
               <div className="flex gap-5">
-                <Link href="#" className="transition-colors hover:text-brand-primary">
+                <Link href="/privacy" className="transition-colors hover:text-brand-primary">
                   Privacy policy
                 </Link>
-                <Link href="#" className="transition-colors hover:text-brand-primary">
+                <Link href="/terms" className="transition-colors hover:text-brand-primary">
                   Terms &amp; Conditions
                 </Link>
               </div>
