@@ -1,4 +1,7 @@
+import { createClient } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/supabase/database.types";
+import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 /**
  * Blog data access. Mirrors the conventions in lib/studio/member.ts — log the
@@ -123,6 +126,44 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
     return null;
   }
   return data ? mapRow(data) : null;
+}
+
+/**
+ * Slug + last-modified for every published post, for the sitemap.
+ *
+ * Uses a cookie-free anon client on purpose. `sitemap()` is generated without a
+ * request context, so the cookie-scoped server client's `cookies()` call is not
+ * available here — the same constraint that applies to `generateStaticParams`.
+ * Published posts are readable by anon under RLS, so no service-role key is
+ * needed. Everything is wrapped so a missing env var at build time degrades to
+ * an empty list rather than failing the build; the route revalidates at runtime
+ * where the env is present.
+ */
+export async function listPublishedForSitemap(): Promise<
+  { slug: string; updatedAt: string }[]
+> {
+  try {
+    const supabase = createClient<Database>(
+      getSupabaseUrl(),
+      getSupabaseAnonKey(),
+      { auth: { persistSession: false } },
+    );
+    const { data, error } = await supabase
+      .from("studio_blog_posts")
+      .select("slug, updated_at")
+      .eq("status", "published");
+    if (error) {
+      console.error("[listPublishedForSitemap]", error.message);
+      return [];
+    }
+    return (data ?? []).map((r: { slug: string; updated_at: string }) => ({
+      slug: r.slug,
+      updatedAt: r.updated_at,
+    }));
+  } catch (err) {
+    console.error("[listPublishedForSitemap]", (err as Error).message);
+    return [];
+  }
 }
 
 /** Slugs for generateStaticParams on the public route. */
