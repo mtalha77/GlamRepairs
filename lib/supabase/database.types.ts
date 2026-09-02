@@ -6,6 +6,7 @@ export type ReviewDecision =
   | "ready_for_report"
   | "need_more_photos"
   | "not_suitable";
+export type BlogStatus = "draft" | "published" | "archived";
 export type StudioNotificationType =
   | "chat_message"
   | "review_submitted"
@@ -300,6 +301,75 @@ export type Database = {
           avoid_items?: string | null;
           extra_notes?: string | null;
           created_at?: string;
+        };
+        Relationships: [];
+      };
+      studio_blog_posts: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          excerpt: string | null;
+          body_markdown: string;
+          meta_title: string | null;
+          meta_description: string | null;
+          target_keyword: string | null;
+          cluster: string | null;
+          hero_image_url: string | null;
+          reading_minutes: number | null;
+          author_slug: string;
+          reviewer_slug: string | null;
+          reviewed_at: string | null;
+          status: BlogStatus;
+          published_at: string | null;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          excerpt?: string | null;
+          body_markdown?: string;
+          meta_title?: string | null;
+          meta_description?: string | null;
+          target_keyword?: string | null;
+          cluster?: string | null;
+          hero_image_url?: string | null;
+          reading_minutes?: number | null;
+          author_slug?: string;
+          reviewer_slug?: string | null;
+          reviewed_at?: string | null;
+          status?: BlogStatus;
+          published_at?: string | null;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          title?: string;
+          excerpt?: string | null;
+          body_markdown?: string;
+          meta_title?: string | null;
+          meta_description?: string | null;
+          target_keyword?: string | null;
+          cluster?: string | null;
+          hero_image_url?: string | null;
+          reading_minutes?: number | null;
+          author_slug?: string;
+          reviewer_slug?: string | null;
+          reviewed_at?: string | null;
+          status?: BlogStatus;
+          published_at?: string | null;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
