@@ -456,3 +456,77 @@ select:autofill {
   transform: translateX(0);
   opacity: 1;
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Article typography for /blog/[slug]. Scoped to .prose-gr so it cannot leak
+   into the marketing pages or the studio.
+
+   Written as plain CSS rather than pulling in @tailwindcss/typography, which
+   would be a new dependency for one route.
+   ──────────────────────────────────────────────────────────────────────────── */
+.prose-gr {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: rgba(0, 0, 0, 0.82);
+}
+.prose-gr > * + * {
+  margin-top: 1.15em;
+}
+.prose-gr h2 {
+  font-size: 1.6rem;
+  line-height: 1.25;
+  font-weight: 650;
+  color: #2a1140;
+  margin-top: 2.4em;
+  margin-bottom: 0.15em;
+  /* Offset so in-page anchor links do not hide the heading under a sticky header */
+  scroll-margin-top: 5rem;
+}
+.prose-gr h3 {
+  font-size: 1.2rem;
+  font-weight: 650;
+  color: #2a1140;
+  margin-top: 1.8em;
+  margin-bottom: 0.1em;
+}
+.prose-gr h4 {
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin-top: 1.5em;
+}
+.prose-gr strong {
+  font-weight: 650;
+  color: rgba(0, 0, 0, 0.92);
+}
+.prose-gr ul {
+  margin-top: 1.15em;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+.prose-gr li {
+  margin-top: 0.55em;
+  padding-left: 0.25rem;
+}
+.prose-gr li::marker {
+  color: #a88ec3;
+}
+.prose-gr a {
+  color: #662d91;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-gr blockquote {
+  border-left: 3px solid #d6cdea;
+  padding-left: 1rem;
+  color: rgba(0, 0, 0, 0.62);
+  font-style: italic;
+}
+.prose-gr hr {
+  border: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 2.2em;
+  margin-bottom: 2.2em;
+}
+.prose-gr code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}

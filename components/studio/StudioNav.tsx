@@ -10,6 +10,7 @@ export const STUDIO_NAV_LINKS = [
   { href: "/studio", label: "Home", exact: true },
   { href: "/studio/customers", label: "Customers" },
   { href: "/studio/broadcast", label: "Broadcast" },
+  { href: "/studio/blog", label: "Blog" },
   { href: "/studio/chat", label: "Chat" },
   { href: "/studio/notifications", label: "Notifications" },
   { href: "/studio/team", label: "Team" },
