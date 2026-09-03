@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createPublicSupabaseClient } from "@/lib/supabase/publicClient";
 import type { Database } from "@/lib/supabase/database.types";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 
@@ -67,7 +68,7 @@ function mapRow(row: any): BlogPost {
 /* ── Public reads ─────────────────────────────────────────────────────────── */
 
 export async function listPublishedPosts(): Promise<BlogPost[]> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createPublicSupabaseClient();
   const { data, error } = await supabase
     .from("studio_blog_posts")
     .select(COLUMNS)
@@ -82,7 +83,7 @@ export async function listPublishedPosts(): Promise<BlogPost[]> {
 }
 
 export async function getPublishedPost(slug: string): Promise<BlogPost | null> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createPublicSupabaseClient();
   const { data, error } = await supabase
     .from("studio_blog_posts")
     .select(COLUMNS)
@@ -168,7 +169,7 @@ export async function listPublishedForSitemap(): Promise<
 
 /** Slugs for generateStaticParams on the public route. */
 export async function listPublishedSlugs(): Promise<string[]> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createPublicSupabaseClient();
   const { data, error } = await supabase
     .from("studio_blog_posts")
     .select("slug")
