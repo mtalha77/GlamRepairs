@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   publishBlogPost,
@@ -12,22 +12,23 @@ import type { BlogPost } from "@/lib/studio/blog";
 /**
  * Blog editor.
  *
- * Markdown in a plain textarea rather than a rich-text editor — deliberate. A
- * WYSIWYG would mean a new dependency, a sanitiser, and a class of formatting
- * bugs, for content that is almost entirely headings, paragraphs and lists.
+ * ── The bug this version fixes ───────────────────────────────────────────────
+ * Publish used to send only the post id, so the server validated whatever was
+ * last *saved* rather than what was on screen. Choosing a reviewer and clicking
+ * Publish without saving first produced "Set a qualified reviewer" while the
+ * dropdown plainly showed one.
  *
- * The live counters exist because both publish gates (reviewer set, body long
- * enough) are enforced server-side and in the database. Surfacing them here
- * means you find out before you click, not after.
+ * Publish now submits the whole form and the server saves before it validates,
+ * so the two can no longer disagree. The unsaved-changes marker below exists
+ * for the same reason: never let the UI imply a state the database does not
+ * hold.
+ *
+ * Markdown in a plain textarea rather than a rich-text editor is deliberate — a
+ * WYSIWYG means a new dependency, a sanitiser, and a class of formatting bugs,
+ * for content that is almost entirely headings, paragraphs and lists.
  */
-const CLUSTERS = [
-  "diagnostic",
-  "ingredient",
-  "routine",
-  "myth",
-  "pakistan",
-] as const;
 
+const CLUSTERS = ["diagnostic", "ingredient", "routine", "myth", "pakistan"] as const;
 const MIN_PUBLISH_CHARS = 1200;
 
 type Props = {
@@ -61,9 +62,11 @@ const input =
 
 export default function BlogEditor({ post, authors, reviewers }: Props) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   const [body, setBody] = useState(post?.bodyMarkdown ?? "");
   const [reviewer, setReviewer] = useState(post?.reviewerSlug ?? "");
@@ -74,50 +77,48 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
   const longEnough = chars >= MIN_PUBLISH_CHARS;
   const canPublish = Boolean(reviewer) && longEnough;
 
-  function onSave(formData: FormData) {
+  function run(fn: () => Promise<{ ok: boolean; error?: string }>, ok: string) {
     setError(null);
     setMessage(null);
     start(async () => {
-      const res = await saveBlogPost(formData);
+      const res = await fn();
       if (res.ok) {
-        setMessage("Saved.");
+        setMessage(ok);
+        setDirty(false);
         router.refresh();
       } else {
-        setError(res.error);
+        setError(res.error ?? "Something went wrong.");
       }
     });
   }
 
+  function onSave(formData: FormData) {
+    run(() => saveBlogPost(formData), "Saved.");
+  }
+
+  /**
+   * Publish submits the form's *current* values rather than the post id, so
+   * unsaved edits — the reviewer especially — are written before validation.
+   */
   function onPublish() {
-    if (!post) return;
-    setError(null);
-    setMessage(null);
-    start(async () => {
-      const res = await publishBlogPost(post.id);
-      if (res.ok) {
-        setMessage("Published — it is live on /blog now.");
-        router.refresh();
-      } else {
-        setError(res.error);
-      }
-    });
+    const form = formRef.current;
+    if (!form) return;
+    const formData = new FormData(form);
+    run(() => publishBlogPost(formData), "Published — it is live on /blog now.");
   }
 
   function onUnpublish() {
     if (!post) return;
-    start(async () => {
-      const res = await unpublishBlogPost(post.id);
-      if (res.ok) {
-        setMessage("Moved back to draft.");
-        router.refresh();
-      } else {
-        setError(res.error);
-      }
-    });
+    run(() => unpublishBlogPost(post.id), "Moved back to draft.");
   }
 
   return (
-    <form action={onSave} className="px-6 py-8">
+    <form
+      ref={formRef}
+      action={onSave}
+      onChange={() => setDirty(true)}
+      className="px-6 py-8"
+    >
       <input type="hidden" name="id" defaultValue={post?.id ?? ""} />
 
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -128,9 +129,15 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
           {post ? (
             <p className="mt-1 font-mono text-xs text-neutral-400">
               /blog/{post.slug} · {post.status}
+              {dirty ? (
+                <span className="ml-2 font-sans text-amber-700">
+                  unsaved changes
+                </span>
+              ) : null}
             </p>
           ) : null}
         </div>
+
         <div className="flex items-center gap-2">
           <button
             type="submit"
@@ -139,6 +146,7 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
           >
             {pending ? "Saving…" : "Save draft"}
           </button>
+
           {post && post.status !== "published" ? (
             <button
               type="button"
@@ -146,14 +154,17 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
               disabled={pending || !canPublish}
               title={
                 canPublish
-                  ? undefined
-                  : "Needs a reviewer and enough content before it can go live"
+                  ? "Saves your changes, then publishes"
+                  : !reviewer
+                    ? "Choose a reviewer first"
+                    : "Needs more content before it can go live"
               }
               className="rounded-xl bg-[#662d91] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
             >
-              Publish
+              {pending ? "Publishing…" : "Save & publish"}
             </button>
           ) : null}
+
           {post && post.status === "published" ? (
             <button
               type="button"
@@ -184,13 +195,12 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
           <Field label="Title">
             <input name="title" defaultValue={post?.title ?? ""} className={input} required />
           </Field>
+
           <Field label="Slug" hint="Leave blank to generate from the title.">
             <input name="slug" defaultValue={post?.slug ?? ""} className={input} />
           </Field>
-          <Field
-            label="Excerpt"
-            hint="One or two sentences. Shown on the blog index."
-          >
+
+          <Field label="Excerpt" hint="One or two sentences. Shown on the blog index.">
             <textarea
               name="excerpt"
               defaultValue={post?.excerpt ?? ""}
@@ -198,9 +208,10 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
               className={input}
             />
           </Field>
+
           <Field
             label="Body (Markdown)"
-            hint="## headings, - lists, **bold**, [links](https://…). Phrase H2s as the question someone would actually search."
+            hint="## headings, - lists, **bold**, [links](https://…). Phrase H2s as the question someone would actually search — those become FAQ schema."
           >
             <textarea
               name="body_markdown"
@@ -210,14 +221,14 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
               className={`${input} font-mono text-[13px] leading-relaxed`}
             />
           </Field>
+
           <p className="text-xs text-neutral-500">
             {words.toLocaleString()} words · {chars.toLocaleString()} characters{" "}
             {longEnough ? (
               <span className="text-emerald-700">· long enough to publish</span>
             ) : (
               <span className="text-amber-700">
-                · needs {(MIN_PUBLISH_CHARS - chars).toLocaleString()} more
-                characters to publish
+                · needs {(MIN_PUBLISH_CHARS - chars).toLocaleString()} more characters
               </span>
             )}
           </p>
@@ -229,6 +240,7 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
             <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
               Accountability
             </p>
+
             <div className="mt-4 space-y-4">
               <Field label="Author">
                 <select
@@ -243,6 +255,7 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
                   ))}
                 </select>
               </Field>
+
               <Field
                 label="Reviewer"
                 hint="Required to publish. This is the E-E-A-T signal."
@@ -250,7 +263,10 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
                 <select
                   name="reviewer_slug"
                   value={reviewer}
-                  onChange={(e) => setReviewer(e.target.value)}
+                  onChange={(e) => {
+                    setReviewer(e.target.value);
+                    setDirty(true);
+                  }}
                   className={input}
                 >
                   <option value="">— not reviewed —</option>
@@ -268,6 +284,7 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
             <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
               Search
             </p>
+
             <div className="mt-4 space-y-4">
               <Field label="Target keyword">
                 <input
@@ -276,6 +293,7 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
                   className={input}
                 />
               </Field>
+
               <Field label="Cluster">
                 <select
                   name="cluster"
@@ -289,6 +307,7 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
                   ))}
                 </select>
               </Field>
+
               <Field label="Meta title" hint="Falls back to the post title.">
                 <input
                   name="meta_title"
@@ -296,6 +315,7 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
                   className={input}
                 />
               </Field>
+
               <Field label="Meta description">
                 <textarea
                   name="meta_description"

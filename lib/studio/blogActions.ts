@@ -9,17 +9,21 @@ import { AUTHORS } from "@/lib/seo/authors";
 /**
  * Server actions for the blog admin.
  *
- * Two rules are enforced here on top of the database constraints:
+ * ── Bug this file fixes (reported 2 Sep 2026) ────────────────────────────────
+ * Publishing failed with "Set a qualified reviewer before publishing" even
+ * though a reviewer had been chosen in the dropdown.
  *
- *   1. Publishing requires a reviewer whose slug exists in the author registry
- *      AND who is marked `canReview`. The DB constraint enforces "a reviewer is
- *      set"; this enforces "the reviewer is real and qualified".
- *   2. Publishing requires meaningful body content. Thin YMYL pages are a
- *      liability, so the floor is a hard stop rather than a lint warning.
+ * Cause: save and publish were two separate actions. The dropdown updated React
+ * state, which enabled the Publish button, but `publishBlogPost` read the
+ * *database* — where `reviewer_slug` was still null because the editor had not
+ * been saved. The UI said ready; the server correctly refused.
  *
- * `revalidatePath` is called on publish/unpublish so the public blog reflects
- * the change immediately instead of serving a stale cached page.
+ * Fix: `publishBlogPost` now takes the form data and **saves before it
+ * publishes**, in one action. There is no longer a window where what you see
+ * and what is stored can disagree. The gates themselves are unchanged — a real,
+ * qualified reviewer and a body long enough to be worth publishing.
  */
+
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
 const MIN_PUBLISH_CHARS = 1200;
@@ -40,67 +44,100 @@ async function guard() {
   return { user, member };
 }
 
-export async function saveBlogPost(formData: FormData): Promise<ActionResult> {
-  const auth = await guard();
-  if (!auth) return { ok: false, error: "Not signed in." };
-
-  const id = String(formData.get("id") ?? "").trim();
+/** Shared field mapping, so save and publish can never drift apart. */
+function payloadFrom(formData: FormData, userId: string) {
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body_markdown") ?? "");
-
-  if (!title) return { ok: false, error: "Give the post a title." };
-
   const slug = String(formData.get("slug") ?? "").trim() || slugify(title);
 
-  const payload = {
+  return {
     title,
     slug,
-    excerpt: String(formData.get("excerpt") ?? "").trim() || null,
-    body_markdown: body,
-    meta_title: String(formData.get("meta_title") ?? "").trim() || null,
-    meta_description: String(formData.get("meta_description") ?? "").trim() || null,
-    target_keyword: String(formData.get("target_keyword") ?? "").trim() || null,
-    cluster: String(formData.get("cluster") ?? "").trim() || null,
-    reviewer_slug: String(formData.get("reviewer_slug") ?? "").trim() || null,
-    author_slug: String(formData.get("author_slug") ?? "ayma-arif").trim(),
-    reading_minutes: readingMinutes(body),
-    updated_by: auth.user.id,
+    body,
+    row: {
+      title,
+      slug,
+      excerpt: String(formData.get("excerpt") ?? "").trim() || null,
+      body_markdown: body,
+      meta_title: String(formData.get("meta_title") ?? "").trim() || null,
+      meta_description:
+        String(formData.get("meta_description") ?? "").trim() || null,
+      target_keyword: String(formData.get("target_keyword") ?? "").trim() || null,
+      cluster: String(formData.get("cluster") ?? "").trim() || null,
+      reviewer_slug: String(formData.get("reviewer_slug") ?? "").trim() || null,
+      author_slug: String(formData.get("author_slug") ?? "ayma-arif").trim(),
+      reading_minutes: readingMinutes(body),
+      updated_by: userId,
+    },
   };
+}
+
+/** Writes the row and returns its id, creating it when there is no id yet. */
+async function persist(
+  formData: FormData,
+  userId: string,
+): Promise<{ ok: true; id: string; slug: string } | { ok: false; error: string }> {
+  const id = String(formData.get("id") ?? "").trim();
+  const { title, slug, row } = payloadFrom(formData, userId);
+
+  if (!title) return { ok: false, error: "Give the post a title." };
 
   const supabase = await createServerSupabaseClient();
 
   if (id) {
     const { error } = await supabase
       .from("studio_blog_posts")
-      .update(payload)
+      .update(row)
       .eq("id", id);
     if (error) {
-      console.error("[saveBlogPost:update]", error.message);
+      console.error("[persist:update]", error.message);
       return { ok: false, error: error.message };
     }
-  } else {
-    const { error } = await supabase
-      .from("studio_blog_posts")
-      .insert({ ...payload, created_by: auth.user.id });
-    if (error) {
-      console.error("[saveBlogPost:insert]", error.message);
-      return { ok: false, error: error.message };
-    }
+    return { ok: true, id, slug };
   }
+
+  const { data, error } = await supabase
+    .from("studio_blog_posts")
+    .insert({ ...row, created_by: userId })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    console.error("[persist:insert]", error?.message);
+    return { ok: false, error: error?.message ?? "Could not create the post." };
+  }
+  return { ok: true, id: data.id, slug };
+}
+
+export async function saveBlogPost(formData: FormData): Promise<ActionResult> {
+  const auth = await guard();
+  if (!auth) return { ok: false, error: "Not signed in." };
+
+  const res = await persist(formData, auth.user.id);
+  if (!res.ok) return res;
 
   revalidatePath("/studio/blog");
   return { ok: true };
 }
 
-export async function publishBlogPost(id: string): Promise<ActionResult> {
+/**
+ * Save, then publish. Takes the whole form so the editor's current state is
+ * what gets validated — not whatever was last written.
+ */
+export async function publishBlogPost(formData: FormData): Promise<ActionResult> {
   const auth = await guard();
   if (!auth) return { ok: false, error: "Not signed in." };
+
+  // 1 — persist first. This is the fix: the reviewer chosen in the dropdown is
+  // written before it is checked.
+  const saved = await persist(formData, auth.user.id);
+  if (!saved.ok) return saved;
 
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("studio_blog_posts")
     .select("slug, body_markdown, reviewer_slug")
-    .eq("id", id)
+    .eq("id", saved.id)
     .maybeSingle();
 
   if (error || !data) {
@@ -108,18 +145,20 @@ export async function publishBlogPost(id: string): Promise<ActionResult> {
     return { ok: false, error: "Could not load that post." };
   }
 
-  // Gate 1 — a real, qualified reviewer.
+  // 2 — a real, qualified reviewer.
   const reviewer = data.reviewer_slug ? AUTHORS[data.reviewer_slug] : undefined;
   if (!reviewer || !reviewer.canReview) {
     return {
       ok: false,
-      error:
-        "Set a qualified reviewer before publishing. Health content without a " +
-        "named reviewer is what core updates demote.",
+      error: data.reviewer_slug
+        ? `"${data.reviewer_slug}" is not a reviewer in the author registry. ` +
+          `Add them to lib/seo/authors.ts with canReview: true.`
+        : "Choose a reviewer before publishing. Health content without a named " +
+          "reviewer is what core updates demote.",
     };
   }
 
-  // Gate 2 — not thin.
+  // 3 — not thin.
   if ((data.body_markdown ?? "").trim().length < MIN_PUBLISH_CHARS) {
     return {
       ok: false,
@@ -136,7 +175,7 @@ export async function publishBlogPost(id: string): Promise<ActionResult> {
       reviewed_at: now,
       updated_by: auth.user.id,
     })
-    .eq("id", id);
+    .eq("id", saved.id);
 
   if (upErr) {
     console.error("[publishBlogPost:update]", upErr.message);
