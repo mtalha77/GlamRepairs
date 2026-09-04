@@ -197,7 +197,6 @@ export default function SkinGuidanceReport() {
   const fullName = useFunnelStore((state) => state.fullName);
   const email = useFunnelStore((state) => state.email);
   const sessionId = useFunnelStore((state) => state.sessionId);
-  const selfieUrl = useFunnelStore((state) => state.selfieUrl);
   const selfie = useFunnelStore(
     (state) => state.answers["booking.selfie"] as string | undefined,
   );
@@ -208,7 +207,6 @@ export default function SkinGuidanceReport() {
     fullName,
     email,
     sessionId,
-    selfieUrl,
     intro:
       "Hi Glam Repair! I finished the free skin quiz and want to upgrade to a Premium plan.",
   });

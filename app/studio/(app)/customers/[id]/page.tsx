@@ -69,7 +69,6 @@ export default async function CustomerDetailPage({
     fullName: customer.fullName ?? undefined,
     email: customer.email ?? undefined,
     sessionId: customer.sessionId,
-    photoUrls: customer.imageUrls,
     selectedPlan: customer.selectedPlan,
     planName: customer.planName,
     planPrice: customer.planPrice,

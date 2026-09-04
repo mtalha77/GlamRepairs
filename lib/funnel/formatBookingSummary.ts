@@ -159,23 +159,11 @@ function formatEventDate(iso: string) {
   });
 }
 
-const PHOTO_SLOT_LABELS = [
-  "Front face",
-  "Left/concern",
-  "Right/concern",
-  "3/4 left",
-  "3/4 right",
-  "From below",
-] as const;
-
 export type BookingWhatsAppSummaryInput = {
   answers: Record<string, unknown>;
   fullName?: string;
   email?: string;
   sessionId?: string;
-  selfieUrl?: string | null;
-  /** Public URLs for assessment photos (preferred over selfieUrl alone). */
-  photoUrls?: string[] | null;
   selectedPlan?: string | null;
   planName?: string | null;
   planPrice?: string | null;
@@ -191,8 +179,6 @@ export function formatBookingWhatsAppMessage({
   fullName,
   email,
   sessionId,
-  selfieUrl,
-  photoUrls,
   selectedPlan,
   planName,
   planPrice,
@@ -361,30 +347,20 @@ export function formatBookingWhatsAppMessage({
   if (mail) extras.push(`Email: ${mail}`);
   if (sessionId) extras.push(`Ref: ${sessionId.slice(0, 8)}`);
 
-  const links = [
-    ...(Array.isArray(photoUrls) ? photoUrls : []),
-    ...(selfieUrl && !(photoUrls && photoUrls.includes(selfieUrl))
-      ? [selfieUrl]
-      : []),
-  ].filter((url): url is string => typeof url === "string" && url.length > 0);
-
-  if (links.length > 0) {
-    extras.push("My photos:");
-    links.forEach((url, index) => {
-      const label = PHOTO_SLOT_LABELS[index] ?? `Photo ${index + 1}`;
-      extras.push(`${index + 1}. ${label}: ${url}`);
-    });
-  } else {
-    const photos = answers["onboarding.photos"];
-    if (Array.isArray(photos)) {
-      const count = photos.filter(
-        (item) => typeof item === "string" && item.length > 0,
-      ).length;
-      if (count > 0) {
-        extras.push(
-          `Photos attached with this chat (${count}). If you don't see them, ask me to resend.`,
-        );
-      }
+  // Deliberately no photo links in this text — see the storage-lockdown
+  // handover. A link pasted into WhatsApp becomes a permanent, un-revocable
+  // copy of a client's face on Meta's infrastructure, on top of whatever this
+  // app's own access controls do. Photos are reviewed inside the studio,
+  // signed in, never via a link in a message.
+  const photos = answers["onboarding.photos"];
+  if (Array.isArray(photos)) {
+    const count = photos.filter(
+      (item) => typeof item === "string" && item.length > 0,
+    ).length;
+    if (count > 0) {
+      extras.push(
+        `Photos submitted with this assessment (${count}) — our team will review them in the portal.`,
+      );
     }
   }
 

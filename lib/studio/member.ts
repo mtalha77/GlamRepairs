@@ -10,6 +10,14 @@ export type StudioMember = {
   displayName: string;
   canVerifyPayment: boolean;
   canSendReport: boolean;
+  /**
+   * A distinct, explicitly-granted escalation — never inferred from `role`.
+   * Delete controls, payment verification, and the `/p/` photo-redirect
+   * route all gate on this, in application code, because the DB client here
+   * uses the service-role key for some calls (bootstrap) and RLS alone
+   * cannot be trusted to enforce it everywhere.
+   */
+  isSuperAdmin: boolean;
   createdAt: string;
 };
 
@@ -55,6 +63,7 @@ export async function bootstrapOwnerIfNeeded(user: User) {
     display_name: displayName,
     can_verify_payment: true,
     can_send_report: true,
+    is_super_admin: true,
   });
 
   if (error) {
@@ -66,7 +75,9 @@ export async function getStudioMember(userId: string) {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("studio_members")
-    .select("user_id, role, display_name, can_verify_payment, can_send_report, created_at")
+    .select(
+      "user_id, role, display_name, can_verify_payment, can_send_report, is_super_admin, created_at",
+    )
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -83,6 +94,8 @@ export async function getStudioMember(userId: string) {
     displayName: data.display_name,
     canVerifyPayment: data.role === "owner" || Boolean(data.can_verify_payment),
     canSendReport: data.role === "owner" || Boolean(data.can_send_report),
+    // Literal, no `role === "owner"` fallback — see the type's doc comment.
+    isSuperAdmin: Boolean(data.is_super_admin),
     createdAt: data.created_at,
   } satisfies StudioMember;
 }
@@ -100,7 +113,9 @@ export async function listStudioMembers() {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("studio_members")
-    .select("user_id, role, display_name, can_verify_payment, can_send_report, created_at")
+    .select(
+      "user_id, role, display_name, can_verify_payment, can_send_report, is_super_admin, created_at",
+    )
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -116,6 +131,7 @@ export async function listStudioMembers() {
         displayName: row.display_name,
         canVerifyPayment: row.role === "owner" || Boolean(row.can_verify_payment),
         canSendReport: row.role === "owner" || Boolean(row.can_send_report),
+        isSuperAdmin: Boolean(row.is_super_admin),
         createdAt: row.created_at,
       }) satisfies StudioMember,
   );

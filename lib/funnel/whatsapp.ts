@@ -54,35 +54,9 @@ export function buildWhatsAppBookingSummaryLink(
   return getWhatsAppChatLink(buildWhatsAppBookingSummaryText(input));
 }
 
-export type WhatsAppOrderDetails = {
-  planName: string;
-  price: string;
-  fullName?: string;
-  email?: string;
-  sessionId?: string;
-  /** Public URL of the uploaded selfie (from Supabase Storage once wired). */
-  imageUrl?: string | null;
-};
-
-/**
- * Build a wa.me deep link with a prefilled message so the team can identify the
- * lead, open the selfie, and collect payment over WhatsApp.
- */
-export function buildWhatsAppOrderLink({
-  planName,
-  price,
-  fullName,
-  email,
-  sessionId,
-  imageUrl,
-}: WhatsAppOrderDetails) {
-  const lines = [
-    `Hi GlamRepairs! I'd like to subscribe to the ${planName} plan (${price}).`,
-    fullName ? `Name: ${fullName}` : null,
-    email ? `Email: ${email}` : null,
-    sessionId ? `Ref: ${sessionId.slice(0, 8)}` : null,
-    imageUrl ? `Selfie: ${imageUrl}` : null,
-  ].filter(Boolean);
-
-  return getWhatsAppChatLink(lines.join("\n"));
-}
+// `buildWhatsAppOrderLink` / `WhatsAppOrderDetails` used to live here — an
+// unused order-summary builder that embedded a photo URL directly into a
+// wa.me message ("Selfie: <url>"). It had no call sites, so it was removed
+// outright during the storage-lockdown pass rather than left as a dormant
+// footgun someone could wire back up later. See the storage-lockdown
+// handover for why a photo link in a WhatsApp message is never acceptable.
