@@ -27,8 +27,17 @@ export const SITE = {
   locale: "en_PK",
   country: "PK",
   language: "en",
-  /** Used in Organization schema. Add real profiles as they go live. */
-  sameAs: [] as string[],
+  // Consolidates the brand entity: tells Google these profiles and this site
+  // are the same organisation. Only includes profiles that are live, public and
+  // actually branded GlamRepairs — a 404 or an abandoned handle here is a
+  // negative signal, not a neutral one. URLs match the ones already live in
+  // Footer.tsx and CeoSection.tsx; no TikTok entry because no TikTok handle
+  // exists elsewhere in the codebase — add one here only once it does.
+  sameAs: [
+    "https://www.instagram.com/glam.repairs/",
+    "https://web.facebook.com/profile.php?id=61590698607527",
+    "https://www.linkedin.com/company/glamrepairs/",
+  ] as string[],
 } as const;
 
 /** Absolute URL helper — schema and sitemaps must never emit relative URLs. */

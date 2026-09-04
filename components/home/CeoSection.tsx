@@ -13,7 +13,7 @@ export default function CeoSection() {
         >
           <Image
             src="/images,svgs/ceo_doctor.png"
-            alt="Dr. Ayma Arif, aesthetics and dermatology expert holding a tablet"
+            alt="Ayma Arif, aesthetics and dermatology expert holding a tablet"
             width={660}
             height={694}
             sizes="(max-width: 1024px) 95vw, 68vw"
@@ -42,7 +42,7 @@ export default function CeoSection() {
             </span>
 
             <h2 className="mt-5 font-serif italic leading-none text-brand-primary text-[2.5rem] sm:mt-6 sm:text-6xl lg:text-[4.5rem]">
-              Dr. Ayma Arif
+              Ayma Arif
             </h2>
           </header>
 
@@ -55,7 +55,7 @@ export default function CeoSection() {
           </p>
 
           <p className="mt-6 w-full text-justify font-sans leading-relaxed text-brand-ink text-base sm:text-lg lg:text-xl">
-            <span className="font-serif italic">Dr. Ayma Arif</span>{" "}is a
+            <span className="font-serif italic">Ayma Arif</span>{" "}is a
             certified aesthetics professional with a Bachelor&apos;s degree in
             Cosmetology and Dermatology Science. With hands-on experience across
             multiple clinics in Pakistan, she has helped clients with skin
@@ -73,7 +73,7 @@ export default function CeoSection() {
             href="https://www.linkedin.com/company/glamrepairs/"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Connect with Dr. Ayma Arif on LinkedIn"
+            aria-label="Connect with Ayma Arif on LinkedIn"
             className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-[#0A66C2] px-4 py-2.5 text-white transition-opacity hover:opacity-90 sm:mt-7 sm:px-5"
           >
             <svg
@@ -86,7 +86,7 @@ export default function CeoSection() {
               <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z" />
             </svg>
             <span className="font-sans text-sm font-medium sm:text-[15px]">
-              Dr. Ayma Arif
+              Ayma Arif
             </span>
           </a>
         </AnimatedSlideIn>

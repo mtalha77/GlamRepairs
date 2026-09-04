@@ -3,12 +3,12 @@
 import { useState } from "react";
 import AnimatedSlideIn from "@/components/home/AnimatedSlideIn";
 
-type FaqItem = {
+export type FaqItem = {
   question: string;
   answer: string;
 };
 
-const faqItems: FaqItem[] = [
+const defaultFaqItems: FaqItem[] = [
   {
     question: "Is this an AI tool?",
     answer:
@@ -89,7 +89,12 @@ function FaqAccordionItem({ item, isOpen, onToggle }: FaqAccordionItemProps) {
   );
 }
 
-export default function FaqSection() {
+export default function FaqSection({
+  items = defaultFaqItems,
+}: {
+  /** Overrides the shared FAQ set — used by /about for its own 7 Q&As. */
+  items?: FaqItem[];
+}) {
   const [openItems, setOpenItems] = useState<Set<number>>(() => new Set([0]));
 
   const toggleItem = (index: number) => {
@@ -114,7 +119,7 @@ export default function FaqSection() {
         </AnimatedSlideIn>
 
         <div className="flex w-full min-w-0 flex-col gap-4 sm:gap-5">
-          {faqItems.map((item, index) => (
+          {items.map((item, index) => (
             <AnimatedSlideIn
               key={item.question}
               direction="left"
