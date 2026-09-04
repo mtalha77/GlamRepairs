@@ -227,7 +227,6 @@ export default function ConsentStep({
 
   const ensureSessionId = useFunnelStore((state) => state.ensureSessionId);
   const unlockFlowStep = useFunnelStore((state) => state.unlockFlowStep);
-  const setSelfieUrl = useFunnelStore((state) => state.setSelfieUrl);
 
   const onSubmit = async () => {
     if (!canSubmit || isSubmitting) return;
@@ -254,9 +253,10 @@ export default function ConsentStep({
       photoDataUrls.push(store.answers["booking.selfie"]);
     }
 
-    let photoUrls: string[] = [];
-
-    const result = await submitLead({
+    // Storage upload happens regardless — the funnel needs the photos on the
+    // lead row. The result's image URLs are never fed into the WhatsApp
+    // message below (see formatBookingSummary.ts for why).
+    await submitLead({
       sessionId: store.sessionId,
       fullName: store.fullName || String(store.answers["onboarding.firstName"] ?? ""),
       email: store.email || String(store.answers["onboarding.email"] ?? ""),
@@ -268,22 +268,11 @@ export default function ConsentStep({
       answers: store.answers,
     });
 
-    if (result.ok) {
-      photoUrls = result.imageUrls?.length
-        ? result.imageUrls
-        : result.imageUrl
-          ? [result.imageUrl]
-          : [];
-      if (photoUrls[0]) setSelfieUrl(photoUrls[0]);
-    }
-
     const message = buildWhatsAppBookingSummaryText({
       answers: store.answers,
       fullName: store.fullName || String(store.answers["onboarding.firstName"] ?? ""),
       email: store.email || String(store.answers["onboarding.email"] ?? ""),
       sessionId: store.sessionId,
-      selfieUrl: photoUrls[0] ?? store.selfieUrl,
-      photoUrls,
       selectedPlan: store.selectedPlan,
       planName: plan?.name ?? null,
       planPrice: plan?.price ?? null,

@@ -23,6 +23,10 @@ export type Database = {
           display_name: string;
           can_verify_payment: boolean;
           can_send_report: boolean;
+          // Added by HANDOVER-6's super-admin-permissions migration (already
+          // live). Distinct from `role` — an "owner" is not automatically a
+          // super admin, and vice versa; the two are set independently.
+          is_super_admin: boolean;
           created_at: string;
         };
         Insert: {
@@ -31,6 +35,7 @@ export type Database = {
           display_name: string;
           can_verify_payment?: boolean;
           can_send_report?: boolean;
+          is_super_admin?: boolean;
           created_at?: string;
         };
         Update: {
@@ -39,6 +44,7 @@ export type Database = {
           display_name?: string;
           can_verify_payment?: boolean;
           can_send_report?: boolean;
+          is_super_admin?: boolean;
           created_at?: string;
         };
         Relationships: [];
