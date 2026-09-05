@@ -173,6 +173,11 @@ export type Database = {
           funnel_step: number | null;
           assigned_to: string | null;
           report_sender_id: string | null;
+          // Internal/test lead flag — HOTFIX-5. All 32 rows seeded before
+          // this shipped are test data; default false so any new insert
+          // that doesn't explicitly set it is treated as a real customer.
+          is_test: boolean;
+          test_reason: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -197,6 +202,8 @@ export type Database = {
           funnel_step?: number | null;
           assigned_to?: string | null;
           report_sender_id?: string | null;
+          is_test?: boolean;
+          test_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -221,6 +228,8 @@ export type Database = {
           funnel_step?: number | null;
           assigned_to?: string | null;
           report_sender_id?: string | null;
+          is_test?: boolean;
+          test_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };

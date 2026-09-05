@@ -20,9 +20,17 @@
 export type Author = {
   slug: string;
   name: string;
-  /** e.g. "Certified Aesthetician" */
+  /**
+   * The one job title used for this person everywhere they're credited.
+   * e.g. "Certified Aesthetics Practitioner" — do not let a second variant
+   * ("Certified Aesthetician", "Aesthetics Practitioner", ...) creep back in
+   * anywhere this person is named. Inconsistent titles for the same named
+   * person undercut the Person schema / `sameAs` wiring, whose whole point is
+   * telling Google these mentions are one entity.
+   */
   title: string;
-  /** e.g. "BSc Cosmetology & Dermatology Science" */
+  /** e.g. "BS Cosmetology & Dermatology Science" — BS, never BSc; Pakistani
+   * universities award BS. */
   credentials: string;
   /** Professional registration number, when one applies. */
   regNo?: string;
@@ -32,6 +40,8 @@ export type Author = {
   bio: string;
   /** Verifiable external profiles — LinkedIn, professional register, etc. */
   profiles?: { label: string; url: string }[];
+  /** A professional body membership worth carrying in structured data. */
+  memberOf?: { name: string; url: string };
   /** Can this person sign off clinical accuracy on a post? */
   canReview: boolean;
 };
@@ -40,18 +50,22 @@ export const AUTHORS: Record<string, Author> = {
   "ayma-arif": {
     slug: "ayma-arif",
     name: "Ayma Arif",
-    title: "Certified Aesthetician",
-    credentials: "BSc Cosmetology & Dermatology Science",
+    title: "Certified Aesthetics Practitioner",
+    credentials: "BS Cosmetology & Dermatology Science",
     // Deliberately left unset. Schema pointing at a 404 image is worse than no
     // image — Google flags unresolvable `image` values. Drop a square photo at
     // `public/authors/ayma-arif.jpg` (≥400×400), then uncomment:
     // photo: "/authors/ayma-arif.jpg",
     bio:
-      "Ayma Arif is a certified aesthetician who has reviewed skin assessments " +
-      "for clients across Pakistan. She writes and reviews the diagnostic " +
-      "content on GlamRepairs, with a focus on telling people what their skin " +
-      "is actually doing rather than which product to buy.",
+      "Ayma Arif is a certified aesthetics practitioner who has reviewed skin " +
+      "assessments for clients across Pakistan. She writes and reviews the " +
+      "diagnostic content on GlamRepairs, with a focus on telling people what " +
+      "their skin is actually doing rather than which product to buy.",
     profiles: [],
+    memberOf: {
+      name: "International Dermoscopy Society",
+      url: "https://dermoscopy-ids.org/",
+    },
     canReview: true,
   },
 };

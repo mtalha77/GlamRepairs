@@ -14,7 +14,13 @@ export default function AboutHeroSection() {
         alt=""
         fill
         priority
-        sizes="100vw"
+        // Decorative full-bleed background. Capped per breakpoint rather than
+        // a flat "100vw" — on a `fill` image `sizes` is what keeps the
+        // browser from picking the largest candidate in next.config's
+        // deviceSizes on a high-DPR phone (this was requesting the 3840px
+        // variant on mobile). The mobile bucket targets the ~1200px tier
+        // even at 3x DPR (400 * 3 = 1200).
+        sizes="(max-width: 640px) 400px, (max-width: 1024px) 800px, 1920px"
         className="object-cover object-center"
       />
 

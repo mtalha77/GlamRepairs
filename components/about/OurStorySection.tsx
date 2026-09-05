@@ -4,7 +4,7 @@ import { whoReviews } from "@/components/about/aboutContent";
 /**
  * "Who reviews your skin" — the named, credentialed practitioner behind every
  * assessment. This is the page's E-E-A-T anchor, so the credential wording
- * here must match lib/seo/authors.ts exactly: BSc Cosmetology & Dermatology
+ * here must match lib/seo/authors.ts exactly: BS Cosmetology & Dermatology
  * Science, never a medical title.
  */
 export default function OurStorySection() {

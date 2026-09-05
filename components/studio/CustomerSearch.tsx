@@ -19,6 +19,7 @@ type CustomerSearchProps = {
   initialPayment?: string;
   initialAssigned?: string;
   initialFunnel?: string;
+  initialShowTest?: boolean;
   members?: TeamOption[];
   showAssignmentFilter?: boolean;
 };
@@ -31,6 +32,7 @@ export default function CustomerSearch({
   initialPayment = "",
   initialAssigned = "",
   initialFunnel = "",
+  initialShowTest = false,
   members = [],
   showAssignmentFilter = false,
 }: CustomerSearchProps) {
@@ -40,6 +42,7 @@ export default function CustomerSearch({
   const [payment, setPayment] = useState(initialPayment);
   const [assigned, setAssigned] = useState(initialAssigned);
   const [funnel, setFunnel] = useState(initialFunnel);
+  const [showTest, setShowTest] = useState(initialShowTest);
 
   function applyFilters(
     nextQuery: string,
@@ -47,6 +50,7 @@ export default function CustomerSearch({
     nextPayment: string,
     nextAssigned: string,
     nextFunnel: string,
+    nextShowTest: boolean,
   ) {
     const params = new URLSearchParams();
     if (nextQuery.trim()) params.set("q", nextQuery.trim());
@@ -54,6 +58,7 @@ export default function CustomerSearch({
     if (nextPayment) params.set("payment", nextPayment);
     if (nextAssigned) params.set("assigned", nextAssigned);
     if (nextFunnel) params.set("funnel", nextFunnel);
+    if (nextShowTest) params.set("showTest", "1");
     router.push(
       params.size > 0
         ? `/studio/customers?${params.toString()}`
@@ -68,7 +73,7 @@ export default function CustomerSearch({
       className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center"
       onSubmit={(event) => {
         event.preventDefault();
-        applyFilters(query, plan, payment, assigned, funnel);
+        applyFilters(query, plan, payment, assigned, funnel, showTest);
       }}
     >
       <TextInput
@@ -86,7 +91,7 @@ export default function CustomerSearch({
         onChange={(event) => {
           const nextPlan = event.target.value;
           setPlan(nextPlan);
-          applyFilters(query, nextPlan, payment, assigned, funnel);
+          applyFilters(query, nextPlan, payment, assigned, funnel, showTest);
         }}
       >
         <option value="">All plans</option>
@@ -104,7 +109,7 @@ export default function CustomerSearch({
         onChange={(event) => {
           const nextPayment = event.target.value;
           setPayment(nextPayment);
-          applyFilters(query, plan, nextPayment, assigned, funnel);
+          applyFilters(query, plan, nextPayment, assigned, funnel, showTest);
         }}
       >
         <option value="">All payments</option>
@@ -120,7 +125,7 @@ export default function CustomerSearch({
           onChange={(event) => {
             const nextAssigned = event.target.value;
             setAssigned(nextAssigned);
-            applyFilters(query, plan, payment, nextAssigned, funnel);
+            applyFilters(query, plan, payment, nextAssigned, funnel, showTest);
           }}
         >
           <option value="">All assignments</option>
@@ -140,12 +145,24 @@ export default function CustomerSearch({
         onChange={(event) => {
           const nextFunnel = event.target.value;
           setFunnel(nextFunnel);
-          applyFilters(query, plan, payment, assigned, nextFunnel);
+          applyFilters(query, plan, payment, assigned, nextFunnel, showTest);
         }}
       >
         <option value="">All funnels</option>
         <option value="abandoned">Left funnel</option>
       </select>
+      <label className="flex items-center gap-2 text-sm text-brand-gray">
+        <input
+          type="checkbox"
+          checked={showTest}
+          onChange={(event) => {
+            const nextShowTest = event.target.checked;
+            setShowTest(nextShowTest);
+            applyFilters(query, plan, payment, assigned, funnel, nextShowTest);
+          }}
+        />
+        Show test entries
+      </label>
       <button
         type="submit"
         className="rounded-xl bg-brand-primary px-4 py-2 text-sm text-white"

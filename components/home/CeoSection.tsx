@@ -47,16 +47,16 @@ export default function CeoSection() {
           </header>
 
           <p className="mt-4 font-sans italic tracking-[-0.03em] text-brand-ink text-lg sm:text-xl lg:text-[1.375rem]">
-            Aesthetics &amp; Dermatology Expert
+            Certified Aesthetics Practitioner
           </p>
           <p className="mt-1 font-sans italic text-[rgba(31,31,31,0.55)] text-sm sm:text-[15px] lg:text-base">
-            (BSc Cosmetology &amp; Dermatology Science &middot; KFU &middot;
+            (BS Cosmetology &amp; Dermatology Science &middot; KFU &middot;
             Clinic-trained)
           </p>
 
           <p className="mt-6 w-full text-justify font-sans leading-relaxed text-brand-ink text-base sm:text-lg lg:text-xl">
             <span className="font-serif italic">Ayma Arif</span>{" "}is a
-            certified aesthetics professional with a Bachelor&apos;s degree in
+            certified aesthetics practitioner with a Bachelor&apos;s degree in
             Cosmetology and Dermatology Science. With hands-on experience across
             multiple clinics in Pakistan, she has helped clients with skin
             assessments, treatment planning, and evidence-based skincare

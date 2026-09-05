@@ -17,7 +17,7 @@ const defaultFaqItems: FaqItem[] = [
   {
     question: "Who reviews my photos?",
     answer:
-      "A certified aesthetics expert with a BSc in Cosmetology & Dermatology Science and experience across multiple clinics in Pakistan.",
+      "Ayma Arif, Certified Aesthetics Practitioner, with a BS in Cosmetology & Dermatology Science and experience across multiple clinics in Pakistan.",
   },
   {
     question: "How long does it take to get my assessment?",
