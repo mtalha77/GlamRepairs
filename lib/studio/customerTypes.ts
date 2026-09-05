@@ -27,6 +27,8 @@ export type StudioCustomer = {
   reportSenderName: string | null;
   funnelComplete: boolean;
   funnelStep: number | null;
+  isTest: boolean;
+  testReason: string | null;
   createdAt: string;
   updatedAt: string;
 };

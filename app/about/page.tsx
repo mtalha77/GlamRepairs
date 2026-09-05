@@ -13,7 +13,7 @@
  * full strategy note.
  *
  * ⚠️ Credential accuracy: every mention of the reviewing practitioner on this
- * page says "Ayma Arif, BSc Cosmetology & Dermatology Science" — never "Dr."
+ * page says "Ayma Arif, BS Cosmetology & Dermatology Science" — never "Dr."
  * That title implies PMDC registration in a health context, which is not the
  * qualification held, and it undercuts the site's own Terms (no diagnosis, no
  * prescription). An overstated credential is an E-E-A-T liability, not an

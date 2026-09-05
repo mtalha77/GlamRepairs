@@ -42,9 +42,19 @@ export async function generateMetadata({
       url: `/blog/${post.slug}`,
       publishedTime: post.publishedAt ?? undefined,
       modifiedTime: post.updatedAt,
+      // No `images` when there's no hero — Next's file-convention
+      // app/opengraph-image.tsx fills that gap automatically, so a share
+      // is never imageless even before Ayma adds hero images to posts.
       ...(post.heroImageUrl ? { images: [post.heroImageUrl] } : {}),
     },
-    twitter: { card: "summary_large_image", title, description },
+    // Large-image cards need a genuinely large, post-specific image. Without
+    // a hero, `summary` is the honest card type — a repeated brand fallback
+    // isn't "large image" content, it's just not-blank.
+    twitter: {
+      card: post.heroImageUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+    },
   };
 }
 

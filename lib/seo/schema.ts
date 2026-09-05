@@ -77,6 +77,15 @@ export function personSchema(author: Author) {
       name: author.credentials,
       ...(author.regNo ? { identifier: author.regNo } : {}),
     },
+    ...(author.memberOf
+      ? {
+          memberOf: {
+            "@type": "Organization",
+            name: author.memberOf.name,
+            url: author.memberOf.url,
+          },
+        }
+      : {}),
     ...(author.profiles?.length
       ? { sameAs: author.profiles.map((p) => p.url) }
       : {}),

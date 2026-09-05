@@ -16,7 +16,7 @@ export {
 } from "@/lib/studio/customerTypes";
 
 const CUSTOMER_COLUMNS =
-  "id, session_id, full_name, email, selected_plan, plan_name, plan_price, answers, image_urls, photo_paths, photos_expire_at, photos_deleted_at, status, notes, source, payment_status, assigned_to, report_sender_id, funnel_complete, funnel_step, created_at, updated_at";
+  "id, session_id, full_name, email, selected_plan, plan_name, plan_price, answers, image_urls, photo_paths, photos_expire_at, photos_deleted_at, status, notes, source, payment_status, assigned_to, report_sender_id, funnel_complete, funnel_step, is_test, test_reason, created_at, updated_at";
 
 function mapCustomer(
   row: {
@@ -40,6 +40,8 @@ function mapCustomer(
     report_sender_id: string | null;
     funnel_complete: boolean | null | undefined;
     funnel_step: number | null | undefined;
+    is_test: boolean | null | undefined;
+    test_reason: string | null;
     created_at: string;
     updated_at: string;
   },
@@ -72,6 +74,8 @@ function mapCustomer(
       : null,
     funnelComplete: row.funnel_complete !== false,
     funnelStep: row.funnel_step ?? null,
+    isTest: Boolean(row.is_test),
+    testReason: row.test_reason,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -92,6 +96,13 @@ export type CustomerListFilters = {
   payment?: string;
   assigned?: string;
   funnel?: string;
+  /**
+   * Test leads are hidden by default — all 32 leads seeded before is_test
+   * shipped are internal/test data, and the first real customer would
+   * otherwise arrive buried under them. Pass true to show them for
+   * debugging (the "Show test entries" toggle).
+   */
+  showTest?: boolean;
 };
 
 function isPaymentStatus(value: string): value is PaymentStatus {
@@ -139,6 +150,10 @@ export async function listStudioCustomers(filters: CustomerListFilters = {}) {
     );
   }
 
+  if (!filters.showTest) {
+    query = query.eq("is_test", false);
+  }
+
   const [{ data, error }, memberNames] = await Promise.all([
     query,
     getMemberNameMap(),
@@ -169,17 +184,25 @@ export async function getStudioCustomer(id: string) {
 export async function getStudioOverviewCounts() {
   const supabase = await createServerSupabaseClient();
 
+  // Dashboard headline metrics always exclude test leads — no toggle here,
+  // unlike the customer list. All 32 leads seeded before is_test shipped are
+  // internal/test data.
   const [all, newest, photos, team] = await Promise.all([
-    supabase.from("leads").select("id", { count: "exact", head: true }),
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
-      .eq("status", "new"),
+      .eq("is_test", false),
+    supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "new")
+      .eq("is_test", false),
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
       .not("photos_expire_at", "is", null)
-      .is("photos_deleted_at", null),
+      .is("photos_deleted_at", null)
+      .eq("is_test", false),
     supabase.from("studio_members").select("user_id", { count: "exact", head: true }),
   ]);
 

@@ -3,8 +3,9 @@
  * presentation. Rewritten 4 September 2026 — see app/about/page.tsx for the
  * word-count and credential-accuracy verification this rewrite must satisfy.
  *
- * ⚠️ Credential accuracy: Ayma Arif holds a BSc in Cosmetology & Dermatology
- * Science. She is never "Dr." anywhere in this file — that title implies PMDC
+ * ⚠️ Credential accuracy: Ayma Arif holds a BS in Cosmetology & Dermatology
+ * Science (BS, not BSc — Pakistani universities award BS). She is never
+ * "Dr." anywhere in this file — that title implies PMDC
  * registration in a health context, contradicts the site's own Terms (no
  * diagnosis, no prescription), and is a disprovable E-E-A-T liability rather
  * than a credibility asset. See lib/seo/authors.ts for the same credential
@@ -51,7 +52,7 @@ export const whoReviews = {
   headingEmphasis: "your skin",
   subheadingLead: "Reviewed by a",
   subheadingEmphasis: "certified professional.",
-  expertName: "Ayma Arif, BSc Cosmetology & Dermatology Science,",
+  expertName: "Ayma Arif, BS Cosmetology & Dermatology Science,",
   paragraphs: [
     "has spent years working across clinics in Pakistan with clients " +
       "whose concerns ranged from acne and pigmentation to dryness and " +
@@ -178,10 +179,10 @@ export const ABOUT_FAQS: AboutFaqItem[] = [
   {
     question: "Who reviews my photographs?",
     answer:
-      "Ayma Arif, who holds a BSc in Cosmetology & Dermatology Science " +
-      "and has worked across multiple clinics in Pakistan. Where a " +
-      "second opinion is useful, a reviewing practitioner also sees your " +
-      "case.",
+      "Ayma Arif, Certified Aesthetics Practitioner, who holds a BS in " +
+      "Cosmetology & Dermatology Science and has worked across multiple " +
+      "clinics in Pakistan. Where a second opinion is useful, a reviewing " +
+      "practitioner also sees your case.",
   },
   {
     question: "How long does my assessment take?",

@@ -153,9 +153,9 @@ export default function Footer() {
                 className="h-12 w-auto sm:h-14"
               />
               <p className="mt-4 max-w-full font-sans text-sm leading-relaxed tracking-[0.01em] text-brand-primary/80 sm:max-w-[24rem]">
-                Our platform provides access to virtual primary care, virtual
-                urgent care, behavioral health counseling, healthcare advocacy,
-                specialist messaging, and healthcare discount benefits.
+                Glam Repairs provides personalised cosmetic skincare guidance,
+                reviewed by a certified practitioner. We do not diagnose or
+                treat medical conditions.
               </p>
             </div>
 
