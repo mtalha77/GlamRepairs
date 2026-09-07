@@ -29,7 +29,9 @@ export const BOOKING_ANSWER_LABELS: Record<string, string> = {
   "onboarding.diet": "Diet",
   "onboarding.photos": "Photos",
   "onboarding.consentPrivateReview": "Private review consent",
-  "onboarding.consentMarketing": "Marketing consent",
+  // HOTFIX-7 §3: was "Marketing consent" — backwards. The checkbox restricts
+  // marketing use of photos; the old label read as an opt-in to marketing.
+  "onboarding.photoMarketingRestriction": "Photo marketing restriction",
 };
 
 /** Friendlier wording for common slug values in sentences. */

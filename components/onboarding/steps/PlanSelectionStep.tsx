@@ -5,37 +5,38 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
 import { ONBOARDING_PROGRESS } from "@/components/onboarding/onboardingConfig";
+import CurrencySwitcher from "@/components/pricing/CurrencySwitcher";
 import CredentialsBlock from "@/components/seo/CredentialsBlock";
 import { StepHeader, StepRequiredError } from "@/components/steps";
 import { resolveUnlockTarget } from "@/lib/funnel/funnelProgress";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
 import { useStepRequiredError } from "@/lib/funnel/useStepAnswer";
+import { formatRegionPrice, type PricingRegion } from "@/lib/pricing/regions";
 
 type PlanId = "free" | "clarity" | "transform";
 
-const plans: {
+// HOTFIX-7 §1: names/highlights only — price comes from the region prop
+// (public.pricing_regions), resolved server-side per request. Never
+// hardcode a price back into this array.
+const PLAN_META: {
   id: PlanId;
   name: string;
-  price: string;
   highlights: string;
 }[] = [
   {
     id: "free",
     name: "Free",
-    price: "Rs. 0",
     highlights:
       "Skin concern quiz · Instant skin type result · Generic routine guide · Skin tips access",
   },
   {
     id: "clarity",
     name: "Clarity",
-    price: "Rs. 1,500",
     highlights: "Manual expert review · Delivered in 24 hours · 1 follow-up at 2 weeks",
   },
   {
     id: "transform",
     name: "Transform",
-    price: "Rs. 3,000",
     highlights:
       "Priority review in 24 hours · Week-by-week plan · 2 follow-ups · WhatsApp access",
   },
@@ -165,12 +166,20 @@ function PlanSelectionFooter({
 type PlanSelectionStepProps = {
   backHref?: string;
   nextHref?: string;
+  region: PricingRegion;
+  regions: PricingRegion[];
 };
 
 export default function PlanSelectionStep({
   backHref = "/onboarding/step/20",
   nextHref = "/onboarding/step/22",
+  region,
+  regions,
 }: PlanSelectionStepProps) {
+  const plans = PLAN_META.map((plan) => ({
+    ...plan,
+    price: formatRegionPrice(region, plan.id),
+  }));
   const router = useRouter();
   const selectedPlan = useFunnelStore(
     (state) => state.selectedPlan,
@@ -220,6 +229,13 @@ export default function PlanSelectionStep({
           eyebrow="Plan Selection & Payment"
           title="Choose your plan"
         />
+
+        {/* HOTFIX-7 §1, trap (b) — geo set this region as the default;
+            never hard-lock by it. A Pakistani student in Manchester, or
+            someone in Lahore buying for family abroad, needs this. */}
+        <div className="mt-3 flex justify-end">
+          <CurrencySwitcher region={region} regions={regions} />
+        </div>
 
         {/* HOTFIX-6 §1 — trust reassurance at the moment the reader is
             deciding whether to pay: who actually reviews this. */}

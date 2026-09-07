@@ -1,3 +1,5 @@
+import { formatRegionPrice, type PricingRegion } from "@/lib/pricing/regions";
+
 export type ComparisonCell =
   | { type: "check" }
   | { type: "empty" }
@@ -15,15 +17,10 @@ export const comparisonHeaders = [
   "Skin Transform",
 ] as const;
 
-export const comparisonRows: ComparisonRow[] = [
-  {
-    feature: "Price",
-    values: [
-      { type: "text", value: "Free" },
-      { type: "text", value: "Rs. 1500" },
-      { type: "text", value: "Rs. 3000" },
-    ],
-  },
+// HOTFIX-7 §1: the Price row is region-dependent, so it's built at render
+// time from buildComparisonRows(region) rather than hardcoded here — see
+// FeaturesComparisonSection.tsx.
+const staticComparisonRows: ComparisonRow[] = [
   {
     feature: "Skin quiz & type assessment",
     values: [{ type: "check" }, { type: "check" }, { type: "check" }],
@@ -97,3 +94,15 @@ export const comparisonRows: ComparisonRow[] = [
     values: [{ type: "empty" }, { type: "empty" }, { type: "check" }],
   },
 ];
+
+export function buildComparisonRows(region: PricingRegion): ComparisonRow[] {
+  const priceRow: ComparisonRow = {
+    feature: "Price",
+    values: [
+      { type: "text", value: "Free" },
+      { type: "text", value: formatRegionPrice(region, "clarity") },
+      { type: "text", value: formatRegionPrice(region, "transform") },
+    ],
+  };
+  return [priceRow, ...staticComparisonRows];
+}

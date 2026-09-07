@@ -178,6 +178,14 @@ export type Database = {
           // that doesn't explicitly set it is treated as a real customer.
           is_test: boolean;
           test_reason: string | null;
+          // HOTFIX-7 §1 — "record what was quoted": the pricing_regions.code
+          // and currency the visitor actually saw/chose at submission, and
+          // the regional list price for the selected plan before any member
+          // discount (the existing DB trigger applies the discount from
+          // this value).
+          pricing_region: string | null;
+          currency: string | null;
+          list_price: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -204,6 +212,9 @@ export type Database = {
           report_sender_id?: string | null;
           is_test?: boolean;
           test_reason?: string | null;
+          pricing_region?: string | null;
+          currency?: string | null;
+          list_price?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -230,7 +241,49 @@ export type Database = {
           report_sender_id?: string | null;
           is_test?: boolean;
           test_reason?: string | null;
+          pricing_region?: string | null;
+          currency?: string | null;
+          list_price?: number | null;
           created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      pricing_regions: {
+        Row: {
+          code: string;
+          label: string;
+          currency: string;
+          symbol: string;
+          price_free: number;
+          price_clarity: number;
+          price_transform: number;
+          is_default: boolean;
+          active: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          code: string;
+          label: string;
+          currency: string;
+          symbol: string;
+          price_free?: number;
+          price_clarity: number;
+          price_transform: number;
+          is_default?: boolean;
+          active?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          code?: string;
+          label?: string;
+          currency?: string;
+          symbol?: string;
+          price_free?: number;
+          price_clarity?: number;
+          price_transform?: number;
+          is_default?: boolean;
+          active?: boolean;
           updated_at?: string;
         };
         Relationships: [];
@@ -390,7 +443,23 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      resolve_pricing_region: {
+        Args: { p_country: string | null };
+        Returns: {
+          code: string;
+          label: string;
+          currency: string;
+          symbol: string;
+          price_free: number;
+          price_clarity: number;
+          price_transform: number;
+          is_default: boolean;
+          active: boolean;
+          updated_at: string;
+        }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

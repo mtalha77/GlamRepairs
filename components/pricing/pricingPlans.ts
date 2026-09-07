@@ -1,10 +1,13 @@
 import type { FunnelPlanId } from "@/lib/funnel/plans";
 
+// HOTFIX-7 §1: price is deliberately NOT part of this record. It comes from
+// public.pricing_regions (lib/pricing/regions.ts), resolved per-visitor —
+// never hardcode it here again. See PricingSection.tsx for how it's joined
+// back in at render time.
 export type PricingPlan = {
   /** Matches onboarding store plan ids (free | clarity | transform). */
   planId: FunnelPlanId;
   name: string;
-  price: string;
   cta: string;
   description: string;
   features: {
@@ -19,7 +22,6 @@ export const pricingPlans: PricingPlan[] = [
   {
     planId: "free",
     name: "Skin Starter",
-    price: "0.00",
     cta: "TRY IT FREE",
     description: "Know your skin before you fix it.",
     features: [
@@ -46,7 +48,6 @@ export const pricingPlans: PricingPlan[] = [
   {
     planId: "clarity",
     name: "Skin Clarity",
-    price: "1500",
     cta: "GET MY SKIN ASSESSMENT",
     description: "Your skin, studied - not scanned.",
     features: [
@@ -83,7 +84,6 @@ export const pricingPlans: PricingPlan[] = [
   {
     planId: "transform",
     name: "Skin Transform",
-    price: "3000",
     badge: "Most Complete",
     cta: "START MY FULL SKIN JOURNEY",
     description: "A full skin strategy. Not just a routine.",

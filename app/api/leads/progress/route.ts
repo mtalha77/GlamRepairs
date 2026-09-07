@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { isFunnelPlanId } from "@/lib/funnel/plans";
 import { saveFunnelProgress } from "@/lib/leads/insertLead";
+import { getRequestPricingRegion } from "@/lib/pricing/geo";
+import { formatRegionPrice } from "@/lib/pricing/regions";
 import { PLAN_OPTIONS } from "@/lib/studio/constants";
 
 type ProgressBody = {
@@ -34,13 +37,20 @@ export async function POST(request: Request) {
   }
 
   const plan = PLAN_OPTIONS.find((item) => item.id === body.selectedPlan);
+  // HOTFIX-7 §1: price resolved from public.pricing_regions, not a
+  // hardcoded PLAN_OPTIONS.price — that field no longer exists precisely
+  // because it went stale the moment PK pricing last changed.
+  const planPrice =
+    plan && isFunnelPlanId(plan.id)
+      ? formatRegionPrice(await getRequestPricingRegion(request), plan.id)
+      : undefined;
   const leadId = await saveFunnelProgress({
     sessionId,
     fullName,
     email,
     selectedPlan: body.selectedPlan ?? null,
     planName: plan?.name,
-    planPrice: plan?.price,
+    planPrice,
     answers: body.answers,
     funnelStep: body.funnelStep ?? null,
   });

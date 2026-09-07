@@ -52,7 +52,7 @@ export default function NewCustomerForm({ errorCode }: NewCustomerFormProps) {
           <option value="">No plan</option>
           {PLAN_OPTIONS.map((plan) => (
             <option key={plan.id} value={plan.id}>
-              {plan.name} ({plan.price})
+              {plan.name}
             </option>
           ))}
         </select>

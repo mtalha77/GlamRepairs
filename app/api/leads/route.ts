@@ -23,6 +23,22 @@ function validatePayload(body: unknown): body is LeadSubmitPayload {
   return typeof payload.sessionId === "string" && payload.sessionId.length > 0;
 }
 
+/**
+ * HOTFIX-7 §3 — verify the consent gate server-side too. The funnel UI
+ * already disables submission until both boxes are ticked
+ * (ConsentStep.tsx's canSubmit), but that's only enforced client-side; a
+ * direct POST here could skip it entirely. One production lead row has
+ * both consent answers null with photos already uploaded — probably a
+ * pre-this-check test artefact, but it's exactly the gap this closes:
+ * photos are never persisted without both consent answers recorded true.
+ */
+function hasRecordedConsent(answers: Record<string, unknown> | undefined) {
+  return (
+    answers?.["onboarding.consentPrivateReview"] === true &&
+    answers?.["onboarding.photoMarketingRestriction"] === true
+  );
+}
+
 function collectPhotoDataUrls(payload: LeadSubmitPayload): string[] {
   const fromList = Array.isArray(payload.photoDataUrls)
     ? payload.photoDataUrls.filter(
@@ -78,6 +94,17 @@ export async function POST(request: Request) {
   }
 
   const photoDataUrls = collectPhotoDataUrls(body);
+
+  if (photoDataUrls.length > 0 && !hasRecordedConsent(body.answers)) {
+    return NextResponse.json<LeadSubmitResult>(
+      {
+        ok: false,
+        reason: "validation",
+        message: "Both consent checkboxes must be agreed before photos can be submitted.",
+      },
+      { status: 400 },
+    );
+  }
 
   if (!isConfigured()) {
     if (process.env.NODE_ENV !== "production") {

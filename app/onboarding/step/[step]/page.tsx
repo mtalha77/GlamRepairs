@@ -14,6 +14,8 @@ import {
   ONBOARDING_FORM_STEPS,
   ONBOARDING_TOTAL_STEPS,
 } from "@/components/onboarding/onboardingConfig";
+import { getServerPricingRegion } from "@/lib/pricing/geo";
+import { listActivePricingRegions } from "@/lib/pricing/regions";
 
 const TOTAL_STEPS = ONBOARDING_TOTAL_STEPS;
 
@@ -172,13 +174,33 @@ export default async function OnboardingStepPage({ params }: StepPageProps) {
           ? "Finish"
           : "Next";
 
+  // HOTFIX-7 §1: resolved fresh per request (getServerPricingRegion() reads
+  // cookies()/headers(), which is what keeps this route dynamic instead of
+  // caching one visitor's currency for everyone — see PricingSection.tsx).
+  // Only these two steps show a price, so only these two pay for the lookup.
   if (stepNumber === ONBOARDING_FORM.planSelection) {
-    return <PlanSelectionStep backHref={backHref} nextHref={nextHref} />;
+    const [region, regions] = await Promise.all([
+      getServerPricingRegion(),
+      listActivePricingRegions(),
+    ]);
+    return (
+      <PlanSelectionStep
+        backHref={backHref}
+        nextHref={nextHref}
+        region={region}
+        regions={regions}
+      />
+    );
   }
 
   if (stepNumber === ONBOARDING_FORM.consent) {
+    const region = await getServerPricingRegion();
     return (
-      <ConsentStep backHref={backHref} nextHref="/onboarding/complete" />
+      <ConsentStep
+        backHref={backHref}
+        nextHref="/onboarding/complete"
+        region={region}
+      />
     );
   }
 

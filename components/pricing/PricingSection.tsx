@@ -1,5 +1,8 @@
+import CurrencySwitcher from "@/components/pricing/CurrencySwitcher";
 import PricingCard from "@/components/pricing/PricingCard";
 import { pricingPlans } from "@/components/pricing/pricingPlans";
+import { getServerPricingRegion } from "@/lib/pricing/geo";
+import { formatRegionPrice, listActivePricingRegions } from "@/lib/pricing/regions";
 
 type PricingSectionProps = {
   title?: string;
@@ -14,11 +17,26 @@ const defaultSubtitle =
 const trustLine =
   "Every paid assessment is manually reviewed by a certified aesthetics professional with a degree in Cosmetology & Dermatology Science.";
 
-export default function PricingSection({
+/**
+ * HOTFIX-7 §1 — regional pricing.
+ *
+ * This is an async Server Component that calls getServerPricingRegion(),
+ * which reads cookies()/headers(). That's what opts every route rendering
+ * this section (the homepage and /pricing) out of static caching — trap (a)
+ * in the handover: a statically cached pricing section would serve the
+ * first visitor's currency to everyone after that. Do not memoize or hoist
+ * the region lookup above this component in a way that could get cached.
+ */
+export default async function PricingSection({
   title = defaultTitle,
   subtitle = defaultSubtitle,
   showTrustLine = false,
 }: PricingSectionProps) {
+  const [region, regions] = await Promise.all([
+    getServerPricingRegion(),
+    listActivePricingRegions(),
+  ]);
+
   return (
     <section
       id="pricing"
@@ -32,11 +50,18 @@ export default function PricingSection({
           <p className="mt-4 font-sans leading-snug text-brand-ink text-base sm:mt-5 sm:text-lg lg:text-2xl">
             {subtitle}
           </p>
+          <div className="mt-4 flex justify-center">
+            <CurrencySwitcher region={region} regions={regions} />
+          </div>
         </header>
 
         <div className="mt-10 grid gap-6 sm:mt-12 lg:mt-14 lg:grid-cols-3 lg:items-stretch lg:gap-5 xl:gap-6">
           {pricingPlans.map((plan) => (
-            <PricingCard key={plan.name} {...plan} />
+            <PricingCard
+              key={plan.name}
+              {...plan}
+              price={formatRegionPrice(region, plan.planId)}
+            />
           ))}
         </div>
 
