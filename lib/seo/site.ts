@@ -34,6 +34,15 @@ export const SITE = {
    * lib/funnel/whatsapp.ts reads this as its fallback.
    */
   whatsapp: "923355880333",
+  /**
+   * Help line for people stuck mid-funnel (HOTFIX-9 §4). Stored in
+   * INTERNATIONAL form for tel:/wa.me links; supportPhoneDisplay is the
+   * local form people actually recognise and can read off the screen.
+   * Deliberately a different number from `whatsapp` above — that one is the
+   * business/assessment line, this one is "I can't get the upload to work".
+   */
+  supportPhone: "923018770506",
+  supportPhoneDisplay: "0301 8770506",
   // Consolidates the brand entity: tells Google these profiles and this site
   // are the same organisation. Only includes profiles that are live, public and
   // actually branded GlamRepairs — a 404 or an abandoned handle here is a
@@ -62,6 +71,8 @@ export const SITE = {
  */
 export const PAYMENT = {
   bank: "United Bank Limited (UBL)",
+  /** Compact form for the WhatsApp prefill, where every character counts. */
+  bankShort: "UBL",
   accountTitle: "Muhammad Talha",
   accountNumber: "010900024325",
   iban: "PK47UNIL0109000243258774",

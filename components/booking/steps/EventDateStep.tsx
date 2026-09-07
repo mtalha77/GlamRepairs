@@ -6,6 +6,7 @@ import {
   useStepGate,
   useStepRequiredError,
 } from "@/lib/funnel/useStepAnswer";
+import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
 
 function toLocalISODate(date: Date) {
   const year = date.getFullYear();
@@ -24,11 +25,21 @@ export default function EventDateStep() {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const minDate = toLocalISODate(tomorrow);
 
+  // HOTFIX-9 §1 — the nav skips this step entirely when there is no event,
+  // but a manual URL or a browser Back can still land here. Never hold
+  // someone behind a required date for an event they said they do not have.
+  const hasNoEvent = useFunnelStore(
+    (state) => state.answers["booking.specialEvent"] === "none",
+  );
+
   const isEmpty = eventDate === "";
   const isFuture = !isEmpty && eventDate >= minDate;
-  useStepGate(isFuture);
+  useStepGate(hasNoEvent || isFuture);
 
-  const requiredError = useStepRequiredError(isEmpty, "Event date is required.");
+  const requiredError = useStepRequiredError(
+    !hasNoEvent && isEmpty,
+    "Event date is required.",
+  );
   const futureError =
     !isEmpty && !isFuture ? "Please choose a future date." : undefined;
   const error = requiredError ?? futureError;

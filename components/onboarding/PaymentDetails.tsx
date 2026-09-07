@@ -107,7 +107,7 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
   );
 
   return (
-    <section className="mt-6 rounded-2xl border border-brand-lavender/70 bg-white px-4 py-4 text-left sm:mt-7 sm:px-5 sm:py-5">
+    <section className="mt-6 rounded-2xl border-2 border-brand-light/70 bg-white px-4 py-4 text-left shadow-sm sm:mt-7 sm:px-5 sm:py-5">
       <h2 className="font-serif text-lg text-brand-primary sm:text-xl">
         Almost done — here&apos;s how to pay
       </h2>

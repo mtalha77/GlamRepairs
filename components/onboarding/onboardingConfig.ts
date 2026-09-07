@@ -22,6 +22,8 @@ export const ONBOARDING_FORM = {
   program: 2,
   notAlone: 10,
   treatmentFit: 11,
+  specialEvent: 19,
+  eventDate: 20,
   planSelection: 21,
   uploadPhotos: 23,
   consent: 25,

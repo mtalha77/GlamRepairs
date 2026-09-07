@@ -9,6 +9,11 @@ import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import { ONBOARDING_TOTAL_STEPS } from "@/components/onboarding/onboardingConfig";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
 import { useFunnelProgressSave } from "@/lib/funnel/useFunnelProgressSave";
+import {
+  countSkippedOnboardingStepsBefore,
+  onboardingTotalStepsFor,
+} from "@/lib/funnel/funnelProgress";
+import { useOnboardingSkips } from "@/lib/funnel/useOnboardingSkips";
 
 type OnboardingShellProps = {
   children: ReactNode;
@@ -39,7 +44,21 @@ export default function OnboardingShell({
   const pathname = usePathname();
   const ensureSessionId = useFunnelStore((state) => state.ensureSessionId);
   useFunnelProgressSave();
+  const skips = useOnboardingSkips();
   const showProgressBar = showProgress && typeof currentStep === "number";
+
+  // HOTFIX-9 §1 — a user who skips the event-date step is walking a
+  // 24-step funnel, so they should be counting down 24, not watching the
+  // bar jump 19 → 21 out of 25 and wondering what it missed. Applies to
+  // /onboarding/* only; the booking flow numbers itself separately.
+  const isOnboarding = pathname.startsWith("/onboarding");
+  const displayTotalSteps = isOnboarding
+    ? onboardingTotalStepsFor(skips)
+    : totalSteps;
+  const displayCurrentStep =
+    isOnboarding && typeof currentStep === "number"
+      ? currentStep - countSkippedOnboardingStepsBefore(currentStep, skips)
+      : currentStep;
   const showFooter = Boolean(
     footer || (typeof currentStep === "number" && backHref),
   );
@@ -68,8 +87,8 @@ export default function OnboardingShell({
         {showProgressBar && (
           <div className="mb-7 sm:mb-8">
             <OnboardingProgress
-              currentStep={currentStep}
-              totalSteps={totalSteps}
+              currentStep={displayCurrentStep as number}
+              totalSteps={displayTotalSteps}
               completed={progressCompleted}
             />
           </div>
