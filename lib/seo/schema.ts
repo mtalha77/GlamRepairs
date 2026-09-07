@@ -71,12 +71,27 @@ export function personSchema(author: Author) {
     url: abs(`/authors/${author.slug}`),
     ...(author.photo ? { image: abs(author.photo) } : {}),
     worksFor: { "@id": abs("/#organization") },
-    hasCredential: {
-      "@type": "EducationalOccupationalCredential",
-      credentialCategory: "degree",
-      name: author.credentials,
-      ...(author.regNo ? { identifier: author.regNo } : {}),
-    },
+    // Array, not a single object — HOTFIX-6 §4. The HEC attestation reference
+    // is the identifier here (falling back to regNo for any future author who
+    // has one but no HEC attestation) precisely because it's independently
+    // checkable; recognizedBy names the awarding institution so the credential
+    // isn't just a floating string.
+    hasCredential: [
+      {
+        "@type": "EducationalOccupationalCredential",
+        credentialCategory: "degree",
+        name: author.credentials,
+        ...(author.institution
+          ? { recognizedBy: { "@type": "Organization", name: author.institution } }
+          : {}),
+        ...(author.hecReference
+          ? { identifier: author.hecReference }
+          : author.regNo
+            ? { identifier: author.regNo }
+            : {}),
+      },
+    ],
+    ...(author.knowsAbout?.length ? { knowsAbout: author.knowsAbout } : {}),
     ...(author.memberOf
       ? {
           memberOf: {

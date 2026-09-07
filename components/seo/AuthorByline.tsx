@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Author } from "@/lib/seo/authors";
+import CredentialsBlock from "@/components/seo/CredentialsBlock";
 
 /**
  * Byline + "Medically reviewed by" block.
@@ -57,10 +58,6 @@ export default function AuthorByline({
             >
               {author.name}
             </Link>
-            <span className="text-black/55">
-              {" "}
-              — {author.title}, {author.credentials}
-            </span>
           </p>
           <p className="mt-0.5 text-black/55">
             <time dateTime={datePublished}>Published {fmt(datePublished)}</time>
@@ -75,6 +72,18 @@ export default function AuthorByline({
           </p>
         </div>
       </div>
+
+      {/* HOTFIX-6 §1 — full credentials block, identical to /about and
+          /authors/[slug]. Compact spacing for the in-article byline. */}
+      <CredentialsBlock slug={author.slug} compact showProfileLink={false} />
+      <p className="text-xs">
+        <Link
+          href={`/authors/${author.slug}`}
+          className="font-medium underline underline-offset-2 text-black/55"
+        >
+          View full profile
+        </Link>
+      </p>
 
       {reviewer ? (
         <p className="rounded-lg bg-black/[0.035] px-3 py-2 text-black/70">
