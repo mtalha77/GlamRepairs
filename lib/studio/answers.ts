@@ -33,7 +33,11 @@ const ANSWER_QUESTIONS: Record<string, string> = {
   "onboarding.stress": "What is your stress level?",
   "onboarding.diet": "Diet (select all that apply)",
   "onboarding.consentPrivateReview": "Do you consent to a private skin review?",
-  "onboarding.consentMarketing": "Do you consent to marketing updates?",
+  // HOTFIX-7 §3: this label was backwards — the checkbox is "my photos will
+  // NOT be used for marketing", so "Do you consent to marketing updates?"
+  // read as the opposite of what was agreed. Renamed key to match.
+  "onboarding.photoMarketingRestriction":
+    "Do you require photos not be used for marketing?",
 };
 
 const QUESTION_ORDER = [
@@ -61,7 +65,7 @@ const QUESTION_ORDER = [
   "booking.specialEvent",
   "booking.eventDate",
   "onboarding.consentPrivateReview",
-  "onboarding.consentMarketing",
+  "onboarding.photoMarketingRestriction",
 ];
 
 const VALUE_LABELS: Record<string, string> = {

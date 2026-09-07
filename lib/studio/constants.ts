@@ -38,8 +38,14 @@ export const REVIEW_DECISION_LABELS: Record<
   not_suitable: "Not suitable for a remote plan",
 };
 
+// HOTFIX-7 §1: names/ids only. Price used to be hardcoded here and got
+// stale the moment PK pricing changed (1,500 → 2,000, 3,000 → 3,500) — it
+// now lives in public.pricing_regions (lib/pricing/regions.ts). The two
+// call sites that used to read .price here (NewCustomerForm.tsx,
+// createCustomerAction in actions.ts) resolve the studio's own region
+// (PK — this business is Pakistan-run) live instead.
 export const PLAN_OPTIONS = [
-  { id: "free", name: "Skin Starter", price: "Rs. 0" },
-  { id: "clarity", name: "Clarity", price: "Rs. 1,500" },
-  { id: "transform", name: "Transform", price: "Rs. 3,000" },
+  { id: "free", name: "Skin Starter" },
+  { id: "clarity", name: "Clarity" },
+  { id: "transform", name: "Transform" },
 ] as const;

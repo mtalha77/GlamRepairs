@@ -140,6 +140,12 @@ export async function insertLead(
     selected_plan: input.selectedPlan ?? null,
     plan_name: input.planName ?? null,
     plan_price: input.planPrice ?? null,
+    // HOTFIX-7 §1 — record what was quoted, not what the server would
+    // guess now. list_price feeds the existing member-discount trigger;
+    // pricing_region/currency are what a revenue report groups by.
+    pricing_region: input.pricingRegion ?? null,
+    currency: input.currency ?? null,
+    list_price: input.listPrice ?? null,
     answers: sanitizeLeadAnswers(input.answers),
     image_urls: input.imageUrls,
     photo_paths: input.photoPaths,

@@ -1,8 +1,9 @@
 import {
+  buildComparisonRows,
   comparisonHeaders,
-  comparisonRows,
   type ComparisonCell,
 } from "@/components/pricing/featureComparison";
+import { getServerPricingRegion } from "@/lib/pricing/geo";
 
 function CheckIcon() {
   return (
@@ -42,7 +43,12 @@ function ComparisonCellContent({ cell }: { cell: ComparisonCell }) {
   );
 }
 
-export default function FeaturesComparisonSection() {
+export default async function FeaturesComparisonSection() {
+  // HOTFIX-7 §1: region-aware Price row — see PricingSection.tsx for why
+  // this must stay a per-request lookup, never a cached/static one.
+  const region = await getServerPricingRegion();
+  const comparisonRows = buildComparisonRows(region);
+
   return (
     <section className="bg-white px-4 pb-16 sm:px-6 sm:pb-20 lg:px-10 lg:pb-24 xl:px-12">
       <div className="mx-auto max-w-[86rem]">

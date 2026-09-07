@@ -15,20 +15,34 @@ import {
 import { openWhatsAppWithMessage } from "@/lib/funnel/shareWhatsApp";
 import { buildWhatsAppBookingSummaryText } from "@/lib/funnel/whatsapp";
 import { submitLead } from "@/lib/leads/submitLead";
+import {
+  formatRegionPrice,
+  priceForPlan,
+  type PricingRegion,
+} from "@/lib/pricing/regions";
 
 type PlanId = "free" | "clarity" | "transform";
 
-const PLAN_COPY: Record<PlanId, { name: string; price: string }> = {
-  free: { name: "Free", price: "Rs. 0" },
-  clarity: { name: "Clarity", price: "Rs. 1,500" },
-  transform: { name: "Transform", price: "Rs. 3,000" },
+// HOTFIX-7 §1: names only — price comes from the region prop, resolved
+// server-side from public.pricing_regions. Never hardcode it here again.
+const PLAN_NAMES: Record<PlanId, string> = {
+  free: "Free",
+  clarity: "Clarity",
+  transform: "Transform",
 };
 
 type ConsentContextValue = {
   privateReview: boolean;
-  marketingConsent: boolean;
+  /**
+   * HOTFIX-7 §3: renamed from consentMarketing. That name asserted the
+   * opposite of what the checkbox says ("I agree that my photos will NOT
+   * be used for marketing") — a filter for consentMarketing = true would
+   * have emailed exactly the people who declined. See lib/studio/answers.ts
+   * and lib/funnel/formatBookingSummary.ts for the matching label fix.
+   */
+  photoMarketingRestriction: boolean;
   setPrivateReview: (value: boolean) => void;
-  setMarketingConsent: (value: boolean) => void;
+  setPhotoMarketingRestriction: (value: boolean) => void;
   canSubmit: boolean;
   isSubmitting: boolean;
   onSubmit: () => void;
@@ -150,16 +164,16 @@ function ConsentFooter({ backHref }: { backHref: string }) {
 function ConsentContent() {
   const {
     privateReview,
-    marketingConsent,
+    photoMarketingRestriction,
     setPrivateReview,
-    setMarketingConsent,
+    setPhotoMarketingRestriction,
   } = useConsent();
   const privateReviewError = useStepRequiredError(
     !privateReview,
     "This consent is required.",
   );
-  const marketingConsentError = useStepRequiredError(
-    !marketingConsent,
+  const photoMarketingRestrictionError = useStepRequiredError(
+    !photoMarketingRestriction,
     "This consent is required.",
   );
 
@@ -185,13 +199,13 @@ function ConsentContent() {
         </div>
         <div>
           <ConsentCheckbox
-            checked={marketingConsent}
-            onChange={setMarketingConsent}
+            checked={photoMarketingRestriction}
+            onChange={setPhotoMarketingRestriction}
             label="I agree that my photos will not be used for marketing or shared publicly without my separate written consent."
           />
           <StepRequiredError
             id="consent-marketing-error"
-            message={marketingConsentError}
+            message={photoMarketingRestrictionError}
           />
         </div>
       </div>
@@ -207,11 +221,13 @@ function ConsentContent() {
 type ConsentStepProps = {
   backHref?: string;
   nextHref?: string;
+  region: PricingRegion;
 };
 
 export default function ConsentStep({
   backHref = "/onboarding/step/24",
   nextHref = "/onboarding/complete",
+  region,
 }: ConsentStepProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -219,11 +235,9 @@ export default function ConsentStep({
     "onboarding.consentPrivateReview",
     false,
   );
-  const [marketingConsent, setMarketingConsent] = useStepAnswer<boolean>(
-    "onboarding.consentMarketing",
-    false,
-  );
-  const canSubmit = privateReview && marketingConsent;
+  const [photoMarketingRestriction, setPhotoMarketingRestriction] =
+    useStepAnswer<boolean>("onboarding.photoMarketingRestriction", false);
+  const canSubmit = privateReview && photoMarketingRestriction;
 
   const ensureSessionId = useFunnelStore((state) => state.ensureSessionId);
   const unlockFlowStep = useFunnelStore((state) => state.unlockFlowStep);
@@ -236,7 +250,8 @@ export default function ConsentStep({
 
     const store = useFunnelStore.getState();
     const planId = store.selectedPlan as PlanId | null;
-    const plan = planId ? PLAN_COPY[planId] : null;
+    const planName = planId ? PLAN_NAMES[planId] : undefined;
+    const planPrice = planId ? formatRegionPrice(region, planId) : undefined;
 
     const photos = Array.isArray(store.answers["onboarding.photos"])
       ? (store.answers["onboarding.photos"] as (string | null)[])
@@ -261,8 +276,12 @@ export default function ConsentStep({
       fullName: store.fullName || String(store.answers["onboarding.firstName"] ?? ""),
       email: store.email || String(store.answers["onboarding.email"] ?? ""),
       selectedPlan: store.selectedPlan,
-      planName: plan?.name,
-      planPrice: plan?.price,
+      planName,
+      planPrice,
+      // HOTFIX-7 §1 — record what was quoted, not a server-side re-guess.
+      pricingRegion: region.code,
+      currency: region.currency,
+      listPrice: planId ? priceForPlan(region, planId) : undefined,
       selfieDataUrl: photoDataUrls[0] ?? null,
       photoDataUrls,
       answers: store.answers,
@@ -274,8 +293,8 @@ export default function ConsentStep({
       email: store.email || String(store.answers["onboarding.email"] ?? ""),
       sessionId: store.sessionId,
       selectedPlan: store.selectedPlan,
-      planName: plan?.name ?? null,
-      planPrice: plan?.price ?? null,
+      planName: planName ?? null,
+      planPrice: planPrice ?? null,
     });
 
     unlockFlowStep("onboarding", ONBOARDING_COMPLETE_UNLOCK);
@@ -289,9 +308,9 @@ export default function ConsentStep({
     <ConsentContext.Provider
       value={{
         privateReview,
-        marketingConsent,
+        photoMarketingRestriction,
         setPrivateReview,
-        setMarketingConsent,
+        setPhotoMarketingRestriction,
         canSubmit,
         isSubmitting,
         onSubmit,

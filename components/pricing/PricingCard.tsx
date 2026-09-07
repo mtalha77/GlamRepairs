@@ -106,14 +106,14 @@ export default function PricingCard({
               ) : null}
             </div>
 
+            {/* HOTFIX-7 §1: `price` now arrives fully formatted with its
+                region's own symbol (formatRegionPrice) — a hardcoded "Rs"
+                suffix here would be wrong for every non-PKR region, and
+                "/monthly" was wrong for every region: these are one-time
+                payments (see the page's own "One payment, no subscription"
+                copy). */}
             <p className="mt-4 font-serif not-italic leading-none tracking-[-2px] text-[#A88EC3] text-[2.5rem] sm:text-[3rem]">
               {price}
-              <span className="ml-1.5 font-light italic tracking-normal text-2xl sm:text-[1.75rem]">
-                Rs
-              </span>
-              <span className="ml-1 font-normal not-italic tracking-normal text-base sm:text-[1.125rem]">
-                /monthly
-              </span>
             </p>
 
             <p className="mt-4 font-serif italic leading-[1.3] tracking-[-0.44px] text-[#662D91] text-lg sm:text-[22px]">

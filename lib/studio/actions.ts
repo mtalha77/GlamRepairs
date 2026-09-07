@@ -8,6 +8,8 @@ import { sendStudioInviteEmail } from "@/lib/email/sendStudioInviteEmail";
 import { sendStudioReportEmail } from "@/lib/email/sendStudioReportEmail";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { resolvePricingRegion, priceForPlan } from "@/lib/pricing/regions";
+import { updatePricingRegionPrices } from "@/lib/studio/pricingAdmin";
 import { PLAN_OPTIONS, REVIEW_DECISIONS } from "@/lib/studio/constants";
 import {
   getStudioCustomer,
@@ -399,6 +401,12 @@ export async function createCustomerAction(formData: FormData) {
   }
 
   const plan = PLAN_OPTIONS.find((item) => item.id === planId) ?? null;
+  // HOTFIX-7 §1: this business is Pakistan-run, so a manually-added studio
+  // customer is priced against the PK region — never a hardcoded number.
+  const region = await resolvePricingRegion("PK");
+  const planPrice = plan
+    ? `${region.symbol}${priceForPlan(region, plan.id).toLocaleString("en-US")}`
+    : null;
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("leads")
@@ -408,7 +416,10 @@ export async function createCustomerAction(formData: FormData) {
       email,
       selected_plan: plan?.id ?? null,
       plan_name: plan?.name ?? null,
-      plan_price: plan?.price ?? null,
+      plan_price: planPrice,
+      pricing_region: plan ? region.code : null,
+      currency: plan ? region.currency : null,
+      list_price: plan ? priceForPlan(region, plan.id) : null,
       answers: {},
       image_urls: [],
       photo_paths: [],
@@ -882,4 +893,45 @@ export async function sendBroadcastAction(formData: FormData) {
   redirect(
     `/studio/broadcast?sent=${sent}${failed ? `&failed=${failed}` : ""}`,
   );
+}
+
+/**
+ * HOTFIX-7 §1 — "changing a price is a database update, not a deploy."
+ * Super-admin-only field on /studio/settings so Talha doesn't need the
+ * Supabase dashboard for routine price changes.
+ */
+export async function updatePricingRegionAction(formData: FormData) {
+  const { member } = await requireStudioMember();
+  if (!member?.isSuperAdmin) {
+    redirect("/studio/settings?error=pricing_forbidden");
+  }
+
+  const code = asString(formData, "code");
+  const clarity = Number(formData.get("clarity"));
+  const transform = Number(formData.get("transform"));
+
+  if (
+    !code ||
+    !Number.isFinite(clarity) ||
+    !Number.isFinite(transform) ||
+    clarity < 0 ||
+    transform < 0
+  ) {
+    redirect("/studio/settings?error=pricing_invalid");
+  }
+
+  try {
+    await updatePricingRegionPrices(code, { clarity, transform });
+  } catch (error) {
+    console.error("[updatePricingRegionAction]", error);
+    redirect("/studio/settings?error=pricing_save");
+  }
+
+  // Every route that shows a price reads it fresh per-request (see
+  // PricingSection.tsx) — these revalidations mostly matter for any
+  // response-cache layer in front of Next, not for correctness.
+  revalidatePath("/studio/settings");
+  revalidatePath("/pricing");
+  revalidatePath("/");
+  redirect("/studio/settings?saved=pricing");
 }
