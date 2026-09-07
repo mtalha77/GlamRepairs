@@ -12,6 +12,7 @@ import ReviewForm from "@/components/studio/ReviewForm";
 import ReviewList from "@/components/studio/ReviewList";
 import VerifyPaymentButton from "@/components/studio/VerifyPaymentButton";
 import { formatBookingWhatsAppMessage } from "@/lib/funnel/formatBookingSummary";
+import { leadDisplayRef } from "@/lib/leads/displayRef";
 import { formatCustomerAnswers } from "@/lib/studio/answers";
 import { CUSTOMER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/studio/constants";
 import { getStudioCustomer } from "@/lib/studio/customers";
@@ -83,6 +84,14 @@ export default async function CustomerDetailPage({
         <h1 className="mt-1 font-serif text-3xl text-brand-primary">
           {customer.fullName || "Unnamed customer"}
         </h1>
+        {/* HANDOVER-9 §1 — the reference this client was told to put in
+            their bank transfer note. A transfer arrives as a name and an
+            amount, so this is what turns it into a matched payment. */}
+        {leadDisplayRef(customer.sessionId) ? (
+          <p className="mt-2 inline-block rounded-lg bg-brand-lavender/25 px-2.5 py-1 font-mono text-sm font-semibold text-brand-primary">
+            {leadDisplayRef(customer.sessionId)}
+          </p>
+        ) : null}
         <p className="mt-1 text-sm text-brand-gray">
           {customer.email || "No email"} ·{" "}
           {customer.planName || customer.selectedPlan || "No plan"} ·{" "}

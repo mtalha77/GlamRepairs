@@ -2,10 +2,13 @@ import {
   formatBookingWhatsAppMessage,
   type BookingWhatsAppSummaryInput,
 } from "@/lib/funnel/formatBookingSummary";
+import { SITE } from "@/lib/seo/site";
 
 // Business WhatsApp — override via NEXT_PUBLIC_WHATSAPP_NUMBER if needed.
-// International digits only (no "+", spaces, or dashes).
-const FALLBACK_WHATSAPP_NUMBER = "923355880333";
+// International digits only (no "+", spaces, or dashes). HANDOVER-9 §1 moved
+// the literal to SITE.whatsapp so the local-to-international conversion is
+// written down in exactly one place.
+const FALLBACK_WHATSAPP_NUMBER = SITE.whatsapp;
 
 /** wa.me URLs break past ~2k chars; leave room for photo links. */
 const MAX_WHATSAPP_MESSAGE_LENGTH = 2500;
@@ -38,11 +41,31 @@ export function truncateWhatsAppMessage(text: string) {
   return `${text.slice(0, MAX_WHATSAPP_MESSAGE_LENGTH - 20).trimEnd()}\n…(truncated)`;
 }
 
-/** Prefill text for the assessment WhatsApp message. */
+/**
+ * Prefill text for the assessment WhatsApp message.
+ *
+ * HANDOVER-9 §1: when payment lines are supplied they are appended AFTER
+ * truncation, not before. A long set of answers must never be what pushes
+ * the bank details and the reference off the end of the message — that is
+ * precisely the content the client needs to keep.
+ */
 export function buildWhatsAppBookingSummaryText(
-  input: BookingWhatsAppSummaryInput,
+  input: BookingWhatsAppSummaryInput & { paymentLines?: string | null },
 ) {
-  return truncateWhatsAppMessage(formatBookingWhatsAppMessage(input));
+  const { paymentLines, ...summary } = input;
+  const body = formatBookingWhatsAppMessage(summary);
+
+  if (!paymentLines) return truncateWhatsAppMessage(body);
+
+  const separator = "\n\n";
+  const room =
+    MAX_WHATSAPP_MESSAGE_LENGTH - paymentLines.length - separator.length;
+  const trimmedBody =
+    body.length <= room
+      ? body
+      : `${body.slice(0, Math.max(0, room - 20)).trimEnd()}\n…(truncated)`;
+
+  return `${trimmedBody}${separator}${paymentLines}`;
 }
 
 /**

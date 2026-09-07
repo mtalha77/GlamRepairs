@@ -27,6 +27,13 @@ export const SITE = {
   locale: "en_PK",
   country: "PK",
   language: "en",
+  /**
+   * Business WhatsApp, stored in INTERNATIONAL form (no "+", no leading 0).
+   * The local form is 0335-5880333; converting it at each call site is how
+   * you end up with one place doing it wrong, so it is converted once, here.
+   * lib/funnel/whatsapp.ts reads this as its fallback.
+   */
+  whatsapp: "923355880333",
   // Consolidates the brand entity: tells Google these profiles and this site
   // are the same organisation. Only includes profiles that are live, public and
   // actually branded GlamRepairs — a 404 or an abandoned handle here is a
@@ -38,6 +45,45 @@ export const SITE = {
     "https://web.facebook.com/profile.php?id=61590698607527",
     "https://www.linkedin.com/company/glamrepairs/",
   ] as string[],
+} as const;
+
+/**
+ * HANDOVER-9 §1 — bank transfer details, shown in exactly three places
+ * (the completion screen, the WhatsApp message body, and the confirmation
+ * email) and defined only here.
+ *
+ * ⚠️ The amount is NEVER in this constant. It comes from public.pricing_regions
+ * via lib/pricing/regions.ts, because it differs per region and changing it is
+ * a database update, not a deploy. Adding an `amount` field here would quietly
+ * re-introduce the stale-price bug HOTFIX-7 removed.
+ *
+ * IBAN checked: 24-character PK format, mod-97 checksum valid, and the
+ * embedded account number matches accountNumber below.
+ */
+export const PAYMENT = {
+  bank: "United Bank Limited (UBL)",
+  accountTitle: "Muhammad Talha",
+  accountNumber: "010900024325",
+  iban: "PK47UNIL0109000243258774",
+  /**
+   * Approved wording (Talha, HANDOVER-9). The account is in a personal name
+   * that appears nowhere else on the site, which is a moment of hesitation
+   * right at the payment step. Naming him, and his relationship to the
+   * business, turns a surprise into a disclosure. Shown directly above the
+   * bank block everywhere the block appears.
+   */
+  ownerDisclosure:
+    "Payments are received into the account of Muhammad Talha, who runs " +
+    "Glam Repairs alongside Ayma Arif.",
+  /**
+   * How long we tell clients it takes to confirm a transfer.
+   *
+   * ⚠️ DEFAULT — Talha should set this to whatever he can actually honour.
+   * Silence after someone has sent money is where trust dies, so a generous
+   * but stated window beats no window at all. One-line change, and it updates
+   * the completion screen, the WhatsApp message and the email together.
+   */
+  confirmationWindow: "12 hours",
 } as const;
 
 /** Absolute URL helper — schema and sitemaps must never emit relative URLs. */
