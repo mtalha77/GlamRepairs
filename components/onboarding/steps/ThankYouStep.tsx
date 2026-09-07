@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import FunnelStepGuard from "@/components/funnel/FunnelStepGuard";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
 import { ONBOARDING_TOTAL_STEPS } from "@/components/onboarding/onboardingConfig";
 import { getOnboardingFirstName } from "@/components/onboarding/onboardingStorage";
+import PaymentDetails from "@/components/onboarding/PaymentDetails";
 import { StepHeader } from "@/components/steps";
 import { ONBOARDING_COMPLETE_UNLOCK } from "@/lib/funnel/funnelProgress";
+import type { PricingRegion } from "@/lib/pricing/regions";
 
 const nextSteps = [
   {
@@ -84,18 +86,38 @@ function ContactNotice() {
   );
 }
 
+/** The stored name never changes while this screen is mounted. */
+function subscribeToNothing() {
+  return () => {};
+}
+
+function getServerFirstName() {
+  return "";
+}
+
 type ThankYouStepProps = {
   currentStep?: number;
+  /**
+   * HANDOVER-9 §1 — resolved server-side by the completion page so the
+   * payment amount comes from public.pricing_regions for this visitor's
+   * region rather than a hardcoded number.
+   */
+  region: PricingRegion;
 };
 
 export default function ThankYouStep({
   currentStep = ONBOARDING_TOTAL_STEPS,
+  region,
 }: ThankYouStepProps) {
-  const [firstName, setFirstName] = useState("");
-
-  useEffect(() => {
-    setFirstName(getOnboardingFirstName());
-  }, []);
+  // The name lives in sessionStorage, which does not exist on the server.
+  // useSyncExternalStore renders the empty server snapshot first and swaps
+  // in the stored name on the client, without a hydration mismatch and
+  // without setState-inside-an-effect.
+  const firstName = useSyncExternalStore(
+    subscribeToNothing,
+    getOnboardingFirstName,
+    getServerFirstName,
+  );
 
   const headline = firstName ? `Thank you, ${firstName}!` : "Thank you!";
 
@@ -128,6 +150,8 @@ export default function ThankYouStep({
           Our certified expert will review your skin assessment and deliver your
           personalized report within 24 hours.
         </p>
+
+        <PaymentDetails region={region} />
 
         <ContactNotice />
 

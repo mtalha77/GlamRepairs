@@ -6,6 +6,7 @@ import Link from "next/link";
 import { formInputClassName } from "@/components/ui/fieldStyles";
 import { assignCustomersBulkAction } from "@/lib/studio/actions";
 import { isAbandonedFunnel } from "@/lib/studio/customerTypes";
+import { leadDisplayRef } from "@/lib/leads/displayRef";
 import type { StudioCustomer } from "@/lib/studio/customerTypes";
 import { formatStudioDate } from "@/lib/studio/formatDate";
 
@@ -144,6 +145,14 @@ export default function CustomerList({
                     {isAbandonedFunnel(customer) ? (
                       <span className="ml-2 inline-block rounded-full bg-brand-cream px-2 py-0.5 text-[11px] text-brand-gray">
                         Left funnel
+                      </span>
+                    ) : null}
+                    {/* HANDOVER-9 §1 — the reference the client is told to
+                        put in their bank transfer note. Reconciliation is
+                        guesswork without it visible next to the name. */}
+                    {leadDisplayRef(customer.sessionId) ? (
+                      <span className="mt-0.5 block font-mono text-[11px] text-brand-gray">
+                        {leadDisplayRef(customer.sessionId)}
                       </span>
                     ) : null}
                   </td>

@@ -80,7 +80,7 @@ export default function CustomerSearch({
         name="q"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search name, email, or plan"
+        placeholder="Search name, email, plan, or GR- reference"
         className="max-w-md"
       />
       <select

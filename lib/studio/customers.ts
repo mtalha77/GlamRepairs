@@ -118,11 +118,27 @@ export async function listStudioCustomers(filters: CustomerListFilters = {}) {
 
   const term = filters.search?.trim();
   if (term) {
-    const escaped = term.replaceAll(/[,()%_\\]/g, " ").trim();
-    if (escaped) {
-      query = query.or(
-        `full_name.ilike.%${escaped}%,email.ilike.%${escaped}%,plan_name.ilike.%${escaped}%`,
-      );
+    // HANDOVER-9 §1 — searching a bank transfer note. When the term looks
+    // like a client reference (GR-8DDFA7) match it against session_id
+    // instead of the name/email/plan columns, because that is what the
+    // reference is derived from (lib/leads/displayRef.ts).
+    //
+    // Caveat, deliberately not worked around: for funnel leads the session
+    // id is a plain UUID so the six hex characters are a true prefix and
+    // this matches exactly. Studio-created leads (`studio_<uuid>`) and the
+    // rare `sess_<ts>_<rand>` fallback derive their reference after
+    // stripping non-hex characters, so they will not be found this way —
+    // neither of those is a lead that pays by bank transfer.
+    const refMatch = /^gr-?([0-9a-f]{6})$/i.exec(term);
+    if (refMatch) {
+      query = query.ilike("session_id", `${refMatch[1].toLowerCase()}%`);
+    } else {
+      const escaped = term.replaceAll(/[,()%_\\]/g, " ").trim();
+      if (escaped) {
+        query = query.or(
+          `full_name.ilike.%${escaped}%,email.ilike.%${escaped}%,plan_name.ilike.%${escaped}%`,
+        );
+      }
     }
   }
 

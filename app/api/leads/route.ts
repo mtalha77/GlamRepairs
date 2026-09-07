@@ -126,6 +126,9 @@ export async function POST(request: Request) {
         planName: body.planName,
         planPrice: body.planPrice,
         selectedPlan: body.selectedPlan,
+        // HANDOVER-9 §1 — derives the GR-XXXXXX reference for the bank
+        // transfer note.
+        sessionId: body.sessionId,
       });
       if (!emailResult.ok) {
         console.error(
@@ -167,6 +170,7 @@ export async function POST(request: Request) {
       planName: body.planName,
       planPrice: body.planPrice,
       selectedPlan: body.selectedPlan,
+      sessionId: body.sessionId,
     });
     if (!emailResult.ok) {
       console.error(

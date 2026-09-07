@@ -15,6 +15,8 @@ import {
 import { openWhatsAppWithMessage } from "@/lib/funnel/shareWhatsApp";
 import { buildWhatsAppBookingSummaryText } from "@/lib/funnel/whatsapp";
 import { submitLead } from "@/lib/leads/submitLead";
+import { leadDisplayRef } from "@/lib/leads/displayRef";
+import { buildPaymentLines } from "@/lib/leads/paymentDetails";
 import {
   formatRegionPrice,
   priceForPlan,
@@ -287,6 +289,16 @@ export default function ConsentStep({
       answers: store.answers,
     });
 
+    // HANDOVER-9 §1 — the bank details travel with the summary so the client
+    // has them in their own chat history, not just on a screen they are about
+    // to navigate away from. The free plan is never paid for, so it gets no
+    // payment block.
+    const reference = leadDisplayRef(store.sessionId);
+    const paymentLines =
+      planId && planId !== "free"
+        ? buildPaymentLines({ amount: planPrice, reference })
+        : null;
+
     const message = buildWhatsAppBookingSummaryText({
       answers: store.answers,
       fullName: store.fullName || String(store.answers["onboarding.firstName"] ?? ""),
@@ -295,6 +307,7 @@ export default function ConsentStep({
       selectedPlan: store.selectedPlan,
       planName: planName ?? null,
       planPrice: planPrice ?? null,
+      paymentLines,
     });
 
     unlockFlowStep("onboarding", ONBOARDING_COMPLETE_UNLOCK);
