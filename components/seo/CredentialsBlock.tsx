@@ -72,12 +72,18 @@ export default function CredentialsBlock({
         </p>
       ) : null}
       {!compact && showProfileLink ? (
-        <p className="pt-1">
+        <p className="flex flex-wrap gap-x-4 pt-1">
           <Link
             href={`/authors/${author.slug}`}
             className="text-xs font-medium underline underline-offset-2 text-brand-primary"
           >
             View full profile
+          </Link>
+          <Link
+            href="/credentials"
+            className="text-xs font-medium underline underline-offset-2 text-brand-primary"
+          >
+            Verify these credentials
           </Link>
         </p>
       ) : null}

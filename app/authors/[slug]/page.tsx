@@ -100,6 +100,14 @@ export default async function AuthorPage({
           Credentials
         </h2>
         <CredentialsBlock slug={author.slug} showProfileLink={false} />
+        <p className="mt-3">
+          <Link
+            href="/credentials"
+            className="text-xs font-medium underline underline-offset-2"
+          >
+            See how to verify these credentials
+          </Link>
+        </p>
       </section>
 
       {author.profiles?.length ? (
