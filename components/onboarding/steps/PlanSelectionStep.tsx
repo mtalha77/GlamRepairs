@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
 import { ONBOARDING_PROGRESS } from "@/components/onboarding/onboardingConfig";
+import CredentialsBlock from "@/components/seo/CredentialsBlock";
 import { StepHeader, StepRequiredError } from "@/components/steps";
 import { resolveUnlockTarget } from "@/lib/funnel/funnelProgress";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
@@ -219,6 +220,12 @@ export default function PlanSelectionStep({
           eyebrow="Plan Selection & Payment"
           title="Choose your plan"
         />
+
+        {/* HOTFIX-6 §1 — trust reassurance at the moment the reader is
+            deciding whether to pay: who actually reviews this. */}
+        <div className="mt-4 rounded-2xl border border-brand-border-light/60 bg-white px-4 py-3.5 sm:mt-5">
+          <CredentialsBlock compact />
+        </div>
 
         <div className="mt-6 space-y-3 sm:mt-7 sm:space-y-4">
           {plans.map((plan) => (

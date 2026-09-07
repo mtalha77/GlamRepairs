@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import CredentialsBlock from "@/components/seo/CredentialsBlock";
 import JsonLd from "@/components/seo/JsonLd";
 import { getAuthor, listAuthors } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph, personSchema } from "@/lib/seo/schema";
@@ -87,17 +88,18 @@ export default async function AuthorPage({
             {author.name}
           </h1>
           <p className="mt-1 text-black/70">{author.title}</p>
-          <p className="text-black/55">{author.credentials}</p>
-          {author.regNo ? (
-            <p className="mt-1 text-sm text-black/45">
-              Registration no. {author.regNo}
-            </p>
-          ) : null}
         </div>
       </header>
 
       <section className="mt-10 space-y-4 text-lg leading-relaxed text-black/80">
         <p>{author.bio}</p>
+      </section>
+
+      <section className="mt-10 rounded-2xl bg-black/[0.03] px-6 py-5">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-black/45">
+          Credentials
+        </h2>
+        <CredentialsBlock slug={author.slug} showProfileLink={false} />
       </section>
 
       {author.profiles?.length ? (

@@ -1,5 +1,6 @@
 import AnimatedSlideIn from "@/components/home/AnimatedSlideIn";
 import { whoReviews } from "@/components/about/aboutContent";
+import CredentialsBlock from "@/components/seo/CredentialsBlock";
 
 /**
  * "Who reviews your skin" — the named, credentialed practitioner behind every
@@ -42,6 +43,15 @@ export default function OurStorySection() {
             <p className="font-sans text-base leading-relaxed text-brand-ink sm:text-lg lg:text-xl lg:leading-[1.6]">
               {whoReviews.paragraphs[1]}
             </p>
+          </div>
+        </AnimatedSlideIn>
+
+        <AnimatedSlideIn direction="up" delay={320}>
+          {/* HOTFIX-6 §1 — full credentials block, HEC attestation and all.
+              This is the page's E-E-A-T anchor; keep it here, not folded
+              into the prose above. */}
+          <div className="mx-auto mt-8 max-w-xl rounded-2xl bg-brand-cream/40 px-6 py-5 text-left sm:mt-10">
+            <CredentialsBlock />
           </div>
         </AnimatedSlideIn>
       </div>
