@@ -46,17 +46,35 @@ export function buildPaymentLines({ amount, reference }: PaymentTextInput) {
 /**
  * Prefill for the "Send payment screenshot on WhatsApp" button. Written in
  * the client's voice — they are the one sending it.
+ *
+ * HOTFIX-9 §3 carries the bank details in here too, not just the reference:
+ * many people act from the chat rather than going back to the page, and a
+ * client who has closed the tab should still be able to pay from WhatsApp
+ * alone. Kept deliberately compact (~250 characters) — some Android
+ * WhatsApp builds truncate very long wa.me payloads, so this must not grow
+ * into a wall of text.
  */
 export function buildScreenshotPrefill({
   amount,
   reference,
   planName,
 }: PaymentTextInput) {
-  const lines = ["Hi Glam Repairs, I've completed my assessment."];
+  const lines = ["Hi Glam Repairs, I've completed my assessment.", ""];
+
   if (reference) lines.push(`Reference: ${reference}`);
   if (planName) {
     lines.push(amount ? `Plan: ${planName} (${amount})` : `Plan: ${planName}`);
   }
-  lines.push("Attaching my payment screenshot.");
+  if (reference || planName) lines.push("");
+
+  lines.push(
+    "Payment details:",
+    `${PAYMENT.bankShort} — ${PAYMENT.accountTitle}`,
+    `IBAN: ${PAYMENT.iban}`,
+    `Acct: ${PAYMENT.accountNumber}`,
+    "",
+    "I'll send my payment screenshot here.",
+  );
+
   return lines.join("\n");
 }

@@ -8,9 +8,10 @@ import {
 } from "@/lib/funnel/bookingFlow";
 import { BOOKING_FORM_STEPS } from "@/components/booking/bookingConfig";
 import {
-  adjustOnboardingHrefForPlanSkip,
+  adjustOnboardingHrefForSkips,
   resolveUnlockTarget,
 } from "@/lib/funnel/funnelProgress";
+import { useOnboardingSkips } from "@/lib/funnel/useOnboardingSkips";
 
 type OnboardingIntroNavProps = {
   backHref: string;
@@ -43,8 +44,7 @@ export default function OnboardingIntroNav({
 }: OnboardingIntroNavProps) {
   const currentStepValid = useFunnelStore((state) => state.currentStepValid);
   const answers = useFunnelStore((state) => state.answers);
-  const planPreselected = useFunnelStore((state) => state.planPreselected);
-  const selectedPlan = useFunnelStore((state) => state.selectedPlan);
+  const skips = useOnboardingSkips();
   const unlockFlowStep = useFunnelStore((state) => state.unlockFlowStep);
   const requestStepValidation = useFunnelStore(
     (state) => state.requestStepValidation,
@@ -67,9 +67,20 @@ export default function OnboardingIntroNav({
     } else if (bookingStep === 1) {
       resolvedBackHref = backHref;
     }
-  } else if (flow === "onboarding" && planPreselected && selectedPlan) {
-    resolvedNextHref = adjustOnboardingHrefForPlanSkip(resolvedNextHref, "next");
-    resolvedBackHref = adjustOnboardingHrefForPlanSkip(resolvedBackHref, "back");
+  } else if (flow === "onboarding") {
+    // HOTFIX-9 §1 — jumps the event-date step when there is no event, and
+    // still jumps the plan step when the plan came from /pricing. Both
+    // directions, so Back never lands on a step Next just skipped.
+    resolvedNextHref = adjustOnboardingHrefForSkips(
+      resolvedNextHref,
+      "next",
+      skips,
+    );
+    resolvedBackHref = adjustOnboardingHrefForSkips(
+      resolvedBackHref,
+      "back",
+      skips,
+    );
   }
 
   const unlockNext = () => {

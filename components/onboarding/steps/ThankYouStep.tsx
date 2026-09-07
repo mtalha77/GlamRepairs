@@ -146,12 +146,15 @@ export default function ThankYouStep({
           subtitleClassName="mt-2 text-sm font-normal text-brand-ink sm:text-[0.9375rem]"
         />
 
+        {/* HOTFIX-9 §3 — paying is the only thing the user still has to
+            do, so it sits directly under the header, above the reassurance
+            copy, rather than below it. */}
+        <PaymentDetails region={region} />
+
         <p className="mx-auto mt-5 max-w-[20rem] text-sm leading-relaxed text-brand-gray sm:mt-6 sm:max-w-none sm:text-[0.9375rem]">
           Our certified expert will review your skin assessment and deliver your
           personalized report within 24 hours.
         </p>
-
-        <PaymentDetails region={region} />
 
         <ContactNotice />
 

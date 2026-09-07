@@ -12,6 +12,7 @@ import {
   useStepGate,
   useStepRequiredError,
 } from "@/lib/funnel/useStepAnswer";
+import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
 
 type SpecialEventChoice =
   | "vacation"
@@ -29,7 +30,11 @@ type EventOption = {
   icon?: string;
 };
 
+// HOTFIX-9 §1 — "no event" first. Most people do not have one coming up,
+// so the majority answer is one tap instead of a scan through seven options
+// they are going to reject.
 const eventOptions: EventOption[] = [
+  { value: "none", label: "No, ready to look and feel my best" },
   { value: "vacation", label: "Vacation", icon: "/svgs/Group (26).svg" },
   { value: "wedding", label: "Wedding", icon: "/svgs/Group 2085660850.svg" },
   { value: "holiday", label: "Holiday", icon: "/svgs/Group 2085660851.svg" },
@@ -45,10 +50,6 @@ const eventOptions: EventOption[] = [
     icon: "/svgs/Layer_x0020_1 (1).svg",
   },
   { value: "other", label: "Other" },
-  {
-    value: "none",
-    label: "No - just ready to look and feel my best!",
-  },
 ];
 
 export default function SpecialEventStep() {
@@ -56,6 +57,7 @@ export default function SpecialEventStep() {
     "booking.specialEvent",
     null,
   );
+  const setAnswer = useFunnelStore((state) => state.setAnswer);
   useStepGate(selectedEvent !== null);
   const error = useStepRequiredError(
     selectedEvent === null,
@@ -80,7 +82,16 @@ export default function SpecialEventStep() {
               icon={option.icon}
               label={option.label}
               selected={selectedEvent === option.value}
-              onSelect={() => setSelectedEvent(option.value)}
+              onSelect={() => {
+                setSelectedEvent(option.value);
+                // HOTFIX-9 §1 — someone can pick Wedding, set a date, come
+                // back and switch to "none". Without this the stale date
+                // rides along into the practitioner's case notes as the
+                // date of an event that does not exist.
+                if (option.value === "none") {
+                  setAnswer("booking.eventDate", "");
+                }
+              }}
             />
           ))}
         </StepChoiceList>
