@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import RelatedReading from "@/components/blog/RelatedReading";
 import AuthorByline from "@/components/seo/AuthorByline";
 import JsonLd from "@/components/seo/JsonLd";
 import { getAuthor } from "@/lib/seo/authors";
@@ -157,6 +158,8 @@ export default async function BlogPostPage({
         className="prose-gr mt-10"
         dangerouslySetInnerHTML={{ __html: html }}
       />
+
+      <RelatedReading currentSlug={post.slug} cluster={post.cluster} />
 
       <section className="mt-14 rounded-2xl bg-[#662d91] px-7 py-8 text-[#fff3da]">
         <h2 className="text-2xl font-semibold">Not sure this is your pattern?</h2>

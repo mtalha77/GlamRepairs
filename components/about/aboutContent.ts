@@ -155,7 +155,12 @@ export const whatWeWontDo = [
   },
 ];
 
-export type AboutFaqItem = { question: string; answer: string };
+export type AboutFaqItem = {
+  question: string;
+  answer: string;
+  /** See FaqItem in components/home/FaqSection.tsx — HOTFIX-10 §1b. */
+  links?: { text: string; href: string }[];
+};
 
 /**
  * Seven Q&As, shared verbatim between the visible accordion and (once the FAQ
@@ -183,6 +188,7 @@ export const ABOUT_FAQS: AboutFaqItem[] = [
       "Cosmetology & Dermatology Science and has worked across multiple " +
       "clinics in Pakistan. Where a second opinion is useful, a reviewing " +
       "practitioner also sees your case.",
+    links: [{ text: "Ayma Arif", href: "/authors/ayma-arif" }],
   },
   {
     question: "How long does my assessment take?",
@@ -201,9 +207,9 @@ export const ABOUT_FAQS: AboutFaqItem[] = [
   {
     question: "What if I am not satisfied?",
     answer:
-      "Tell us within 14 days and we will revise your assessment at no " +
-      "cost. We would rather fix a routine than leave you without one " +
-      "you trust.",
+      "We'll revise your assessment until the routine makes sense for you " +
+      "and you're confident following it. Tell us within 14 days and " +
+      "we'll revise it at no cost.",
   },
   {
     question: "Are my photographs private?",

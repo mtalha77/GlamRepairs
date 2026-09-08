@@ -14,6 +14,7 @@ import type { Metadata } from "next";
 import FaqSection from "@/components/home/FaqSection";
 import Footer from "@/components/home/Footer";
 import Hero from "@/components/home/Hero";
+import LatestPostsSection from "@/components/home/LatestPostsSection";
 import ProblemSection from "@/components/home/ProblemSection";
 import SkinAssessment from "@/components/home/SkinAssessment";
 import TrustPrivacySection from "@/components/home/TrustPrivacySection";
@@ -46,6 +47,9 @@ export default function Home() {
       <TrustPrivacySection />
       <WhatYouGetSection />
       <FaqSection />
+      {/* HOTFIX-10 §1a — sits above the footer CTA so the blog finally has
+          an internal route in from the highest-authority page on the site. */}
+      <LatestPostsSection />
       <Footer />
     </>
   );
