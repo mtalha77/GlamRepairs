@@ -112,8 +112,12 @@ export default async function AuthorPage({
 
       {author.profiles?.length ? (
         <section className="mt-10">
+          {/* Not "Verify these credentials" — that heading sat above a
+              LinkedIn link, which verifies who someone is, not what they
+              hold. /credentials is where credentials are verified, and it is
+              linked from the block directly above this. */}
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-black/45">
-            Verify these credentials
+            Find {author.name.split(" ")[0]} elsewhere
           </h2>
           <ul className="mt-3 space-y-1">
             {author.profiles.map((p) => (

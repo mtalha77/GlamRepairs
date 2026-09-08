@@ -15,7 +15,7 @@
  * Everything here is typed loosely as `object` on purpose. schema.org is not a
  * closed vocabulary and over-typing it produces friction with no payoff.
  */
-import { SITE, abs } from "./site";
+import { CREDENTIALS, SITE, abs } from "./site";
 import type { Author } from "./authors";
 
 /** Wraps several nodes into one @graph. One script tag beats five. */
@@ -104,6 +104,20 @@ export function personSchema(author: Author) {
             ? { identifier: author.regNo }
             : {}),
       },
+      // Coursework the person actually completed, from CREDENTIALS. Kept a
+      // separate node with `credentialCategory: "course"` rather than folded
+      // into the degree: a Coursera specialization is real, relevant training
+      // and it is not a degree or a licence. Stating which is which is what
+      // makes the degree node above believable.
+      ...CREDENTIALS.filter(
+        (c) => c.kind === "course" && author.credentialIds?.includes(c.id),
+      ).map((c) => ({
+        "@type": "EducationalOccupationalCredential",
+        credentialCategory: "course",
+        name: c.name,
+        recognizedBy: { "@type": "Organization", name: c.issuer },
+        ...(c.verifyUrl ? { url: c.verifyUrl } : {}),
+      })),
     ],
     ...(author.knowsAbout?.length ? { knowsAbout: author.knowsAbout } : {}),
     ...(author.memberOf

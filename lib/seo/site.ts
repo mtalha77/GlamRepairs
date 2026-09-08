@@ -106,6 +106,119 @@ export const PAYMENT = {
   confirmationWindow: "12 hours",
 } as const;
 
+/**
+ * HOTFIX-6 §2 — every credential, as data.
+ *
+ * `/credentials` used to be hand-typed table markup: adding a qualification
+ * meant writing a `<tr>`, and the *wording* of each cell was up to whoever
+ * typed it. That is the exact failure mode this file exists to prevent —
+ * one careless "Certificate No." above a free, open membership discredits
+ * the HEC attestation sitting in the row beside it.
+ *
+ * So credentials are objects and the page is a renderer. Adding one is a
+ * single entry here; the label wording is derived from `kind` and is not the
+ * author's to choose.
+ *
+ * ── What each `kind` means, and what may never be said about it ──────────
+ * • `degree`     — an academic qualification from a degree-awarding
+ *                  institution. The only kind that may be described as
+ *                  attested, and only where a `reference` proves it.
+ * • `membership` — joining a body. Says nothing about competence. Renders as
+ *                  "Member" / "Membership No." Never "certified", never
+ *                  "Certificate No.".
+ * • `course`     — completed coursework or a platform specialization. Real
+ *                  learning, and genuinely not a licence or a certification
+ *                  to practise. Renders as completed coursework. Never
+ *                  "certified".
+ *
+ * The renderer in app/credentials/page.tsx derives its labels from `kind`
+ * precisely so this rule cannot be broken by editing a string.
+ */
+export type CredentialKind = "degree" | "membership" | "course";
+
+export type Credential = {
+  /** Stable key — referenced from lib/seo/authors.ts, so don't rename casually. */
+  id: string;
+  kind: CredentialKind;
+  /** The qualification itself, exactly as the issuer names it. */
+  name: string;
+  /** The body that awarded or attested it. */
+  issuer: string;
+  /** Where it was taken, when that differs from who awarded it (e.g. Coursera). */
+  platform?: string;
+  /** A number a third party can quote back to the issuer. */
+  reference?: string;
+  /**
+   * Overrides the kind-derived reference label. Use only to be *more*
+   * specific, never to upgrade what the credential is.
+   */
+  referenceLabel?: string;
+  /** A public URL anyone can open and check for themselves. The strongest form. */
+  verifyUrl?: string;
+  /** A redacted supporting document under /public, once one exists. */
+  documentUrl?: string;
+  /** Component courses inside a specialization. */
+  includes?: string[];
+  /** Plain-English note: what this is, and — where it matters — what it isn't. */
+  note: string;
+};
+
+export const CREDENTIALS: Credential[] = [
+  {
+    id: "hec-degree",
+    kind: "degree",
+    name: "BS Cosmetology & Dermatology Science",
+    issuer: "Higher Education Commission of Pakistan (HEC)",
+    reference: "HEC/A&A/DAS/2026/5290888",
+    referenceLabel: "HEC Attestation Reference No.",
+    // documentUrl: "/credentials/hec-attestation.pdf",
+    //   ↑ uncomment once the redacted e-Attestation certificate (CNIC, DOB,
+    //   home address and signature removed) is dropped at that path. Until
+    //   then `note` says so plainly rather than linking to a 404.
+    note:
+      "The strongest verification on this page — an official Government of " +
+      "Pakistan confirmation that the degree, awarded by King Faisal " +
+      "University, is genuine. A redacted copy of the e-Attestation " +
+      "certificate will be published here; until then this reference number " +
+      "can be quoted when asking HEC to confirm it directly.",
+  },
+  {
+    id: "ids-membership",
+    kind: "membership",
+    name: "International Dermoscopy Society",
+    issuer: "International Dermoscopy Society",
+    reference: "D.2629.9466",
+    verifyUrl: "https://dermoscopy-ids.org/",
+    note:
+      "A professional interest society (16,000+ members across 160+ " +
+      "countries) — open membership, not a competence credential. Listed " +
+      "for transparency, not as proof of clinical certification.",
+  },
+  {
+    id: "duke-telehealth",
+    kind: "course",
+    name: "Telehealth: Essentials, Teamwork, and Dermatology",
+    issuer: "Duke University",
+    platform: "Coursera",
+    verifyUrl:
+      "https://www.coursera.org/account/accomplishments/specialization/XQMQARLK1WFC",
+    includes: [
+      "Telehealth Clinical Essentials",
+      "Telehealth: Interprofessional Team-Based Care",
+      "Telehealth: Dermatology Assessment",
+    ],
+    note:
+      "Completed coursework, directly relevant to how this service actually " +
+      "works — remote assessment, including dermatology specifically. " +
+      "Verifiable at the Coursera link. It is coursework, not a licence or a " +
+      "certification to practise.",
+  },
+];
+
+export function getCredential(id: string): Credential | undefined {
+  return CREDENTIALS.find((c) => c.id === id);
+}
+
 /** Absolute URL helper — schema and sitemaps must never emit relative URLs. */
 export function abs(path = "/"): string {
   return `${SITE.url}${path.startsWith("/") ? path : `/${path}`}`;

@@ -16,7 +16,10 @@ import { getAuthor } from "@/lib/seo/authors";
  * Pakistan verification the degree is genuine — so it gets its own visual
  * weight (`font-medium`), not just another list item. The IDS line is
  * deliberately "Member" / "Membership No.", never "Certified" — see the
- * warning in lib/seo/authors.ts. And the closing disclaimer is not a hedge:
+ * warning in lib/seo/authors.ts. Continuing education names the actual
+ * course and awarding university rather than a vague category, because a
+ * named Duke University specialization is evidence and "continuing education
+ * in telehealth" is not. And the closing disclaimer is not a hedge:
  * stating the scope limit plainly is the fix for the ambiguity that got this
  * site flagged in the first place. Do not shorten it away.
  */
@@ -72,7 +75,7 @@ export default function CredentialsBlock({
         </p>
       ) : null}
       {!compact && showProfileLink ? (
-        <p className="flex flex-wrap gap-x-4 pt-1">
+        <p className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
           <Link
             href={`/authors/${author.slug}`}
             className="text-xs font-medium underline underline-offset-2 text-brand-primary"
@@ -85,6 +88,21 @@ export default function CredentialsBlock({
           >
             Verify these credentials
           </Link>
+          {/* An outbound link to a real, named profile. Reads as a person a
+              visitor can look up rather than a name on a page — and it is the
+              same URL carried in the Person node's `sameAs`, so the visible
+              claim and the structured one cannot diverge. */}
+          {author.profiles?.map((profile) => (
+            <a
+              key={profile.url}
+              href={profile.url}
+              target="_blank"
+              rel="me noopener noreferrer"
+              className="text-xs font-medium underline underline-offset-2 text-brand-primary"
+            >
+              {profile.label}
+            </a>
+          ))}
         </p>
       ) : null}
     </div>
