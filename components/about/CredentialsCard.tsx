@@ -137,7 +137,12 @@ export default function CredentialsCard() {
             alt="Ayma Arif, Certified Aesthetics Practitioner"
             width={56}
             height={56}
-            sizes="56px"
+            // No `sizes` on purpose. Passing one puts next/image into
+            // responsive mode: it emits the full 32w–3840w candidate list and
+            // a `src` fallback pointing at the 3840px variant — a 3840px
+            // upscale of a 480px source, offered as the default, for a 56px
+            // avatar. Omitting it gives the fixed-size treatment instead:
+            // two candidates at 1x and 2x, which is all a 56px circle can use.
             className="h-14 w-14 rounded-full border-2 border-white object-cover"
           />
         </span>
