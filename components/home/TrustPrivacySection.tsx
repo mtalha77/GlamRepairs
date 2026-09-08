@@ -88,7 +88,7 @@ export default function TrustPrivacySection() {
             <AnimatedSlideIn
               key={card.title}
               direction="up"
-              delay={index * 150}
+              delay={index * 70}
               className={`w-full shrink-0 sm:w-[20rem] lg:w-auto ${
                 index === 2 ? "md:col-span-2 md:justify-self-center" : ""
               } ${cardTopOffsets[index]}`}

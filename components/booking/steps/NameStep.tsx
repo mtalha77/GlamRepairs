@@ -30,7 +30,7 @@ export default function NameStep() {
           placeholder="Write your name here"
           value={name}
           onChange={(event) => handleChange(event.target.value)}
-          className="w-full rounded-2xl border border-brand-light/80 bg-white px-4 py-4 text-sm text-brand-ink shadow-sm outline-none transition-colors placeholder:text-brand-gray/45 focus:border-brand-light sm:px-5 sm:py-[1.125rem] sm:text-[0.9375rem]"
+          className="w-full rounded-2xl border border-brand-light/80 bg-white px-4 py-4 text-sm text-brand-ink shadow-sm outline-none transition-colors placeholder:text-brand-gray/45 focus:border-brand-primary sm:px-5 sm:py-[1.125rem] sm:text-[0.9375rem]"
         />
       </StepBody>
     </div>

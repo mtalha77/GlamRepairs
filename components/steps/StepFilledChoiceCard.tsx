@@ -24,9 +24,9 @@ export default function StepFilledChoiceCard({
       onClick={onSelect}
       aria-pressed={selected}
       className={cn(
-        "flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left shadow-sm transition-colors sm:gap-4 sm:px-5 sm:py-4",
+        "flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left shadow-sm transition-[color,background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.2,0.7,0.3,1)] motion-reduce:transition-none sm:gap-4 sm:px-5 sm:py-4",
         selected
-          ? "border-brand-light bg-brand-light text-white"
+          ? "border-brand-light bg-brand-light text-white scale-[1.02] motion-reduce:scale-100"
           : "border-brand-border-light/60 bg-white text-brand-ink hover:border-brand-lavender",
         className,
       )}
@@ -85,9 +85,9 @@ export function StepFilledCheckboxCard({
       onClick={onSelect}
       aria-pressed={selected}
       className={cn(
-        "flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-sm transition-colors sm:px-5 sm:py-3.5",
+        "flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-sm transition-[color,background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.2,0.7,0.3,1)] motion-reduce:transition-none sm:px-5 sm:py-3.5",
         selected
-          ? "border-brand-light bg-brand-light text-white"
+          ? "border-brand-light bg-brand-light text-white scale-[1.02] motion-reduce:scale-100"
           : "border-brand-border-light/60 bg-white text-brand-ink hover:border-brand-lavender",
         className,
       )}
@@ -141,9 +141,9 @@ export function StepRadioChoiceCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        "flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-sm transition-colors sm:px-5 sm:py-3.5",
+        "flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-sm transition-[color,background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.2,0.7,0.3,1)] motion-reduce:transition-none sm:px-5 sm:py-3.5",
         selected
-          ? "border-brand-light bg-brand-light text-white"
+          ? "border-brand-light bg-brand-light text-white scale-[1.02] motion-reduce:scale-100"
           : "border-brand-border-light/60 bg-white text-brand-ink hover:border-brand-lavender",
         className,
       )}

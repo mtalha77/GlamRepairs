@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Suspense, useEffect, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import FunnelStepGuard from "@/components/funnel/FunnelStepGuard";
 import ApplyPlanFromQuery from "@/components/onboarding/ApplyPlanFromQuery";
 import OnboardingNav from "@/components/onboarding/OnboardingNav";
@@ -71,6 +71,24 @@ export default function OnboardingShell({
 
   const guardStep = currentStep;
 
+  /**
+   * HANDOVER-11 §3.1 — which way the step content should enter.
+   *
+   * Derived during render, not in an effect, and deliberately so: the child
+   * below is keyed on `pathname`, so it remounts the moment the step
+   * changes. An effect runs *after* that mount, which would start the
+   * animation in the old direction and then switch mid-flight. Adjusting
+   * state during render is React's documented pattern for exactly this —
+   * React re-renders before committing, so the child mounts already
+   * carrying the right class. The `!==` guard is what stops it looping.
+   */
+  const [lastStep, setLastStep] = useState<number | null>(null);
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
+  if (typeof currentStep === "number" && currentStep !== lastStep) {
+    setDirection(lastStep !== null && currentStep < lastStep ? "back" : "forward");
+    setLastStep(currentStep);
+  }
+
   useEffect(() => {
     ensureSessionId();
   }, [ensureSessionId]);
@@ -94,7 +112,10 @@ export default function OnboardingShell({
           </div>
         )}
 
-        <div key={pathname} className="onboarding-step-enter relative z-20">
+        <div
+          key={pathname}
+          className={`relative z-20 onboarding-step-enter--${direction}`}
+        >
           {children}
         </div>
 

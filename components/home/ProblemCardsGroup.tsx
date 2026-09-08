@@ -22,7 +22,7 @@ export default function ProblemCardsGroup({ cards }: ProblemCardsGroupProps) {
         <AnimatedProblemCard
           key={card.title}
           {...card}
-          delay={index * 150}
+          delay={index * 70}
         />
       ))}
     </div>

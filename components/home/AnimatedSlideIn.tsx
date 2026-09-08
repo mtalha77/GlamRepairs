@@ -11,10 +11,17 @@ type AnimatedSlideInProps = {
   threshold?: number;
 };
 
+/**
+ * HANDOVER-11 §3.2 — "up" is the scroll reveal and moves 16px (translate-y-4),
+ * not the 64px it used to. A 64px rise on every section made the page feel
+ * like it was assembling itself as you scrolled; 16px reads as the content
+ * settling. The horizontal directions keep their longer 64px travel: those
+ * are used on a handful of hero blocks where the slide is the point.
+ */
 function getHiddenClasses(direction: "left" | "right" | "up" | "down") {
   if (direction === "right") return "translate-x-16 opacity-0";
-  if (direction === "up") return "translate-y-16 opacity-0";
-  if (direction === "down") return "-translate-y-16 opacity-0";
+  if (direction === "up") return "translate-y-4 opacity-0";
+  if (direction === "down") return "-translate-y-4 opacity-0";
   return "-translate-x-16 opacity-0";
 }
 
@@ -23,7 +30,7 @@ export default function AnimatedSlideIn({
   direction = "left",
   delay = 0,
   className = "",
-  threshold = 0,
+  threshold = 0.2,
 }: AnimatedSlideInProps) {
   const [ref, inView] = useIntersectionAnimation({ threshold });
   const [visible, setVisible] = useState(false);
@@ -43,7 +50,7 @@ export default function AnimatedSlideIn({
   return (
     <div ref={ref} className={className}>
       <div
-        className={`will-change-transform transform motion-reduce:transform-none motion-reduce:opacity-100 motion-reduce:transition-none transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`will-change-transform transform motion-reduce:transform-none motion-reduce:opacity-100 motion-reduce:transition-none transition-all duration-[400ms] ease-[cubic-bezier(0.2,0.7,0.3,1)] ${
           visible
             ? "translate-x-0 translate-y-0 opacity-100"
             : getHiddenClasses(direction)

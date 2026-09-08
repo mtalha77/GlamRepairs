@@ -1,6 +1,6 @@
 import AnimatedSlideIn from "@/components/home/AnimatedSlideIn";
 import { whoReviews } from "@/components/about/aboutContent";
-import CredentialsBlock from "@/components/seo/CredentialsBlock";
+import CredentialsCard from "@/components/about/CredentialsCard";
 
 /**
  * "Who reviews your skin" — the named, credentialed practitioner behind every
@@ -47,11 +47,14 @@ export default function OurStorySection() {
         </AnimatedSlideIn>
 
         <AnimatedSlideIn direction="up" delay={320}>
-          {/* HOTFIX-6 §1 — full credentials block, HEC attestation and all.
-              This is the page's E-E-A-T anchor; keep it here, not folded
-              into the prose above. */}
-          <div className="mx-auto mt-8 max-w-xl rounded-2xl bg-brand-cream/40 px-6 py-5 text-left sm:mt-10">
-            <CredentialsBlock />
+          {/* HOTFIX-6 §1 / HANDOVER-11 §2 — the page's E-E-A-T anchor.
+              Keep it here, not folded into the prose above. Was a flat
+              CredentialsBlock; now a three-band card, because four
+              credentials of equal visual weight meant the HEC attestation
+              read as quietly as the rest. Wider max-width than the old
+              block: the two-column credential grid needs the room. */}
+          <div className="mx-auto mt-8 max-w-3xl sm:mt-10">
+            <CredentialsCard />
           </div>
         </AnimatedSlideIn>
       </div>

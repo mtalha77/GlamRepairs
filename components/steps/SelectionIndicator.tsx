@@ -8,8 +8,13 @@ export default function SelectionIndicator({
   unselectedBorder = "default",
 }: SelectionIndicatorProps) {
   if (selected) {
+    // HANDOVER-11 §3.1 — the check confirms the tap. This branch only renders
+    // once `selected` flips, so the mount animation fires exactly once per
+    // selection, with no state to track. Nothing waits on it: the funnel
+    // advances on the user's own Next press, and holding navigation behind an
+    // animation would make the form feel slower, not more responsive.
     return (
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-light">
+      <span className="selection-check-in flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-light">
         <svg
           aria-hidden
           viewBox="0 0 12 10"

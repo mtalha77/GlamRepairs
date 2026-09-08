@@ -128,7 +128,7 @@ function FooterLinkList({
         <li key={link.label}>
           <Link
             href={link.href}
-            className="font-sans text-[17px] text-[#242424] transition-colors hover:text-brand-primary"
+            className="gr-link-underline font-sans text-[17px] text-[#242424] transition-colors hover:text-brand-primary"
           >
             {link.label}
           </Link>
@@ -190,6 +190,19 @@ export default function Footer() {
                   WhatsApp
                 </a>
               </p>
+              {/* HANDOVER-11 §5 — when someone actually answers. Beneath the
+                  email and phone because it qualifies both. Values come from
+                  SITE.hours so the footer, the Organization schema's
+                  ContactPoint and any future contact surface cannot drift.
+                  (PKT) is spelled out: the site quotes USD, GBP and EUR, so
+                  a visitor reading these may not know the zone. */}
+              <div className="mt-4 max-w-xs text-sm text-[#242424]">
+                <p className="font-medium">{SITE.hours.displayDays}</p>
+                <p className="mt-0.5">{SITE.hours.displayTime}</p>
+                <p className="mt-2 text-xs leading-relaxed text-brand-primary/70">
+                  {SITE.hours.note}
+                </p>
+              </div>
               <ul className="mt-4 flex gap-3">
                 {socialLinks.map((social) => (
                   <li key={social.label}>
