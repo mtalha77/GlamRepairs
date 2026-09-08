@@ -9,6 +9,9 @@ import { SITE } from "@/lib/seo/site";
  * minutes from paying, so this sits directly beneath the upload control —
  * not in a footer, not behind a "need help?" toggle.
  *
+ * HOTFIX-8 folded the old separate support number into SITE.phone — there
+ * is one business number now, shared with the Google Business Profile.
+ *
  * Both actions are one tap because in Pakistan plenty of people will prefer
  * WhatsApp to a call, and the digits are rendered as readable text rather
  * than hidden behind a button: `tel:` frequently does nothing on desktop,
@@ -28,22 +31,22 @@ export default function UploadSupportNote() {
       <p className="text-xs leading-relaxed text-brand-gray sm:text-[0.8125rem]">
         Trouble uploading? Call or WhatsApp us on{" "}
         <a
-          href={`tel:+${SITE.supportPhone}`}
+          href={`tel:${SITE.phone.e164}`}
           className="font-semibold text-brand-primary underline underline-offset-2"
         >
-          {SITE.supportPhoneDisplay}
+          {SITE.phone.display}
         </a>{" "}
         — we&apos;ll help you get it done.
       </p>
       <div className="mt-2.5 flex items-center justify-center gap-2">
         <a
-          href={`tel:+${SITE.supportPhone}`}
+          href={`tel:${SITE.phone.e164}`}
           className="rounded-full border border-brand-border-light bg-white px-3.5 py-1.5 text-xs font-medium text-brand-primary transition-colors hover:border-brand-lavender sm:text-[0.8125rem]"
         >
           Call
         </a>
         <a
-          href={`https://wa.me/${SITE.supportPhone}`}
+          href={`https://wa.me/${SITE.phone.digits}`}
           target="_blank"
           rel="noopener noreferrer"
           className="rounded-full border border-brand-border-light bg-white px-3.5 py-1.5 text-xs font-medium text-brand-primary transition-colors hover:border-brand-lavender sm:text-[0.8125rem]"
