@@ -1,12 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { Fragment, useState } from "react";
 import AnimatedSlideIn from "@/components/home/AnimatedSlideIn";
 
 export type FaqItem = {
   question: string;
   answer: string;
+  /**
+   * HOTFIX-10 §1b — substrings of `answer` to render as internal links.
+   *
+   * `answer` stays a plain string rather than becoming a ReactNode because
+   * it is the same text an FAQPage schema node would have to emit, and
+   * structured data cannot carry markup. Naming the link target separately
+   * keeps the copy and the schema value identical.
+   */
+  links?: { text: string; href: string }[];
 };
+
+/**
+ * Splits an answer on each linked substring and renders the matches as
+ * links. Order-independent and safe when a link's text is absent from the
+ * answer — it simply renders no link rather than throwing.
+ */
+function renderAnswer(item: FaqItem) {
+  if (!item.links?.length) return item.answer;
+
+  const pattern = item.links
+    .map((link) => link.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+  const parts = item.answer.split(new RegExp(`(${pattern})`, "g"));
+
+  return parts.map((part, index) => {
+    const link = item.links?.find((candidate) => candidate.text === part);
+    if (!link) return <Fragment key={index}>{part}</Fragment>;
+    return (
+      <Link
+        key={index}
+        href={link.href}
+        className="font-medium text-brand-primary underline underline-offset-2"
+      >
+        {part}
+      </Link>
+    );
+  });
+}
 
 const defaultFaqItems: FaqItem[] = [
   {
@@ -18,6 +56,7 @@ const defaultFaqItems: FaqItem[] = [
     question: "Who reviews my photos?",
     answer:
       "Ayma Arif, Certified Aesthetics Practitioner, with a BS in Cosmetology & Dermatology Science and experience across multiple clinics in Pakistan.",
+    links: [{ text: "Ayma Arif", href: "/authors/ayma-arif" }],
   },
   {
     question: "How long does it take to get my assessment?",
@@ -32,7 +71,7 @@ const defaultFaqItems: FaqItem[] = [
   {
     question: "What if I'm not satisfied?",
     answer:
-      "We'll revise your assessment. Your skin is our responsibility until you're confident in your routine.",
+      "We'll revise your assessment until the routine makes sense for you and you're confident following it. Tell us within 14 days and we'll revise it at no cost.",
   },
   {
     question: "Are my photos private?",
@@ -81,7 +120,7 @@ function FaqAccordionItem({ item, isOpen, onToggle }: FaqAccordionItemProps) {
               isOpen ? "opacity-100" : "opacity-0"
             }`}
           >
-            {item.answer}
+            {renderAnswer(item)}
           </p>
         </div>
       </div>

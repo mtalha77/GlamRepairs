@@ -7,17 +7,33 @@ import TrustPrivacyCard from "@/components/home/TrustPrivacyCard";
 
 const cardTopOffsets = ["lg:-mt-20", "lg:-mt-12", "lg:-mt-4"] as const;
 
+/**
+ * HOTFIX-10 §3 — "Never Shared Publicly" was a copy-paste of the first
+ * card's body, live on the homepage for every visitor. It now has its own
+ * copy about not sharing or selling.
+ *
+ * ⚠️ Accuracy constraint, deliberately observed: every claim here has to be
+ * true of the system as it stands TODAY, not only after the storage
+ * lockdown finishes. The assessment-photos bucket is still public
+ * (HANDOVER-6 §1 shipped the application half — the auth-gated /p/ route,
+ * short-lived signed URLs, and no photo links in outbound messages — but
+ * the bucket flip itself is still waiting on the owner's go-ahead). So the
+ * first card no longer asserts "a private internal system"; it describes
+ * the access control that genuinely exists, which is also exactly what
+ * stays true once the bucket is flipped. Do not reintroduce a storage
+ * claim here until `storage.buckets.public` is false for that bucket.
+ */
 const privacyCards = [
   {
     title: "Private & Secure Storage",
     description:
-      "Your photos are stored in a private internal system with restricted access. Only the person preparing your report can see them.",
+      "Your photos are only opened inside our practitioner portal, which requires a sign-in. Only the practitioner assigned to your case can view them.",
     icon: "/icons/guard_icon.svg",
   },
   {
     title: "Never Shared Publicly",
     description:
-      "Your photos are stored in a private internal system with restricted access. Only the person preparing your report can see them.",
+      "We never publish your photos, use them in marketing, or sell them. They are never attached to messages or shown to anyone outside the practitioner working on your case.",
   },
   {
     title: "Deletion On Request",
