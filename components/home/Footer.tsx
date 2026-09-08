@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { BOOKING_START_HREF } from "@/components/booking/bookingConfig";
+import { SITE } from "@/lib/seo/site";
 
 const CTA_IMAGE = "/images,svgs/cta_ginger_woman.png";
 const FOOTER_LOGO = "/svgs/GLAM REPAIR LOGO-08 2 (1).svg";
@@ -170,6 +171,25 @@ export default function Footer() {
               >
                 {contactEmail}
               </a>
+              {/* HOTFIX-8 — the business number, on every page, matching the
+                  Google Business Profile listing. Number and links both come
+                  from SITE.phone; never hardcode one here. */}
+              <p className="mt-2 flex flex-wrap items-center gap-3 font-sans text-sm text-[#242424]">
+                <a
+                  href={`tel:${SITE.phone.e164}`}
+                  className="font-medium transition-colors hover:text-brand-primary"
+                >
+                  {SITE.phone.display}
+                </a>
+                <a
+                  href={`https://wa.me/${SITE.phone.digits}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full border border-brand-primary/40 px-3 py-1 font-medium text-brand-primary transition-colors hover:bg-brand-primary hover:text-white"
+                >
+                  WhatsApp
+                </a>
+              </p>
               <ul className="mt-4 flex gap-3">
                 {socialLinks.map((social) => (
                   <li key={social.label}>

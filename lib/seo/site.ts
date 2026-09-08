@@ -28,21 +28,30 @@ export const SITE = {
   country: "PK",
   language: "en",
   /**
-   * Business WhatsApp, stored in INTERNATIONAL form (no "+", no leading 0).
-   * The local form is 0335-5880333; converting it at each call site is how
-   * you end up with one place doing it wrong, so it is converted once, here.
-   * lib/funnel/whatsapp.ts reads this as its fallback.
+   * The one business number. HOTFIX-8: the Google Business Profile number
+   * (0301 8770506) replaces the previous funnel number (0335 5880333)
+   * everywhere, including the WhatsApp conversion handoff — confirmed by
+   * Talha on 8 Sep 2026 that it is WhatsApp-enabled and monitored.
+   *
+   * NAP consistency is the point: Google cross-references name, address and
+   * phone to decide a business is real, so the site and the GBP listing
+   * have to agree. Every tel:, wa.me, display string and schema value is
+   * derived from here — never hardcode a number at a call site.
+   *
+   * This also absorbs what HOTFIX-9 §4 called `supportPhone`. That was
+   * introduced as a deliberately separate help line; it turned out to be
+   * this same GBP number, so there is now one number and one constant.
    */
-  whatsapp: "923355880333",
-  /**
-   * Help line for people stuck mid-funnel (HOTFIX-9 §4). Stored in
-   * INTERNATIONAL form for tel:/wa.me links; supportPhoneDisplay is the
-   * local form people actually recognise and can read off the screen.
-   * Deliberately a different number from `whatsapp` above — that one is the
-   * business/assessment line, this one is "I can't get the upload to work".
-   */
-  supportPhone: "923018770506",
-  supportPhoneDisplay: "0301 8770506",
+  phone: {
+    /** E.164 — `tel:` links and structured data. The canonical form. */
+    e164: "+923018770506",
+    /** Digits only, no "+" — what wa.me requires. */
+    digits: "923018770506",
+    /** Local form, the one people in Pakistan recognise on sight. */
+    display: "0301 8770506",
+    /** International form, for contexts where the country matters. */
+    displayInternational: "+92 301 8770506",
+  },
   // Consolidates the brand entity: tells Google these profiles and this site
   // are the same organisation. Only includes profiles that are live, public and
   // actually branded GlamRepairs — a 404 or an abandoned handle here is a

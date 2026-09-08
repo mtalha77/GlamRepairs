@@ -34,11 +34,25 @@ export function organizationSchema() {
     url: SITE.url,
     description: SITE.description,
     areaServed: { "@type": "Country", name: "Pakistan" },
-    // Online-only. Declaring a storefront we do not have would be misleading
-    // and is also why a Google Business Profile is not available to us.
+    // Online-only: no storefront is declared, because there isn't one.
+    // (An earlier comment here said a Google Business Profile was therefore
+    // unavailable to us. That is out of date — a profile exists, and
+    // HOTFIX-8 exists to make the site's phone number match the one listed
+    // on it.)
     availableService: {
       "@type": "MedicalTherapy",
       name: "Online skin assessment",
+    },
+    // HOTFIX-8 — NAP consistency. Google cross-references name, address and
+    // phone across sources to decide a business is real, so this has to be
+    // the same number as the Google Business Profile, in E.164.
+    telephone: SITE.phone.e164,
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: SITE.phone.e164,
+      contactType: "customer service",
+      areaServed: "PK",
+      availableLanguage: ["en", "ur"],
     },
     ...(SITE.sameAs.length ? { sameAs: SITE.sameAs } : {}),
   };

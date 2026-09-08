@@ -5,10 +5,10 @@ import {
 import { SITE } from "@/lib/seo/site";
 
 // Business WhatsApp — override via NEXT_PUBLIC_WHATSAPP_NUMBER if needed.
-// International digits only (no "+", spaces, or dashes). HANDOVER-9 §1 moved
-// the literal to SITE.whatsapp so the local-to-international conversion is
-// written down in exactly one place.
-const FALLBACK_WHATSAPP_NUMBER = SITE.whatsapp;
+// International digits only (no "+", spaces, or dashes). HOTFIX-8 points
+// this at SITE.phone, the single business number shared with the Google
+// Business Profile; there is no separate funnel number any more.
+const FALLBACK_WHATSAPP_NUMBER = SITE.phone.digits;
 
 /** wa.me URLs break past ~2k chars; leave room for photo links. */
 const MAX_WHATSAPP_MESSAGE_LENGTH = 2500;
@@ -20,9 +20,18 @@ export function getWhatsAppNumber() {
   );
 }
 
-/** Local-style display, e.g. 0335-5880333 */
+/**
+ * Local-style display, e.g. "0301 8770506".
+ *
+ * For the business number this returns SITE.phone.display verbatim, so the
+ * site, the emails and the Google Business Profile all show the identical
+ * string — NAP consistency is a string match, not a number match. The
+ * derivation below only runs when NEXT_PUBLIC_WHATSAPP_NUMBER overrides it
+ * with some other number, which has no canonical display form to reuse.
+ */
 export function getWhatsAppDisplayNumber() {
   const digits = getWhatsAppNumber();
+  if (digits === SITE.phone.digits) return SITE.phone.display;
   if (digits.startsWith("92") && digits.length === 12) {
     const local = `0${digits.slice(2)}`;
     return `${local.slice(0, 4)}-${local.slice(4)}`;
