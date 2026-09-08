@@ -17,6 +17,8 @@
  * rather stay unnamed, the honest answer is that the blog strategy does not
  * work in a YMYL niche and the budget belongs in paid instead.
  */
+import { CREDENTIALS, getCredential } from "./site";
+
 export type Author = {
   slug: string;
   name: string;
@@ -65,9 +67,27 @@ export type Author = {
   scopeDisclaimer?: string;
   /** Topics for the Person schema's `knowsAbout` — what the engines should associate this person with. */
   knowsAbout?: string[];
+  /**
+   * Which entries in `CREDENTIALS` (lib/seo/site.ts) belong to this person.
+   * The degree and the society membership already have dedicated fields
+   * above, which the Person schema uses; this exists so *coursework* also
+   * reaches structured data without inventing a second place to type it.
+   */
+  credentialIds?: string[];
   /** Can this person sign off clinical accuracy on a post? */
   canReview: boolean;
 };
+
+/**
+ * Resolved from lib/seo/site.ts so the reference numbers exist in exactly one
+ * place. `/credentials` renders the CREDENTIALS array; the Person schema and
+ * every CredentialsBlock render these fields. Before this they were two
+ * hand-typed copies of the same numbers, which is how a site ends up quoting
+ * a membership number that no longer matches the one it publishes.
+ */
+const HEC = getCredential("hec-degree");
+const IDS = getCredential("ids-membership");
+const TELEHEALTH = getCredential("duke-telehealth");
 
 export const AUTHORS: Record<string, Author> = {
   "ayma-arif": {
@@ -84,26 +104,52 @@ export const AUTHORS: Record<string, Author> = {
       "assessments for clients across Pakistan. She writes and reviews the " +
       "diagnostic content on GlamRepairs, with a focus on telling people what " +
       "their skin is actually doing rather than which product to buy.",
-    profiles: [],
+    // A real, checkable person behind the byline. This feeds `sameAs` on the
+    // Person node and renders as a visible link — both matter: the schema
+    // tells engines this profile and this author are one entity, and the
+    // visible link lets an actual reader confirm it in one click.
+    profiles: [
+      {
+        label: "Ayma Arif on LinkedIn",
+        url: "https://www.linkedin.com/in/aymaarif1/",
+      },
+    ],
     institution: "King Faisal University",
-    hecReference: "HEC/A&A/DAS/2026/5290888",
+    hecReference: HEC?.reference,
     // IMPORTANT: IDS membership is free and open (16,000+ members, 160+
     // countries) — a professional interest society, not a credentialing body.
     // Never label this "Certificate No." or "IDS Certified": that reads as an
     // earned clinical certification next to an HEC-attested degree, and a
     // single mislabel like that discredits the genuinely valuable HEC
     // reference sitting beside it. Always "Member" / "Membership No."
-    memberOf: {
-      name: "International Dermoscopy Society",
-      url: "https://dermoscopy-ids.org/",
-      membershipNo: "D.2629.9466",
-    },
-    continuingEducation: ["Continuing education in telehealth practice (Coursera)"],
+    memberOf:
+      IDS && IDS.verifyUrl
+        ? {
+            name: IDS.issuer,
+            url: IDS.verifyUrl,
+            membershipNo: IDS.reference,
+          }
+        : undefined,
+    // Named specifically rather than the old vague "continuing education in
+    // telehealth practice (Coursera)". A named Duke University specialization
+    // with a public verification link is evidence; a category is not.
+    continuingEducation: TELEHEALTH
+      ? [
+          `${TELEHEALTH.name} — ${TELEHEALTH.issuer}` +
+            (TELEHEALTH.platform ? ` via ${TELEHEALTH.platform}` : ""),
+        ]
+      : [],
     scopeDisclaimer:
       "Ayma is not a physician or dermatologist. Glam Repairs provides " +
       "cosmetic skincare guidance and does not diagnose, prescribe for, or " +
       "treat medical conditions.",
-    knowsAbout: ["Skincare", "Cosmetic dermatology science", "Dermoscopy"],
+    knowsAbout: [
+      "Skincare",
+      "Cosmetic dermatology science",
+      "Dermoscopy",
+      "Teledermatology",
+    ],
+    credentialIds: CREDENTIALS.map((c) => c.id),
     canReview: true,
   },
 };
