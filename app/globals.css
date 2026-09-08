@@ -189,22 +189,28 @@ body {
   cursor: pointer;
 }
 
+/* HANDOVER-11 §3 — these four wipe fills used to animate `width` from 0 to
+   100%, which forces layout on every frame of a 500ms hover. scaleX from a
+   left origin is pixel-for-pixel the same wipe, composited, and brings them
+   inside the 150–400ms band. Appearance unchanged; cost isn't. */
 .cta-fill-btn::before {
   content: "";
-  width: 0;
+  width: 100%;
   height: 100%;
   border-radius: inherit;
   position: absolute;
   top: 0;
   left: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
   background-color: var(--brand-accent);
-  transition: width 0.5s ease;
+  transition: transform 0.4s ease-out;
   display: block;
   z-index: -1;
 }
 
 .cta-fill-btn:hover::before {
-  width: 100%;
+  transform: scaleX(1);
 }
 
 .cta-fill-btn:hover {
@@ -221,20 +227,22 @@ body {
 
 .guidance-fill-btn::before {
   content: "";
-  width: 0;
+  width: 100%;
   height: 100%;
   border-radius: inherit;
   position: absolute;
   top: 0;
   left: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
   background-color: var(--brand-accent);
-  transition: width 0.5s ease;
+  transition: transform 0.4s ease-out;
   display: block;
   z-index: -1;
 }
 
 .guidance-fill-btn:hover::before {
-  width: 100%;
+  transform: scaleX(1);
 }
 
 .guidance-fill-btn:hover {
@@ -255,20 +263,22 @@ body {
 
 .analysis-fill-btn::before {
   content: "";
-  width: 0;
+  width: 100%;
   height: 100%;
   border-radius: inherit;
   position: absolute;
   top: 0;
   left: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
   background-color: var(--brand-light);
-  transition: width 0.5s ease;
+  transition: transform 0.4s ease-out;
   display: block;
   z-index: -1;
 }
 
 .analysis-fill-btn:hover::before {
-  width: 100%;
+  transform: scaleX(1);
 }
 
 .analysis-fill-btn:hover {
@@ -287,20 +297,22 @@ body {
 
 .subscribe-fill-btn::before {
   content: "";
-  width: 0;
+  width: 100%;
   height: 100%;
   border-radius: inherit;
   position: absolute;
   top: 0;
   left: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
   background-color: var(--brand-primary);
-  transition: width 0.5s ease;
+  transition: transform 0.4s ease-out;
   display: block;
   z-index: -1;
 }
 
 .subscribe-fill-btn:hover::before {
-  width: 100%;
+  transform: scaleX(1);
 }
 
 .subscribe-fill-btn:hover {
@@ -308,7 +320,7 @@ body {
 }
 
 .subscribe-fill-btn.is-incomplete:hover::before {
-  width: 0;
+  transform: scaleX(0);
 }
 
 .subscribe-fill-btn.is-incomplete:hover {
@@ -346,15 +358,51 @@ select:autofill {
   background-color: #ffffff !important;
 }
 
-@keyframes onboarding-step-in {
+/* HANDOVER-11 §3.1 — the funnel is 25 steps, and direction is the cheapest
+   way to make a long form feel like travel rather than a treadmill. Forward
+   navigation enters from the right, Back from the left, so the motion agrees
+   with the button the user just pressed. 12px, not 40 — this is orientation,
+   not spectacle. translate3d keeps it on the compositor. */
+@keyframes onboarding-step-in-forward {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translate3d(12px, 0, 0);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes onboarding-step-in-back {
+  from {
+    opacity: 0;
+    transform: translate3d(-12px, 0, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* The selection check. Fires on mount, and SelectionIndicator swaps elements
+   when `selected` flips, so it runs exactly once per selection with no state
+   to track. Confirms the tap; nothing is delayed behind it. */
+@keyframes selection-check-in {
+  from {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+
+  60% {
+    transform: scale(1.08);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -370,16 +418,35 @@ select:autofill {
   }
 }
 
-.onboarding-step-enter {
-  animation: onboarding-step-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+.onboarding-step-enter--forward {
+  animation: onboarding-step-in-forward 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+.onboarding-step-enter--back {
+  animation: onboarding-step-in-back 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+.selection-check-in {
+  animation: selection-check-in 0.22s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
 
 .onboarding-card {
   animation: onboarding-card-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Animated with transform, not width. Width is a layout property — every
+   frame of that old transition forced the browser to re-lay-out the bar,
+   which is exactly the cost the transform-and-opacity rule exists to avoid.
+   scaleX from a left origin is the same picture, composited.
+
+   The easing overshoots slightly (1.4 on the third control point) so the bar
+   arrives with a little momentum rather than stopping dead — the "spring"
+   the brief asks for. Overshoot past 100% is clipped by the track's
+   overflow-hidden, so the final step cannot visibly overrun. */
 .onboarding-progress-fill {
-  transition: width 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: left center;
+  transition: transform 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
+  will-change: transform;
 }
 
 @keyframes map-dot-pulse {
@@ -415,13 +482,30 @@ select:autofill {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .onboarding-step-enter,
-  .onboarding-card {
+  .onboarding-step-enter--forward,
+  .onboarding-step-enter--back,
+  .onboarding-card,
+  .selection-check-in {
     animation: none;
   }
 
   .onboarding-progress-fill {
     transition: none;
+  }
+
+  .gr-btn,
+  .gr-card-lift,
+  .gr-link-underline::after {
+    transition: none;
+  }
+
+  .gr-btn:hover,
+  .gr-card-lift:hover {
+    transform: none;
+  }
+
+  .gr-link-underline::after {
+    transform: scaleX(1);
   }
 
   .notification-toast {
@@ -437,6 +521,60 @@ select:autofill {
   .animated-count {
     animation: none;
   }
+}
+
+/* ── HANDOVER-11 §3.3 — micro-interactions ────────────────────────────────
+   Three utilities rather than three dozen ad-hoc class strings, so the
+   timings stay in one place. All transform/opacity/colour only; all inside
+   the 150–400ms band; all disabled under prefers-reduced-motion below. */
+
+/* Buttons: a 1px lift and a colour change. Short, because a button should
+   feel like it responded, not like it performed. */
+.gr-btn {
+  transition:
+    background-color 0.15s ease-out,
+    border-color 0.15s ease-out,
+    color 0.15s ease-out,
+    transform 0.15s ease-out;
+}
+
+.gr-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Cards: a longer, softer lift with the shadow deepening to match. */
+.gr-card-lift {
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.gr-card-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 28px -12px rgba(102, 45, 145, 0.28);
+}
+
+/* Links: an underline that grows from the left rather than fading in.
+   scaleX on a pseudo-element, so no layout work and no reflow of the text. */
+.gr-link-underline {
+  position: relative;
+}
+
+.gr-link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.gr-link-underline:hover::after {
+  transform: scaleX(1);
 }
 
 .notification-toast {

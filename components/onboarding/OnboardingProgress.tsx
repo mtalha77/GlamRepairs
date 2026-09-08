@@ -18,10 +18,23 @@ export default function OnboardingProgress({
           {currentStep}/{totalSteps}
         </span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-brand-lavender/50">
+      {/* HANDOVER-11 §3.1 — the fill is a full-width bar scaled on the X
+          axis, not a bar whose width changes. Same picture; the transform
+          version composites instead of forcing layout on every frame, and
+          it is what lets the easing overshoot without the track growing.
+          role/aria make the bar mean something to a screen reader, which
+          the purely decorative version did not. */}
+      <div
+        className="h-1.5 w-full overflow-hidden rounded-full bg-brand-lavender/50"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={totalSteps}
+        aria-valuenow={currentStep}
+        aria-label={`Step ${currentStep} of ${totalSteps}`}
+      >
         <div
-          className="onboarding-progress-fill h-full rounded-full bg-brand-light"
-          style={{ width: `${progress * 100}%` }}
+          className="onboarding-progress-fill h-full w-full rounded-full bg-brand-light"
+          style={{ transform: `scaleX(${progress})` }}
         />
       </div>
     </div>

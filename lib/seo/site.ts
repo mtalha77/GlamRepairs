@@ -52,6 +52,46 @@ export const SITE = {
     /** International form, for contexts where the country matters. */
     displayInternational: "+92 301 8770506",
   },
+  /**
+   * HANDOVER-11 §5 — support hours, defined once so the footer, the
+   * Organization schema and any future contact surface cannot drift apart.
+   *
+   * ⚠️ Noon, not midnight. The handover read "12 am to 10pm"; confirmed with
+   * Talha that it means 12:00 PM — a ten-hour day, not a twenty-two-hour one.
+   *
+   * ⚠️ NAP consistency: the Google Business Profile still says "Open 24
+   * hours", which contradicts this. Hours are part of the name/address/phone
+   * triple Google cross-references, so a mismatch weakens both the listing
+   * and the site. Talha updates the profile; this is the site half.
+   *
+   * `opens`/`closes` are 24-hour ISO times because that is what
+   * OpeningHoursSpecification requires; `display*` is what humans read.
+   * (PKT) is explicit — the site quotes USD, GBP and EUR prices, so
+   * visitors reading these hours may have no idea which zone they are in.
+   */
+  hours: {
+    days: [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ] as string[],
+    opens: "12:00",
+    closes: "22:00",
+    displayDays: "Monday to Saturday",
+    displayTime: "12:00 PM to 10:00 PM (PKT)",
+    /**
+     * Sets the expectation the hours alone would break: the site promises
+     * assessments within 24 hours, which is a different clock from when
+     * someone answers a message. Without this, a client who writes at 11 PM
+     * on Saturday thinks they have been ignored.
+     */
+    note:
+      "Assessments are delivered within 24 hours. Messages outside these " +
+      "hours are answered the next working day.",
+  },
   // Consolidates the brand entity: tells Google these profiles and this site
   // are the same organisation. Only includes profiles that are live, public and
   // actually branded GlamRepairs — a 404 or an abandoned handle here is a

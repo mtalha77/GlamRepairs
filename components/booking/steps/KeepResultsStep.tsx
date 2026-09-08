@@ -8,7 +8,7 @@ import { useStepAnswer, useStepGate } from "@/lib/funnel/useStepAnswer";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const inputClassName =
-  "w-full rounded-2xl border border-brand-light/70 bg-white px-4 py-3.5 text-sm text-brand-ink shadow-sm outline-none transition-colors placeholder:text-brand-gray/45 focus:border-brand-light sm:py-4 sm:text-[0.9375rem]";
+  "w-full rounded-2xl border border-brand-light/70 bg-white px-4 py-3.5 text-sm text-brand-ink shadow-sm outline-none transition-colors placeholder:text-brand-gray/45 focus:border-brand-primary sm:py-4 sm:text-[0.9375rem]";
 
 function EnvelopeIcon() {
   return (

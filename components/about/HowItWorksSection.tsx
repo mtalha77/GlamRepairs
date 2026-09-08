@@ -15,7 +15,7 @@ export default function HowItWorksSection() {
         <ol className="mt-8 space-y-6">
           {howItWorks.map((step, i) => (
             <li key={step.title}>
-              <AnimatedSlideIn direction="up" delay={i * 100}>
+              <AnimatedSlideIn direction="up" delay={i * 70}>
                 <div className="flex gap-4">
                   <span
                     aria-hidden

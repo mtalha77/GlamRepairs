@@ -70,7 +70,7 @@ export default function WhatWeDoSection() {
             <AnimatedSlideIn
               key={step.number}
               direction="up"
-              delay={index * 150}
+              delay={index * 70}
             >
               <article>
                 {step.number === "01" ? (

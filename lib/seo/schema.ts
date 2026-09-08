@@ -53,6 +53,18 @@ export function organizationSchema() {
       contactType: "customer service",
       areaServed: "PK",
       availableLanguage: ["en", "ur"],
+      // HANDOVER-11 §5 — hours live HERE, on the ContactPoint, and
+      // deliberately not as a top-level `openingHoursSpecification` on the
+      // organisation. The top-level form is how a business with premises
+      // states its opening times; asserting it would imply a storefront that
+      // does not exist. On a ContactPoint it says the honest thing: this is
+      // when someone answers. Schema-valid either way.
+      hoursAvailable: {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: SITE.hours.days,
+        opens: SITE.hours.opens,
+        closes: SITE.hours.closes,
+      },
     },
     ...(SITE.sameAs.length ? { sameAs: SITE.sameAs } : {}),
   };

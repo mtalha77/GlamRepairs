@@ -162,7 +162,7 @@ export default function FaqSection({
             <AnimatedSlideIn
               key={item.question}
               direction="left"
-              delay={index * 120}
+              delay={index * 70}
             >
               <FaqAccordionItem
                 item={item}

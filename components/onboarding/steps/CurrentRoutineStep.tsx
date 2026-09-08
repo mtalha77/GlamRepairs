@@ -9,7 +9,7 @@ import {
 import { useStepAnswer, useStepGate } from "@/lib/funnel/useStepAnswer";
 
 const inputClassName =
-  "w-full rounded-2xl border border-brand-border-light/70 bg-white px-4 py-3.5 text-sm text-brand-ink shadow-sm outline-none transition-colors placeholder:text-brand-gray/45 focus:border-brand-light sm:py-4 sm:text-[15px]";
+  "w-full rounded-2xl border border-brand-border-light/70 bg-white px-4 py-3.5 text-sm text-brand-ink shadow-sm outline-none transition-colors placeholder:text-brand-gray/45 focus:border-brand-primary sm:py-4 sm:text-[15px]";
 
 const labelClassName = "mb-2 block text-sm text-brand-ink sm:text-[0.9375rem]";
 

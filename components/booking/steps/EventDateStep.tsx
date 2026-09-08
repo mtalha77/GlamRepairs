@@ -66,7 +66,7 @@ export default function EventDateStep() {
           className={`w-full rounded-2xl border bg-white px-4 py-4 text-sm text-brand-ink shadow-sm outline-none transition-colors placeholder:text-brand-gray/50 sm:px-5 sm:py-[1.125rem] sm:text-[0.9375rem] ${
             error
               ? "border-brand-error focus:border-brand-error"
-              : "border-brand-light/80 focus:border-brand-light"
+              : "border-brand-light/80 focus:border-brand-primary"
           }`}
         />
         <StepRequiredError message={error} />

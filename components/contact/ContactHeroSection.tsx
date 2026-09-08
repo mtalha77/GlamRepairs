@@ -17,7 +17,14 @@ export default function ContactHeroSection() {
         alt=""
         fill
         priority
-        sizes="100vw"
+        // HANDOVER-11 §4 — was a flat "100vw", which on a `fill` image lets
+        // the browser pick the largest candidate in next.config's
+        // deviceSizes: a 3840px hero fetched onto a phone, for a decorative
+        // background, over a Pakistani mobile connection. This is the LCP
+        // image on /contact, so that cost is paid before anything renders.
+        // Capped per breakpoint; the mobile bucket lands on the ~1200px tier
+        // even at 3x DPR (400 * 3 = 1200). Matches /about, capped earlier.
+        sizes="(max-width: 640px) 400px, (max-width: 1024px) 800px, 1920px"
         className="object-cover object-[center_28%]"
       />
 
