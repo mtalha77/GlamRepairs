@@ -523,6 +523,97 @@ select:autofill {
   }
 }
 
+/* ── HANDOVER-12 — testimonial deck ───────────────────────────────────────
+   The stack geometry lives here rather than in Tailwind classes because it is
+   one rule per depth keyed off a data attribute, which is exactly what CSS is
+   for and what utility classes express badly.
+
+   Every position is transform + opacity only, so the whole deck animates on
+   the compositor. The container is a fixed height (the cards are absolutely
+   positioned), which is what stops the page jolting as quotes of different
+   lengths cycle through.
+
+   The small alternating rotations are the point of the effect: a perfectly
+   square stack reads as a rendering glitch, ±1.5° reads as a hand-placed
+   pile of cards. */
+.tdeck-card {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transition:
+    transform 0.62s cubic-bezier(0.22, 0.75, 0.28, 1),
+    opacity 0.5s cubic-bezier(0.22, 0.75, 0.28, 1);
+  will-change: transform, opacity;
+}
+
+.tdeck-card[data-p="0"] {
+  transform: translateY(0) scale(1) rotate(0deg);
+  opacity: 1;
+  z-index: 5;
+}
+
+.tdeck-card[data-p="1"] {
+  transform: translateY(-16px) scale(0.945) rotate(-1.6deg);
+  opacity: 0.75;
+  z-index: 4;
+}
+
+.tdeck-card[data-p="2"] {
+  transform: translateY(-30px) scale(0.89) rotate(1.4deg);
+  opacity: 0.45;
+  z-index: 3;
+}
+
+.tdeck-card[data-p="3"] {
+  transform: translateY(-42px) scale(0.84) rotate(-0.8deg);
+  opacity: 0.18;
+  z-index: 2;
+}
+
+/* Exiting, and any card deeper than the four on show. Pointer events off so
+   an invisible card can never swallow a click meant for the one in front. */
+.tdeck-card[data-p="x"] {
+  transform: translateY(34px) scale(0.9) rotate(3deg);
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* The ring is driven imperatively by requestAnimationFrame, one style write
+   per frame. No CSS transition on the offset: a transition here would fight
+   the frame loop and smear the countdown behind where it actually is. */
+.tdeck-ring-track {
+  stroke: var(--brand-lavender);
+}
+
+.tdeck-ring-fill {
+  stroke: var(--brand-primary);
+  stroke-linecap: round;
+}
+
+/* prefers-reduced-motion: the deck stops being a deck. No auto-advance (that
+   is enforced in the component, not here), no transforms, and the three back
+   cards are removed from the pile entirely so what remains is a single
+   readable card the user pages through themselves. */
+@media (prefers-reduced-motion: reduce) {
+  .tdeck-card {
+    transition: opacity 0.2s;
+  }
+
+  .tdeck-card[data-p="0"] {
+    transform: none;
+  }
+
+  .tdeck-card[data-p="1"],
+  .tdeck-card[data-p="2"],
+  .tdeck-card[data-p="3"],
+  .tdeck-card[data-p="x"] {
+    transform: none;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
 /* ── HANDOVER-11 §3.3 — micro-interactions ────────────────────────────────
    Three utilities rather than three dozen ad-hoc class strings, so the
    timings stay in one place. All transform/opacity/colour only; all inside

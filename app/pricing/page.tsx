@@ -22,6 +22,7 @@ import FaqSection from "@/components/home/FaqSection";
 import Navbar from "@/components/home/Navbar";
 import FeaturesComparisonSection from "@/components/pricing/FeaturesComparisonSection";
 import PricingSection from "@/components/pricing/PricingSection";
+import TestimonialsSection from "@/components/reviews/TestimonialsSection";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -51,6 +52,8 @@ export default function PricingPage() {
         </header>
         <PricingSection />
         <FeaturesComparisonSection />
+        {/* HANDOVER-12 §5 — after the price comparison, before the FAQ. */}
+        <TestimonialsSection />
         <FaqSection />
       </main>
       <Footer />
