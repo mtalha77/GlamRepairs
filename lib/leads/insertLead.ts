@@ -80,6 +80,21 @@ export async function saveFunnelProgress(input: FunnelProgressInput) {
     payment_status: "pending",
     funnel_complete: false,
     funnel_step: input.funnelStep ?? null,
+    /**
+     * HANDOVER-15 §0 — the fix that makes abandonment recovery work at all.
+     *
+     * This row object is used for BOTH the insert and the update below, so
+     * stamping it here means every step transition refreshes the timestamp,
+     * not just the first save. Before this, `last_seen_at` was null on all
+     * three real abandoned leads: the recovery cron filters on it, the studio
+     * sorts by it, and `leads_abandoned_idx` indexes it, so a null made every
+     * one of them inert.
+     *
+     * `updated_at` is not a substitute. It moves for any write, including
+     * staff edits in the studio, so it cannot answer "when did the client
+     * last touch the funnel" — which is the only question recovery asks.
+     */
+    last_seen_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 
