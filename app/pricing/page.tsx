@@ -18,11 +18,16 @@
  */
 import type { Metadata } from "next";
 import Footer from "@/components/home/Footer";
-import FaqSection from "@/components/home/FaqSection";
+import FaqSection from "@/components/faq/FaqSection";
 import Navbar from "@/components/home/Navbar";
 import FeaturesComparisonSection from "@/components/pricing/FeaturesComparisonSection";
 import PricingSection from "@/components/pricing/PricingSection";
 import TestimonialsSection from "@/components/reviews/TestimonialsSection";
+import JsonLd from "@/components/seo/JsonLd";
+import { resolveFaqs } from "@/lib/faq";
+import { getServerPricingRegion } from "@/lib/pricing/geo";
+import { formatRegionPrice } from "@/lib/pricing/regions";
+import { faqSchema, graph } from "@/lib/seo/schema";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -32,9 +37,23 @@ export const metadata: Metadata = {
   alternates: { canonical: "/pricing" },
 };
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  // HANDOVER-13 §1/§2 — the FAQ list, the FAQPage markup and the price in
+  // the cost answer all come from one place. The region is resolved here
+  // rather than hardcoded: HOTFIX-7 made changing a price a database update,
+  // and an FAQ quoting a stale number would quietly undo that.
+  const region = await getServerPricingRegion();
+  const faqs = resolveFaqs("pricing", {
+    clarity: formatRegionPrice(region, "clarity"),
+    transform: formatRegionPrice(region, "transform"),
+  });
+
   return (
     <>
+      <JsonLd data={graph(faqSchema(
+        faqs.map((faq) => ({ question: faq.q, answer: faq.a })),
+        "/pricing",
+      ))} />
       <section className="relative bg-white">
         <Navbar theme="light" />
         <div className="h-[4.5rem] md:h-20 xl:h-24" aria-hidden />
@@ -54,7 +73,7 @@ export default function PricingPage() {
         <FeaturesComparisonSection />
         {/* HANDOVER-12 §5 — after the price comparison, before the FAQ. */}
         <TestimonialsSection />
-        <FaqSection />
+        <FaqSection faqs={faqs} />
       </main>
       <Footer />
     </>

@@ -33,11 +33,11 @@ import OurStorySection from "@/components/about/OurStorySection";
 import HowItWorksSection from "@/components/about/HowItWorksSection";
 import WhyPakistanSection from "@/components/about/WhyPakistanSection";
 import WhatWeWontDoSection from "@/components/about/WhatWeWontDoSection";
-import { ABOUT_FAQS } from "@/components/about/aboutContent";
-import FaqSection from "@/components/home/FaqSection";
+import FaqSection from "@/components/faq/FaqSection";
 import Footer from "@/components/home/Footer";
 import JsonLd from "@/components/seo/JsonLd";
-import { breadcrumbSchema, graph } from "@/lib/seo/schema";
+import { resolveFaqs } from "@/lib/faq";
+import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
 
 export const metadata: Metadata = {
   title: "About",
@@ -49,6 +49,8 @@ export const metadata: Metadata = {
 };
 
 export default function AboutPage() {
+  const faqs = resolveFaqs("about");
+
   return (
     <>
       <JsonLd
@@ -57,6 +59,12 @@ export default function AboutPage() {
             { name: "Home", path: "/" },
             { name: "About", path: "/about" },
           ]),
+          // HANDOVER-13 §2 — built from the same array the page renders, so
+          // the markup cannot describe questions the visitor cannot see.
+          faqSchema(
+            faqs.map((faq) => ({ question: faq.q, answer: faq.a })),
+            "/about",
+          ),
         )}
       />
       <main>
@@ -66,7 +74,7 @@ export default function AboutPage() {
         <HowItWorksSection />
         <WhyPakistanSection />
         <WhatWeWontDoSection />
-        <FaqSection items={ABOUT_FAQS} />
+        <FaqSection faqs={faqs} />
       </main>
       <Footer />
     </>
