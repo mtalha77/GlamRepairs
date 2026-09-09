@@ -177,10 +177,24 @@ export function serviceSchema(opts: {
   };
 }
 
-export function faqSchema(items: { question: string; answer: string }[]) {
+/**
+ * HANDOVER-13 §2 — one FAQPage node per page, anchored to that page.
+ *
+ * `path` is required rather than defaulted: four pages now emit this, and a
+ * shared "/#faq" @id across all of them would declare them the same entity.
+ *
+ * ⚠️ Only ever pass the questions actually VISIBLE on that page. Marking up
+ * hidden or filtered-out content is a structured data violation, and it is
+ * why callers pass the same resolved array they render rather than the full
+ * FAQS list.
+ */
+export function faqSchema(
+  items: { question: string; answer: string }[],
+  path: string,
+) {
   return {
     "@type": "FAQPage",
-    "@id": abs("/#faq"),
+    "@id": abs(`${path}#faq`),
     mainEntity: items.map((i) => ({
       "@type": "Question",
       name: i.question,

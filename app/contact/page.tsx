@@ -12,8 +12,11 @@
 import type { Metadata } from "next";
 import ContactHeroSection from "@/components/contact/ContactHeroSection";
 import ContactSection from "@/components/contact/ContactSection";
-import FaqSection from "@/components/home/FaqSection";
+import FaqSection from "@/components/faq/FaqSection";
 import Footer from "@/components/home/Footer";
+import JsonLd from "@/components/seo/JsonLd";
+import { resolveFaqs } from "@/lib/faq";
+import { faqSchema, graph } from "@/lib/seo/schema";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -24,12 +27,21 @@ export const metadata: Metadata = {
 };
 
 export default function ContactPage() {
+  // HANDOVER-13 §1/§2 — one array, filtered by tag, rendered and marked up
+  // from the same value. No pricing context passed, so the price question is
+  // omitted rather than guessed, and this page stays static.
+  const faqs = resolveFaqs("contact");
+
   return (
     <>
+      <JsonLd data={graph(faqSchema(
+        faqs.map((faq) => ({ question: faq.q, answer: faq.a })),
+        "/contact",
+      ))} />
       <main>
         <ContactHeroSection />
         <ContactSection />
-        <FaqSection />
+        <FaqSection faqs={faqs} />
       </main>
       <Footer />
     </>

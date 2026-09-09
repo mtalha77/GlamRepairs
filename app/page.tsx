@@ -5,13 +5,13 @@
  * export: the homepage previously had none at all, so it inherited the
  * layout's placeholder `title: "GlamRepairs" / description: "GlamRepairs"`.
  *
- * The FAQ schema is wired here rather than in the layout because FAQPage
- * markup must only appear on a page that actually shows those questions.
- * `FaqSection` renders on several routes; the homepage is the canonical home
- * for the FAQ, so it gets the structured data.
+ * HANDOVER-13: the FAQ schema is now actually wired here — the previous
+ * version of this comment described an intention, not code. `faqSchema()`
+ * existed but had zero call sites, so no page on the site emitted FAQPage
+ * markup. All four FAQ pages now do, each from the questions it renders.
  */
 import type { Metadata } from "next";
-import FaqSection from "@/components/home/FaqSection";
+import FaqSection from "@/components/faq/FaqSection";
 import Footer from "@/components/home/Footer";
 import Hero from "@/components/home/Hero";
 import LatestPostsSection from "@/components/home/LatestPostsSection";
@@ -22,6 +22,11 @@ import WhatWeDoSection from "@/components/home/WhatWeDoSection";
 import WhatYouGetSection from "@/components/home/WhatYouGetSection";
 import PricingSection from "@/components/pricing/PricingSection";
 import TestimonialsSection from "@/components/reviews/TestimonialsSection";
+import JsonLd from "@/components/seo/JsonLd";
+import { resolveFaqs } from "@/lib/faq";
+import { getServerPricingRegion } from "@/lib/pricing/geo";
+import { formatRegionPrice } from "@/lib/pricing/regions";
+import { faqSchema, graph } from "@/lib/seo/schema";
 
 export const metadata: Metadata = {
   // No `title` here on purpose — the layout's `default` already renders
@@ -33,9 +38,23 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export default function Home() {
+export default async function Home() {
+  // HANDOVER-13 §1/§2 — the FAQ list, the FAQPage markup and the price in
+  // the cost answer all come from one place. The region is resolved here
+  // rather than hardcoded: HOTFIX-7 made changing a price a database update,
+  // and an FAQ quoting a stale number would quietly undo that.
+  const region = await getServerPricingRegion();
+  const faqs = resolveFaqs("home", {
+    clarity: formatRegionPrice(region, "clarity"),
+    transform: formatRegionPrice(region, "transform"),
+  });
+
   return (
     <>
+      <JsonLd data={graph(faqSchema(
+        faqs.map((faq) => ({ question: faq.q, answer: faq.a })),
+        "/",
+      ))} />
       <Hero />
       <SkinAssessment />
       <ProblemSection />
@@ -51,7 +70,7 @@ export default function Home() {
           and before the questions, which is where a reader decides whether
           to believe what they have just been told. */}
       <TestimonialsSection />
-      <FaqSection />
+      <FaqSection faqs={faqs} />
       {/* HOTFIX-10 §1a — sits above the footer CTA so the blog finally has
           an internal route in from the highest-authority page on the site. */}
       <LatestPostsSection />
