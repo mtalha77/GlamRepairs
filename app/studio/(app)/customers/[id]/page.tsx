@@ -4,6 +4,7 @@ import AssignCustomerForm from "@/components/studio/AssignCustomerForm";
 import AnswerList from "@/components/studio/AnswerList";
 import ComposeEmailForm from "@/components/studio/ComposeEmailForm";
 import CreateReportForm from "@/components/studio/CreateReportForm";
+import ReportGuidelines from "@/components/studio/ReportGuidelines";
 import CustomerStatusForm from "@/components/studio/CustomerStatusForm";
 import EmailHistory from "@/components/studio/EmailHistory";
 import PhotoGallery from "@/components/studio/PhotoGallery";
@@ -16,10 +17,14 @@ import { leadDisplayRef } from "@/lib/leads/displayRef";
 import { formatCustomerAnswers } from "@/lib/studio/answers";
 import { CUSTOMER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/studio/constants";
 import { getStudioCustomer } from "@/lib/studio/customers";
+import { visiblePhotoCount } from "@/lib/studio/customerTypes";
 import { listCustomerEmails } from "@/lib/studio/emails";
 import { formatStudioDateTime } from "@/lib/studio/formatDate";
 import { listStudioMembers, requireStudioMember } from "@/lib/studio/member";
-import { listCustomerReports } from "@/lib/studio/reports";
+import {
+  countReportsByAuthor,
+  listCustomerReports,
+} from "@/lib/studio/reports";
 import {
   listCustomerReviews,
   reviewToReportDefaults,
@@ -46,7 +51,7 @@ export default async function CustomerDetailPage({
 }: CustomerDetailPageProps) {
   const { id } = await params;
   const query = await searchParams;
-  const [{ member }, customer] = await Promise.all([
+  const [{ user, member }, customer] = await Promise.all([
     requireStudioMember(),
     getStudioCustomer(id),
   ]);
@@ -57,13 +62,16 @@ export default async function CustomerDetailPage({
 
   const isOwner = member.role === "owner";
   const canSendReport = member.canSendReport;
-  const [answers, emails, reports, reviews, members] = await Promise.all([
-    Promise.resolve(formatCustomerAnswers(customer.answers)),
-    listCustomerEmails(customer.id),
-    listCustomerReports(customer.id),
-    listCustomerReviews(customer.id),
-    isOwner ? listStudioMembers() : Promise.resolve([]),
-  ]);
+  const [answers, emails, reports, reviews, members, reportsWritten] =
+    await Promise.all([
+      Promise.resolve(formatCustomerAnswers(customer.answers)),
+      listCustomerEmails(customer.id),
+      listCustomerReports(customer.id),
+      listCustomerReviews(customer.id),
+      isOwner ? listStudioMembers() : Promise.resolve([]),
+      // Drives whether the writing guidelines start expanded.
+      user ? countReportsByAuthor(user.id) : Promise.resolve(0),
+    ]);
   const reportDefaults = reviewToReportDefaults(reviews[0] ?? null);
   const whatsappSummary = formatBookingWhatsAppMessage({
     answers: customer.answers,
@@ -236,12 +244,17 @@ export default async function CustomerDetailPage({
             Skin report PDF
           </h2>
           {canSendReport ? (
-            <CreateReportForm
-              key={reviews[0]?.id ?? "no-review"}
-              leadId={customer.id}
-              toEmail={customer.email ?? ""}
-              defaults={reportDefaults}
-            />
+            <div className="space-y-5">
+              <ReportGuidelines reportsWritten={reportsWritten} />
+              <CreateReportForm
+                key={reviews[0]?.id ?? "no-review"}
+                leadId={customer.id}
+                toEmail={customer.email ?? ""}
+                clientFullName={customer.fullName}
+                photoCount={visiblePhotoCount(customer)}
+                defaults={reportDefaults}
+              />
+            </div>
           ) : (
             <p className="text-sm text-brand-gray">
               You do not have permission to send reports. Ask the owner to

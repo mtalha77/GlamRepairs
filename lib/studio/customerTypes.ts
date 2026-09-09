@@ -39,6 +39,23 @@ export function photosAreExpired(
   return Boolean(customer.photosDeletedAt);
 }
 
+/**
+ * Photographs a practitioner can actually open right now.
+ *
+ * HANDOVER-16 Part 6 gates sending on "all photographs opened", so this must
+ * match what PhotoGallery renders exactly. Two ways it would not: a purged
+ * lead keeps its `image_urls` values while the gallery refuses to show them,
+ * and the array can carry empty strings. Counting either would demand the
+ * practitioner attest to opening photographs that are not on the screen —
+ * an unpassable checkbox, blocking a report nobody can unblock.
+ */
+export function visiblePhotoCount(
+  customer: Pick<StudioCustomer, "photosDeletedAt" | "imageUrls">,
+) {
+  if (photosAreExpired(customer)) return 0;
+  return customer.imageUrls.filter(Boolean).length;
+}
+
 export function isAbandonedFunnel(
   customer: Pick<StudioCustomer, "source" | "funnelComplete" | "selectedPlan">,
 ) {
