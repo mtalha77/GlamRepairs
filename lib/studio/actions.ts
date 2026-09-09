@@ -27,6 +27,7 @@ import {
   parseReportContent,
   reportFileName,
 } from "@/lib/studio/report";
+import { leadDisplayRef } from "@/lib/leads/displayRef";
 import { buildSkinReportPdf } from "@/lib/studio/reportPdf";
 
 function getAppUrl() {
@@ -693,6 +694,7 @@ export async function sendCustomerReportAction(formData: FormData) {
       ...content,
       patient,
       authorName: member.displayName,
+      reportRef: leadDisplayRef(customer.sessionId) ?? undefined,
     });
   } catch (error) {
     console.error("[sendCustomerReportAction] pdf", error);
