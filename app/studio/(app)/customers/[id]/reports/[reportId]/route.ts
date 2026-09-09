@@ -1,6 +1,7 @@
 import { getStudioCustomer } from "@/lib/studio/customers";
 import { requireStudioMember } from "@/lib/studio/member";
 import { buildReportPatient, reportFileName } from "@/lib/studio/report";
+import { leadDisplayRef } from "@/lib/leads/displayRef";
 import { buildSkinReportPdf } from "@/lib/studio/reportPdf";
 import { getCustomerReport } from "@/lib/studio/reports";
 
@@ -37,6 +38,7 @@ export async function GET(_request: Request, { params }: ReportPdfRouteProps) {
         reportDate: new Date(report.createdAt).toLocaleDateString("en-GB"),
       },
       authorName: report.authorName,
+      reportRef: leadDisplayRef(customer.sessionId) ?? undefined,
     });
   } catch (error) {
     console.error("[report pdf route]", error);

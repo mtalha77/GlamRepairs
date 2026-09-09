@@ -1,6 +1,8 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 
 import type { SkinReportPdfInput } from "@/lib/studio/report";
+import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
+import { SITE, getCredential } from "@/lib/seo/site";
 
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
@@ -275,6 +277,163 @@ function drawBulletList(state: DrawState, items: string[]) {
   state.y -= 4;
 }
 
+/**
+ * HANDOVER-16 §2 — the medical boundary, on the deliverable itself.
+ *
+ * Every other surface carries this: the site footer, /about, /contact, the
+ * Terms, every blog post. The report — the document that actually contains
+ * the advice, that a client keeps and may act on for weeks — carried none.
+ * A report telling someone to use niacinamide and commenting on their diet
+ * has to say what it is and is not.
+ *
+ * Verbatim and non-negotiable. Do not shorten it to fit a layout; if it does
+ * not fit, the block moves to a new page, which is what the measurement
+ * below is for.
+ */
+const DISCLAIMER =
+  "This assessment provides cosmetic skincare guidance based on the " +
+  "information and photographs you provided. It is not a medical diagnosis " +
+  "and does not replace advice from a doctor. If your skin is painful, " +
+  "spreading, bleeding, changing rapidly, or does not improve, please see a " +
+  "doctor or dermatologist.";
+
+/**
+ * The signature, built from the same records the credentials page and the
+ * Person schema use — lib/seo/authors.ts and the CREDENTIALS array — so a
+ * reference number can never say one thing on the site and another on a
+ * document a client is holding.
+ *
+ * Banned everywhere, including here: "Dr.", "MD", "licensed".
+ */
+function signatureLines(input: SkinReportPdfInput): string[] {
+  const author =
+    AUTHORS[input.authorSlug ?? DEFAULT_AUTHOR_SLUG] ??
+    AUTHORS[DEFAULT_AUTHOR_SLUG];
+
+  // Falls back to the passed-in name so a practitioner without a record still
+  // gets a signed report rather than one signed by the wrong person.
+  const name = author?.name ?? input.authorName;
+  const lines = ["Prepared and reviewed by", name];
+
+  if (author?.title) lines.push(author.title);
+  if (author?.credentials) lines.push(author.credentials);
+  if (author?.hecReference) {
+    lines.push("Degree attested by the Higher Education Commission of Pakistan");
+    lines.push(`Ref. ${author.hecReference}`);
+  }
+  const ids = getCredential("ids-membership");
+  if (author?.memberOf) {
+    lines.push(
+      `Member, ${author.memberOf.name}${ids?.reference ? ` (Membership No. ${ids.reference})` : ""}`,
+    );
+  }
+  lines.push(
+    `Glam Repairs \u00b7 glamrepairs.com \u00b7 ${SITE.phone.displayInternational}`,
+  );
+
+  const ref = input.reportRef ? `Report reference: ${input.reportRef}` : null;
+  const tail = [ref, input.patient.plan, input.patient.reportDate]
+    .filter(Boolean)
+    .join(" \u00b7 ");
+  if (tail) lines.push(tail);
+
+  return lines;
+}
+
+/**
+ * HANDOVER-16 §1 — why the old version produced a blank second page.
+ *
+ * The footer was drawn at a FIXED y (MARGIN - 8) but was preceded by
+ * `ensureSpace(state, 40)`, which adds a page when the flow cursor is low.
+ * On a report whose content filled page one, that call created page two and
+ * the footer was then stamped at the bottom of it — a page containing 36
+ * characters and nothing else.
+ *
+ * The block is measured first and only then given a page. It is positioned,
+ * not flowed, so it always sits at the bottom of whatever turns out to be
+ * the last page.
+ */
+function drawClosingBlock(state: DrawState, input: SkinReportPdfInput) {
+  const disclaimerLines = wrapText(
+    DISCLAIMER,
+    state.font,
+    8,
+    PAGE_WIDTH - MARGIN * 2,
+  );
+  const lines = signatureLines(input);
+
+  const disclaimerHeight = disclaimerLines.length * 11 + 10;
+  const signatureHeight = lines.length * 11;
+  const blockHeight = disclaimerHeight + signatureHeight + 18;
+
+  // Only now decide whether a new page is needed.
+  const needsNewPage = state.y - blockHeight < MARGIN;
+  if (needsNewPage) {
+    state.page = state.doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+    state.y = PAGE_HEIGHT - MARGIN;
+  }
+
+  // Anchored to the bottom margin on a page that already carries the report,
+  // which is where a signature belongs. On a page created solely for this
+  // block there is nothing above it, so the same anchoring would leave the
+  // whole sheet blank with twelve lines floating at the foot of it — which
+  // reads as the layout bug this function exists to fix. There it flows from
+  // the top instead.
+  let y = needsNewPage ? state.y : MARGIN + blockHeight - 12;
+
+  state.page.drawLine({
+    start: { x: MARGIN, y: y + 10 },
+    end: { x: PAGE_WIDTH - MARGIN, y: y + 10 },
+    thickness: 0.6,
+    color: LINE,
+  });
+
+  for (const line of disclaimerLines) {
+    drawSafeText(state.page, line, {
+      x: MARGIN,
+      y,
+      size: 8,
+      font: state.font,
+      color: GRAY,
+    });
+    y -= 11;
+  }
+
+  y -= 10;
+
+  lines.forEach((line, index) => {
+    drawSafeText(state.page, line, {
+      x: MARGIN,
+      y,
+      size: index === 1 ? 10 : 8,
+      // The practitioner's name is the one line that carries weight.
+      font: index === 1 ? state.bold : state.font,
+      color: index === 1 ? PURPLE : GRAY,
+    });
+    y -= 11;
+  });
+}
+
+/**
+ * HANDOVER-16 §4 — "Page 1 of 2", stamped after pagination is finished.
+ *
+ * It has to run last: the total is not known until every page exists, and a
+ * reader needs to know nothing is missing.
+ */
+function stampPageNumbers(doc: PDFDocument, font: PDFFont) {
+  const pages = doc.getPages();
+  if (pages.length < 2) return;
+  pages.forEach((page, index) => {
+    drawSafeText(page, `Page ${index + 1} of ${pages.length}`, {
+      x: PAGE_WIDTH - MARGIN - 60,
+      y: MARGIN - 20,
+      size: 7,
+      font,
+      color: GRAY,
+    });
+  });
+}
+
 export async function buildSkinReportPdf(input: SkinReportPdfInput) {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -291,7 +450,16 @@ export async function buildSkinReportPdf(input: SkinReportPdfInput) {
   drawHeader(state);
   drawPatientCard(state, input.patient);
 
-  drawSafeText(state.page, `Report date: ${input.patient.reportDate}`, {
+  // §4 — reference and date together in the header. Support, follow-ups and
+  // reordering all need the reference, and the client had no way to quote it.
+  const headerMeta = [
+    `Report date: ${input.patient.reportDate}`,
+    input.reportRef ? `Reference: ${input.reportRef}` : null,
+    input.followUpDate ? `Your check-in: ${input.followUpDate}` : null,
+  ]
+    .filter(Boolean)
+    .join("   \u00b7   ");
+  drawSafeText(state.page, headerMeta, {
     x: MARGIN,
     y: state.y,
     size: 9,
@@ -321,14 +489,8 @@ export async function buildSkinReportPdf(input: SkinReportPdfInput) {
     drawParagraph(state, input.extraNotes);
   }
 
-  ensureSpace(state, 40);
-  drawSafeText(state.page, `Prepared by ${input.authorName} | Glam Repairs`, {
-    x: MARGIN,
-    y: MARGIN - 8,
-    size: 8,
-    font,
-    color: GRAY,
-  });
+  drawClosingBlock(state, input);
+  stampPageNumbers(doc, font);
 
   return Buffer.from(await doc.save());
 }

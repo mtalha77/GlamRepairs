@@ -24,6 +24,20 @@ export type SkinReportPatient = {
 export type SkinReportPdfInput = SkinReportContent & {
   patient: SkinReportPatient;
   authorName: string;
+  /**
+   * HANDOVER-16 §3/§4 — the reference the client can quote back. Without it
+   * on the document itself, someone holding their report has no way to
+   * identify it to support.
+   */
+  reportRef?: string;
+  /**
+   * Which practitioner's credentials the signature renders. Defaults to the
+   * primary author. Once a second practitioner exists this must be the
+   * assigned one — the block states qualifications, so it has to be theirs.
+   */
+  authorSlug?: string;
+  /** ISO or display date for the follow-up check-in, when the plan has one. */
+  followUpDate?: string;
 };
 
 export function buildReportPatient(customer: StudioCustomer): SkinReportPatient {
