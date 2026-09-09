@@ -15,32 +15,17 @@ import SpecialEventStep from "@/components/booking/steps/SpecialEventStep";
 import TreatmentFitStep from "@/components/booking/steps/TreatmentFitStep";
 import AboutYouStep from "@/components/onboarding/steps/AboutYouStep";
 import ConcernDurationStep from "@/components/onboarding/steps/ConcernDurationStep";
+import ContactStep from "@/components/onboarding/steps/ContactStep";
 import LifestyleStep from "@/components/onboarding/steps/LifestyleStep";
 import PrimaryConcernStep from "@/components/onboarding/steps/PrimaryConcernStep";
 import ProgramIntroContent from "@/components/onboarding/ProgramIntroContent";
 import UploadInstructionStep from "@/components/onboarding/steps/UploadInstructionStep";
 import UploadPhotosStep from "@/components/onboarding/steps/UploadPhotosStep";
-import WelcomeHeroImage from "@/components/onboarding/WelcomeHeroImage";
 import { StepHeader } from "@/components/steps";
 
 type StepContentProps = {
   stepNumber: number;
 };
-
-function WelcomeStep() {
-  return (
-    <div>
-      <WelcomeHeroImage />
-      <StepHeader
-        className="mt-7 text-center sm:mt-8"
-        title="Welcome"
-        titleClassName="font-serif text-[1.75rem] leading-none text-brand-primary sm:text-[2rem]"
-        subtitle="Tell us what your skin is going through. We'll guide you with a simple, routine-based report."
-        subtitleClassName="mx-auto mt-3 max-w-[18rem] text-sm font-normal leading-relaxed text-brand-ink sm:mt-3.5 sm:max-w-none sm:text-[0.9375rem]"
-      />
-    </div>
-  );
-}
 
 function StepPlaceholder({ stepNumber }: { stepNumber: number }) {
   return (
@@ -62,7 +47,7 @@ function StepPlaceholder({ stepNumber }: { stepNumber: number }) {
 export default function OnboardingStepContent({ stepNumber }: StepContentProps) {
   switch (stepNumber) {
     case 1:
-      return <WelcomeStep />;
+      return <ContactStep />;
     case 2:
       return <ProgramIntroContent />;
     case 3:

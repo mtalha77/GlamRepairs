@@ -17,6 +17,8 @@ export type FunnelProgressInput = {
   sessionId: string;
   fullName?: string | null;
   email?: string | null;
+  /** As typed. The DB trigger owns phone_e164 — never normalise here. */
+  phone?: string | null;
   selectedPlan?: string | null;
   planName?: string | null;
   planPrice?: string | null;
@@ -71,6 +73,10 @@ export async function saveFunnelProgress(input: FunnelProgressInput) {
     session_id: input.sessionId,
     full_name: input.fullName?.trim() || null,
     email: input.email?.trim() || null,
+    // Raw, exactly as the client typed it. A database trigger derives
+    // phone_e164 on every insert and update, so the app must not parse or
+    // reformat here — doing so would give one number two sources of truth.
+    phone: input.phone?.trim() || null,
     selected_plan: input.selectedPlan ?? null,
     plan_name: input.planName ?? null,
     plan_price: input.planPrice ?? null,

@@ -10,9 +10,14 @@ type FunnelState = {
   sessionId: string;
   /** All collected answers keyed by a stable step key (e.g. "onboarding.skinZones"). */
   answers: Record<string, unknown>;
-  /** Captured contact details (filled in near the end of the funnel). */
+  /**
+   * Contact details, captured on step 1 — see ContactStep for why they moved
+   * to the front. `phone` is stored exactly as typed; a database trigger
+   * derives phone_e164, so the app never parses a number itself.
+   */
   email: string;
   fullName: string;
+  phone: string;
   /** Plan the user selected (free | clarity | transform), saved on pick. */
   selectedPlan: string | null;
   /**
@@ -44,7 +49,7 @@ type FunnelState = {
 
   ensureSessionId: () => void;
   setAnswer: (key: string, value: unknown) => void;
-  setContact: (contact: { email?: string; fullName?: string }) => void;
+  setContact: (contact: { email?: string; fullName?: string; phone?: string }) => void;
   setSelectedPlan: (plan: string | null) => void;
   setPlanPreselected: (preselected: boolean) => void;
   setSelfieUrl: (url: string | null) => void;
@@ -69,6 +74,7 @@ export const useFunnelStore = create<FunnelState>()(
       answers: {},
       email: "",
       fullName: "",
+      phone: "",
       selectedPlan: null,
       planPreselected: false,
       selfieUrl: null,
@@ -88,6 +94,7 @@ export const useFunnelStore = create<FunnelState>()(
         set((state) => ({
           email: contact.email ?? state.email,
           fullName: contact.fullName ?? state.fullName,
+          phone: contact.phone ?? state.phone,
         })),
       setSelectedPlan: (plan) => set({ selectedPlan: plan }),
       setPlanPreselected: (preselected) => set({ planPreselected: preselected }),
@@ -114,6 +121,7 @@ export const useFunnelStore = create<FunnelState>()(
           answers: {},
           email: "",
           fullName: "",
+          phone: "",
           selectedPlan: null,
           planPreselected: false,
           selfieUrl: null,
@@ -131,6 +139,7 @@ export const useFunnelStore = create<FunnelState>()(
         answers: state.answers,
         email: state.email,
         fullName: state.fullName,
+        phone: state.phone,
         selectedPlan: state.selectedPlan,
         planPreselected: state.planPreselected,
         selfieUrl: state.selfieUrl,
