@@ -700,10 +700,11 @@ export async function sendCustomerReportAction(formData: FormData) {
    * disables the button; this refuses the request. Same `evaluateReport`, so
    * the two can never disagree about what passes.
    */
+  const photosOpened = asString(formData, "photosOpened") === "1";
   const checks = evaluateReport(content, {
     clientFullName: customer.fullName,
     photoCount: visiblePhotoCount(customer),
-    photosOpened: asString(formData, "photosOpened") === "1",
+    photosOpened,
   });
   if (failedChecks(checks).length > 0) {
     redirect(
@@ -752,6 +753,17 @@ export async function sendCustomerReportAction(formData: FormData) {
     night_routine: content.nightRoutine,
     avoid_items: content.avoidItems,
     extra_notes: content.extraNotes || null,
+    // Part 2 a/b/d. Stored per row rather than read from the defaults at
+    // render time, so an old report always reproduces exactly what was sent
+    // even after the default wording changes.
+    start_here: content.startHere || null,
+    timeline: content.timeline || null,
+    good_signs: content.goodSigns || null,
+    warning_signs: content.warningSigns || null,
+    // The Part 6 attestation. The column already existed for Part 7's
+    // authorship signals and was going unwritten; the checklist is exactly
+    // the signal it was added for.
+    photos_viewed: photosOpened,
     sent_at: sentAt,
     resend_id: emailResult.resendId,
   });

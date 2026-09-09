@@ -117,6 +117,27 @@ export type Database = {
           night_routine: string;
           avoid_items: string;
           extra_notes: string | null;
+          // HANDOVER-16 Part 2 a/b/d. Nullable: every report sent before
+          // these columns existed has none, and the PDF omits the section
+          // rather than substituting today's default wording.
+          start_here: string | null;
+          timeline: string | null;
+          good_signs: string | null;
+          warning_signs: string | null;
+          // HANDOVER-16 Part 7's authorship signals. The migration is live;
+          // these were missing here, which is why writing them typed as
+          // `never`. Only `photos_viewed` is written today — by the Part 6
+          // checklist attestation.
+          compose_seconds: number | null;
+          keystroke_count: number | null;
+          paste_count: number;
+          largest_paste_len: number;
+          photos_viewed: boolean;
+          draft_saves: number;
+          authorship_flag: string | null;
+          authorship_note: string | null;
+          authorship_cleared_by: string | null;
+          authorship_cleared_at: string | null;
           sent_at: string | null;
           resend_id: string | null;
           created_at: string;
@@ -131,6 +152,20 @@ export type Database = {
           night_routine: string;
           avoid_items: string;
           extra_notes?: string | null;
+          start_here?: string | null;
+          timeline?: string | null;
+          good_signs?: string | null;
+          warning_signs?: string | null;
+          compose_seconds?: number | null;
+          keystroke_count?: number | null;
+          paste_count?: number;
+          largest_paste_len?: number;
+          photos_viewed?: boolean;
+          draft_saves?: number;
+          authorship_flag?: string | null;
+          authorship_note?: string | null;
+          authorship_cleared_by?: string | null;
+          authorship_cleared_at?: string | null;
           sent_at?: string | null;
           resend_id?: string | null;
           created_at?: string;
@@ -145,6 +180,20 @@ export type Database = {
           night_routine?: string;
           avoid_items?: string;
           extra_notes?: string | null;
+          start_here?: string | null;
+          timeline?: string | null;
+          good_signs?: string | null;
+          warning_signs?: string | null;
+          compose_seconds?: number | null;
+          keystroke_count?: number | null;
+          paste_count?: number;
+          largest_paste_len?: number;
+          photos_viewed?: boolean;
+          draft_saves?: number;
+          authorship_flag?: string | null;
+          authorship_note?: string | null;
+          authorship_cleared_by?: string | null;
+          authorship_cleared_at?: string | null;
           sent_at?: string | null;
           resend_id?: string | null;
           created_at?: string;
