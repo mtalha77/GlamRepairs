@@ -1,25 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { saveOnboardingFirstName } from "@/components/onboarding/onboardingStorage";
 import FieldError from "@/components/ui/FieldError";
 import { getFieldErrorId } from "@/components/ui/FormField";
 import { StepHeader } from "@/components/steps";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
 import { useStepAnswer, useStepGate } from "@/lib/funnel/useStepAnswer";
 
+/**
+ * HANDOVER-14 — name and email are no longer asked here.
+ *
+ * Both, plus the WhatsApp number, are collected once on step 1
+ * (`ContactStep`), so a lead who abandons early is still reachable. This step
+ * keeps only what it is actually for: age, gender and city.
+ *
+ * Asking twice cost twice. It made a 25-step form feel longer at the exact
+ * midpoint where people were already leaving, and it let two different
+ * spellings of the same address into one lead record with no way to tell
+ * which the client meant.
+ *
+ * The answer keys `onboarding.firstName` and `onboarding.email` are unchanged
+ * — ContactStep writes the same keys — so every downstream reader (the
+ * WhatsApp summary, the studio answer labels, the confirmation email) keeps
+ * working without a migration.
+ */
+
 const inputClassName =
   "w-full rounded-2xl border border-brand-border-light/70 bg-white px-4 py-3.5 text-sm text-brand-ink shadow-sm outline-none transition-colors placeholder:text-brand-gray/45 focus:border-brand-primary sm:py-4 sm:text-[15px]";
 
-const inputErrorClassName =
-  "border-brand-error focus:border-brand-error";
+const inputErrorClassName = "border-brand-error focus:border-brand-error";
 
 const labelClassName = "mb-2 block text-sm text-brand-ink sm:text-[0.9375rem]";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 type GenderOption = "female" | "male" | "prefer-not-to-say";
-type AboutField = "firstName" | "email" | "age" | "gender" | "city";
+type AboutField = "age" | "gender" | "city";
 
 const genderOptions: { value: GenderOption; label: string }[] = [
   { value: "female", label: "Female" },
@@ -67,36 +81,21 @@ function GenderOption({
 }
 
 function getFieldErrors({
-  firstName,
-  email,
   age,
   gender,
   city,
 }: {
-  firstName: string;
-  email: string;
   age: string;
   gender: GenderOption | null;
   city: string;
-}): Partial<Record<AboutField, string>> {
+}) {
   const errors: Partial<Record<AboutField, string>> = {};
-  const trimmedEmail = email.trim();
-
-  if (!firstName.trim()) {
-    errors.firstName = "Name is required.";
-  }
-
-  if (!trimmedEmail) {
-    errors.email = "Email is required.";
-  } else if (!EMAIL_PATTERN.test(trimmedEmail)) {
-    errors.email = "Email is not valid.";
-  }
 
   if (!age.trim()) {
     errors.age = "Age is required.";
   } else {
-    const ageNumber = Number(age);
-    if (!Number.isFinite(ageNumber) || ageNumber < 1 || ageNumber > 120) {
+    const parsed = Number(age);
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > 120) {
       errors.age = "Please enter a valid age.";
     }
   }
@@ -113,18 +112,12 @@ function getFieldErrors({
 }
 
 export default function AboutYouStep() {
-  const [firstName, setFirstName] = useStepAnswer<string>(
-    "onboarding.firstName",
-    "",
-  );
-  const [email, setEmail] = useStepAnswer<string>("onboarding.email", "");
   const [age, setAge] = useStepAnswer<string>("onboarding.age", "");
   const [gender, setGender] = useStepAnswer<GenderOption | null>(
     "onboarding.gender",
     null,
   );
   const [city, setCity] = useStepAnswer<string>("onboarding.city", "");
-  const setContact = useFunnelStore((state) => state.setContact);
   const validationAttempted = useFunnelStore(
     (state) => state.stepValidationAttempted,
   );
@@ -132,16 +125,8 @@ export default function AboutYouStep() {
     {},
   );
 
-  const fieldErrors = getFieldErrors({
-    firstName,
-    email,
-    age,
-    gender,
-    city,
-  });
-  const isValid = Object.keys(fieldErrors).length === 0;
-
-  useStepGate(isValid);
+  const fieldErrors = getFieldErrors({ age, gender, city });
+  useStepGate(Object.keys(fieldErrors).length === 0);
 
   const markTouched = (field: AboutField) => {
     setTouched((current) =>
@@ -150,14 +135,8 @@ export default function AboutYouStep() {
   };
 
   const shouldShowError = (field: AboutField) =>
-    Boolean(
-      fieldErrors[field] && (validationAttempted || touched[field]),
-    );
+    Boolean(fieldErrors[field] && (validationAttempted || touched[field]));
 
-  const firstNameError = shouldShowError("firstName")
-    ? fieldErrors.firstName
-    : undefined;
-  const emailError = shouldShowError("email") ? fieldErrors.email : undefined;
   const ageError = shouldShowError("age") ? fieldErrors.age : undefined;
   const genderError = shouldShowError("gender")
     ? fieldErrors.gender
@@ -166,65 +145,9 @@ export default function AboutYouStep() {
 
   return (
     <div>
-      <StepHeader eyebrow="About You" title="Let's start with a few basics." />
+      <StepHeader eyebrow="About You" title="A few basics about you." />
 
       <div className="mt-6 space-y-4 sm:mt-7 sm:space-y-5">
-        <div>
-          <label htmlFor="first-name" className={labelClassName}>
-            Name
-          </label>
-          <input
-            id="first-name"
-            type="text"
-            name="firstName"
-            placeholder="Enter name"
-            autoComplete="name"
-            required
-            aria-invalid={firstNameError ? true : undefined}
-            aria-describedby={
-              firstNameError ? getFieldErrorId("first-name") : undefined
-            }
-            value={firstName}
-            onChange={(event) => {
-              const value = event.target.value;
-              setFirstName(value);
-              saveOnboardingFirstName(value);
-              setContact({ fullName: value.trim() });
-            }}
-            onBlur={() => markTouched("firstName")}
-            className={getInputClassName(Boolean(firstNameError))}
-          />
-          <FieldError id={getFieldErrorId("first-name")} message={firstNameError} />
-        </div>
-
-        <div>
-          <label htmlFor="about-email" className={labelClassName}>
-            Email
-          </label>
-          <input
-            id="about-email"
-            type="email"
-            name="email"
-            placeholder="Enter your email"
-            autoComplete="email"
-            inputMode="email"
-            required
-            aria-invalid={emailError ? true : undefined}
-            aria-describedby={
-              emailError ? getFieldErrorId("about-email") : undefined
-            }
-            value={email}
-            onChange={(event) => {
-              const value = event.target.value;
-              setEmail(value);
-              setContact({ email: value.trim() });
-            }}
-            onBlur={() => markTouched("email")}
-            className={getInputClassName(Boolean(emailError))}
-          />
-          <FieldError id={getFieldErrorId("about-email")} message={emailError} />
-        </div>
-
         <div>
           <label htmlFor="age" className={labelClassName}>
             Age
@@ -298,10 +221,6 @@ export default function AboutYouStep() {
           <FieldError id={getFieldErrorId("city")} message={cityError} />
         </div>
       </div>
-
-      <p className="mt-6 text-xs leading-relaxed text-brand-gray sm:mt-7 sm:text-[0.8125rem]">
-        Your name and email are only used to personalize your report — they are never shared publicly.
-      </p>
     </div>
   );
 }

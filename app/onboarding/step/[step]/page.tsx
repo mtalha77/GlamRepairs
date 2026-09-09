@@ -204,8 +204,11 @@ export default async function OnboardingStepPage({ params }: StepPageProps) {
     );
   }
 
+  // Step 1 used to be a pure welcome screen with nothing to fill in, so its
+  // Next was ungated. It now collects name, number and email, so it must gate
+  // like any other input step — otherwise the whole point of moving contact
+  // capture to the front is bypassable with one click.
   const isIntroInfo =
-    stepNumber === ONBOARDING_FORM.welcome ||
     stepNumber === ONBOARDING_FORM.program ||
     stepNumber === ONBOARDING_FORM.notAlone ||
     stepNumber === ONBOARDING_FORM.treatmentFit;

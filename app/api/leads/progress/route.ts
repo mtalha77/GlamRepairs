@@ -10,6 +10,7 @@ type ProgressBody = {
   sessionId?: string;
   fullName?: string;
   email?: string;
+  phone?: string;
   selectedPlan?: string | null;
   answers?: Record<string, unknown>;
   funnelStep?: number;
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
     sessionId,
     fullName,
     email,
+    phone: body.phone?.trim() ?? "",
     selectedPlan: body.selectedPlan ?? null,
     planName: plan?.name,
     planPrice,

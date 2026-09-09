@@ -10,6 +10,7 @@ function payloadFromStore() {
     sessionId: state.sessionId,
     fullName: state.fullName,
     email: state.email,
+    phone: state.phone,
     selectedPlan: state.selectedPlan,
     answers: state.answers,
     funnelStep: Math.max(
@@ -57,6 +58,7 @@ export function useFunnelProgressSave() {
         state.sessionId,
         state.email,
         state.fullName,
+        state.phone,
         state.selectedPlan ?? "",
         String(state.onboardingUnlockedStep),
         Object.keys(state.answers).sort().join(","),
