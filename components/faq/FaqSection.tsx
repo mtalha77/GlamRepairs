@@ -92,11 +92,24 @@ export default function FaqSection({
   headingEmphasis?: string;
   subheading?: string;
 }) {
-  const [filter, setFilter] = useState<FilterValue>("all");
-  const [openId, setOpenId] = useState<string | null>(faqs[0]?.id ?? null);
+  const groups = useMemo(() => faqGroupsPresent(faqs), [faqs]);
+
+  /**
+   * Opens on the first group rather than on "All".
+   *
+   * Thirteen expanded rows plus three group headings makes a section long
+   * enough that the closing CTA — the whole point of ending the FAQ with a
+   * way to ask — falls far below where anyone scrolls. Group order puts
+   * money first, so the default lands on exactly the questions that block a
+   * purchase, and "All" stays one click away.
+   */
+  const [filter, setFilter] = useState<FilterValue>(() => groups[0] ?? "all");
+  const [openId, setOpenId] = useState<string | null>(
+    () => faqs.find((faq) => faq.group === groups[0])?.id ?? faqs[0]?.id ?? null,
+  );
   const buttonRefs = useRef(new Map<string, HTMLButtonElement>());
 
-  const groups = useMemo(() => faqGroupsPresent(faqs), [faqs]);
+  /** The rows the filter currently shows — drives keyboard navigation. */
   const visible = useMemo(
     () => (filter === "all" ? faqs : faqs.filter((f) => f.group === filter)),
     [faqs, filter],
@@ -156,14 +169,14 @@ export default function FaqSection({
   const groupStartIds = useMemo(() => {
     const ids = new Set<string>();
     let previous: FaqGroup | null = null;
-    for (const faq of visible) {
+    for (const faq of faqs) {
       if (faq.group !== previous) {
         ids.add(faq.id);
         previous = faq.group;
       }
     }
     return ids;
-  }, [visible]);
+  }, [faqs]);
 
   if (faqs.length === 0) return null;
 
@@ -208,9 +221,19 @@ export default function FaqSection({
           </div>
         ) : null}
 
+        {/* Every question is rendered, always. The filter sets `hidden`
+            rather than dropping rows from the array, and that is not a
+            stylistic choice: the FAQPage schema on this page marks up all of
+            these questions, and marking up content absent from the DOM is a
+            structured data violation. Hiding keeps the markup honest, keeps
+            deep links to a filtered-out question working, and leaves the
+            whole list readable with JavaScript disabled. */}
         <div>
-          {visible.map((faq, index) => {
+          {faqs.map((faq) => {
             const isOpen = openId === faq.id;
+            const isVisible = filter === "all" || faq.group === filter;
+            // Keyboard order follows what is on screen, not the full array.
+            const index = visible.findIndex((item) => item.id === faq.id);
             // Group headings only in the unfiltered view — inside a filter
             // every row shares one group, so the label says nothing.
             const showGroupLabel =
@@ -226,6 +249,7 @@ export default function FaqSection({
 
                 <div
                   id={faq.id}
+                  hidden={!isVisible}
                   className={`mb-[9px] overflow-hidden rounded-2xl border transition-[background-color,border-color,box-shadow] duration-300 motion-reduce:transition-none ${
                     isOpen
                       ? "border-brand-lavender bg-white shadow-[0_2px_4px_rgba(102,45,145,0.04),0_10px_26px_-14px_rgba(102,45,145,0.2)]"
