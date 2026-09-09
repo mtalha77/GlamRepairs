@@ -28,25 +28,56 @@ import "./globals.css";
 
 const GA_MEASUREMENT_ID = "G-5B70X63TRH";
 
+/**
+ * HANDOVER-15 §2 — fonts, with two of its instructions deliberately NOT
+ * followed. Both were checked before being rejected.
+ *
+ * ⚠️ "Delete Inter entirely — it is used nowhere." It is used in 17 places.
+ * The claim is true of the CSS variable `--font-inter`, which appears only
+ * in the declaration below, but the Tailwind utility `font-inter` (mapped to
+ * it in globals.css) is on Hero, Navbar, SkinAssessment and
+ * WhatYouGetSection — the entire above-the-fold homepage. Deleting it would
+ * silently drop the hero to a fallback face.
+ *
+ * ⚠️ "Geist Mono is studio pages only." It is also on /credentials (the HEC
+ * reference chip), /about (CredentialsCard) and the funnel's PaymentDetails
+ * — account number and IBAN, where a monospace face is doing real work.
+ * Moving it into the studio layout would break all three.
+ *
+ * What genuinely helps, and is applied:
+ * • `display: "swap"` on all four. Text paints immediately in a fallback
+ *   instead of staying invisible while the face downloads — the single
+ *   biggest perceived-speed win available here, and it costs nothing.
+ * • `preload: false` on Geist Mono. It stays available everywhere it is
+ *   used, but stops emitting a <link rel=preload> on every page in the
+ *   layout. A browser only downloads a font when something rendered
+ *   actually needs it, so the funnel and marketing pages no longer fetch a
+ *   face they never show. That is §2's stated intent, without its breakage.
+ */
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: false,
 });
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
   style: ["normal", "italic"],
+  display: "swap",
 });
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
