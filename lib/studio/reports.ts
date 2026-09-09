@@ -79,3 +79,26 @@ export async function getCustomerReport(leadId: string, reportId: string) {
     createdAt: data.created_at,
   } satisfies StudioReport;
 }
+
+/**
+ * How many reports this practitioner has written, across all clients.
+ *
+ * HANDOVER-16 Part 6 uses it for one thing: the guidelines panel opens by
+ * default until five reports have been sent. A head-only count, so it costs
+ * nothing to run on every customer page.
+ */
+export async function countReportsByAuthor(userId: string) {
+  const supabase = await createServerSupabaseClient();
+  const { count, error } = await supabase
+    .from("studio_reports")
+    .select("id", { count: "exact", head: true })
+    .eq("created_by", userId);
+
+  if (error) {
+    console.error("[countReportsByAuthor]", error.message);
+    // Zero means "show the guidelines" — the safe direction to fail in.
+    return 0;
+  }
+
+  return count ?? 0;
+}

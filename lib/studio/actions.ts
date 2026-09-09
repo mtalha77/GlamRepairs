@@ -28,6 +28,12 @@ import {
   reportFileName,
 } from "@/lib/studio/report";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
+import { visiblePhotoCount } from "@/lib/studio/customerTypes";
+import {
+  describeFailures,
+  evaluateReport,
+  failedChecks,
+} from "@/lib/studio/reportQuality";
 import { buildSkinReportPdf } from "@/lib/studio/reportPdf";
 
 function getAppUrl() {
@@ -685,6 +691,24 @@ export async function sendCustomerReportAction(formData: FormData) {
   const content = parseReportContent(formData);
   if (!content) {
     redirect(`/studio/customers/${leadId}?error=report&message=${encodeURIComponent("Fill in all required report fields.")}`);
+  }
+
+  /**
+   * HANDOVER-16 Part 6 — "Block sending until every box passes."
+   *
+   * Enforced here, not only in the editor. The checklist in CreateReportForm
+   * disables the button; this refuses the request. Same `evaluateReport`, so
+   * the two can never disagree about what passes.
+   */
+  const checks = evaluateReport(content, {
+    clientFullName: customer.fullName,
+    photoCount: visiblePhotoCount(customer),
+    photosOpened: asString(formData, "photosOpened") === "1",
+  });
+  if (failedChecks(checks).length > 0) {
+    redirect(
+      `/studio/customers/${leadId}?error=report&message=${encodeURIComponent(describeFailures(checks))}`,
+    );
   }
 
   const patient = buildReportPatient(customer);
