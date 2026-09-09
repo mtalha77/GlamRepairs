@@ -21,6 +21,7 @@ import TrustPrivacySection from "@/components/home/TrustPrivacySection";
 import WhatWeDoSection from "@/components/home/WhatWeDoSection";
 import WhatYouGetSection from "@/components/home/WhatYouGetSection";
 import PricingSection from "@/components/pricing/PricingSection";
+import TestimonialsSection from "@/components/reviews/TestimonialsSection";
 
 export const metadata: Metadata = {
   // No `title` here on purpose — the layout's `default` already renders
@@ -46,6 +47,10 @@ export default function Home() {
       />
       <TrustPrivacySection />
       <WhatYouGetSection />
+      {/* HANDOVER-12 §5 — a trust beat directly after the value proposition
+          and before the questions, which is where a reader decides whether
+          to believe what they have just been told. */}
+      <TestimonialsSection />
       <FaqSection />
       {/* HOTFIX-10 §1a — sits above the footer CTA so the blog finally has
           an internal route in from the highest-authority page on the site. */}
