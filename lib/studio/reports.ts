@@ -10,6 +10,15 @@ export type StudioReport = {
   nightRoutine: string;
   avoidItems: string;
   extraNotes: string | null;
+  /**
+   * HANDOVER-16 Part 2 a/b/d. Null on every report sent before these
+   * existed — the PDF omits the section rather than inventing one, so an
+   * old report still downloads exactly as it was sent.
+   */
+  startHere: string | null;
+  timeline: string | null;
+  goodSigns: string | null;
+  warningSigns: string | null;
   sentAt: string | null;
   createdAt: string;
 };
@@ -19,7 +28,7 @@ export async function listCustomerReports(leadId: string) {
   const { data, error } = await supabase
     .from("studio_reports")
     .select(
-      "id, lead_id, created_by, author_name, noticed, morning_routine, night_routine, avoid_items, extra_notes, sent_at, created_at",
+      "id, lead_id, created_by, author_name, noticed, morning_routine, night_routine, avoid_items, extra_notes, start_here, timeline, good_signs, warning_signs, sent_at, created_at",
     )
     .eq("lead_id", leadId)
     .order("created_at", { ascending: false });
@@ -41,6 +50,10 @@ export async function listCustomerReports(leadId: string) {
         nightRoutine: row.night_routine,
         avoidItems: row.avoid_items,
         extraNotes: row.extra_notes,
+        startHere: row.start_here,
+        timeline: row.timeline,
+        goodSigns: row.good_signs,
+        warningSigns: row.warning_signs,
         sentAt: row.sent_at,
         createdAt: row.created_at,
       }) satisfies StudioReport,
@@ -52,7 +65,7 @@ export async function getCustomerReport(leadId: string, reportId: string) {
   const { data, error } = await supabase
     .from("studio_reports")
     .select(
-      "id, lead_id, created_by, author_name, noticed, morning_routine, night_routine, avoid_items, extra_notes, sent_at, created_at",
+      "id, lead_id, created_by, author_name, noticed, morning_routine, night_routine, avoid_items, extra_notes, start_here, timeline, good_signs, warning_signs, sent_at, created_at",
     )
     .eq("lead_id", leadId)
     .eq("id", reportId)
@@ -75,6 +88,10 @@ export async function getCustomerReport(leadId: string, reportId: string) {
     nightRoutine: data.night_routine,
     avoidItems: data.avoid_items,
     extraNotes: data.extra_notes,
+    startHere: data.start_here,
+    timeline: data.timeline,
+    goodSigns: data.good_signs,
+    warningSigns: data.warning_signs,
     sentAt: data.sent_at,
     createdAt: data.created_at,
   } satisfies StudioReport;

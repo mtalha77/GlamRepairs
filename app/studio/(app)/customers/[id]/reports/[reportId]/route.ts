@@ -33,6 +33,13 @@ export async function GET(_request: Request, { params }: ReportPdfRouteProps) {
       nightRoutine: report.nightRoutine,
       avoidItems: report.avoidItems,
       extraNotes: report.extraNotes ?? "",
+      // Null on reports predating Part 2 — the PDF omits those sections
+      // rather than substituting today's defaults, so a re-download matches
+      // what the client actually received.
+      startHere: report.startHere ?? "",
+      timeline: report.timeline ?? "",
+      goodSigns: report.goodSigns ?? "",
+      warningSigns: report.warningSigns ?? "",
       patient: {
         ...buildReportPatient(customer),
         reportDate: new Date(report.createdAt).toLocaleDateString("en-GB"),

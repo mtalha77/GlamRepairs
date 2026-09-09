@@ -8,6 +8,16 @@ export type SkinReportContent = {
   nightRoutine: string;
   avoidItems: string;
   extraNotes: string;
+  /**
+   * HANDOVER-16 Part 2 a/b/d. Optional on the type because every report sent
+   * before these existed has none, and an old report must still render as it
+   * was sent. Empty means the PDF omits the section rather than printing a
+   * heading with nothing under it.
+   */
+  startHere?: string;
+  timeline?: string;
+  goodSigns?: string;
+  warningSigns?: string;
 };
 
 export type SkinReportPatient = {
@@ -70,7 +80,15 @@ export function parseReportContent(formData: FormData): SkinReportContent | null
   const nightRoutine = String(formData.get("nightRoutine") ?? "").trim();
   const avoidItems = String(formData.get("avoidItems") ?? "").trim();
   const extraNotes = String(formData.get("extraNotes") ?? "").trim();
+  const startHere = String(formData.get("startHere") ?? "").trim();
+  const timeline = String(formData.get("timeline") ?? "").trim();
+  const goodSigns = String(formData.get("goodSigns") ?? "").trim();
+  const warningSigns = String(formData.get("warningSigns") ?? "").trim();
 
+  // The four original sections stay the only hard requirement. The Part 2
+  // sections are pre-filled in the editor, so in practice they arrive
+  // populated — but a missing one must not reject a report that is otherwise
+  // complete and that a client is waiting for.
   if (!noticed || !morningRoutine || !nightRoutine || !avoidItems) {
     return null;
   }
@@ -81,6 +99,10 @@ export function parseReportContent(formData: FormData): SkinReportContent | null
     nightRoutine,
     avoidItems,
     extraNotes,
+    startHere,
+    timeline,
+    goodSigns,
+    warningSigns,
   };
 }
 

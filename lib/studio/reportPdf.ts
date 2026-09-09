@@ -3,6 +3,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import type { SkinReportPdfInput } from "@/lib/studio/report";
 import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
 import { SITE, getCredential } from "@/lib/seo/site";
+import { PHOTO_PROMPT } from "@/lib/studio/reportGuidance";
 
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
@@ -245,6 +246,93 @@ function drawParagraph(state: DrawState, text: string) {
   state.y -= 8;
 }
 
+/**
+ * HANDOVER-16 Part 2a — the start-here instruction, in a tinted box.
+ *
+ * It is one sentence competing with two full routines and a list of things
+ * to avoid, on a document people skim. Given the same body treatment as
+ * every other paragraph it is read last or not at all, which defeats the
+ * point of it existing. The box is measured and kept whole: a callout split
+ * across a page break reads as a rendering fault, not emphasis.
+ */
+function drawCallout(state: DrawState, text: string) {
+  const paddingX = 14;
+  const paddingY = 12;
+  const innerWidth = PAGE_WIDTH - MARGIN * 2 - paddingX * 2;
+  const lines = wrapText(text, state.bold, 10.5, innerWidth);
+  const boxHeight = paddingY * 2 + lines.length * 15;
+
+  ensureSpace(state, boxHeight + 8);
+
+  const boxTop = state.y + 4;
+  state.page.drawRectangle({
+    x: MARGIN,
+    y: boxTop - boxHeight,
+    width: PAGE_WIDTH - MARGIN * 2,
+    height: boxHeight,
+    color: SOFT,
+  });
+  // A left rule rather than a full border — it reads as emphasis instead of
+  // as a table cell.
+  state.page.drawRectangle({
+    x: MARGIN,
+    y: boxTop - boxHeight,
+    width: 3,
+    height: boxHeight,
+    color: PURPLE,
+  });
+
+  let lineY = boxTop - paddingY - 11;
+  for (const line of lines) {
+    if (line) {
+      drawSafeText(state.page, line, {
+        x: MARGIN + paddingX,
+        y: lineY,
+        size: 10.5,
+        font: state.bold,
+        color: PURPLE,
+      });
+    }
+    lineY -= 15;
+  }
+
+  state.y = boxTop - boxHeight - 18;
+}
+
+/**
+ * A bold lead-in followed by wrapped body text — "Good signs: less shine by
+ * midday…". Used for Part 2d, where the label is doing real work: one half
+ * is encouragement and the other is a safety instruction, and they must not
+ * read as one undifferentiated paragraph.
+ */
+function drawLabelledParagraph(state: DrawState, label: string, text: string) {
+  const maxWidth = PAGE_WIDTH - MARGIN * 2;
+  ensureSpace(state, 16);
+  drawSafeText(state.page, `${label}:`, {
+    x: MARGIN,
+    y: state.y,
+    size: 11,
+    font: state.bold,
+    color: INK,
+  });
+  state.y -= 15;
+
+  for (const line of wrapText(text, state.font, 11, maxWidth)) {
+    ensureSpace(state, 16);
+    if (line) {
+      drawSafeText(state.page, line, {
+        x: MARGIN,
+        y: state.y,
+        size: 11,
+        font: state.font,
+        color: INK,
+      });
+    }
+    state.y -= 16;
+  }
+  state.y -= 8;
+}
+
 function drawBulletList(state: DrawState, items: string[]) {
   const maxWidth = PAGE_WIDTH - MARGIN * 2 - 14;
   for (const item of items) {
@@ -471,6 +559,19 @@ export async function buildSkinReportPdf(input: SkinReportPdfInput) {
   drawSectionTitle(state, "What we noticed");
   drawParagraph(state, input.noticed);
 
+  /**
+   * HANDOVER-16 Part 2a — before the routines, deliberately.
+   *
+   * A client with no existing routine is being handed roughly seven new
+   * behaviours at once, which is how routines fail. Placing this after the
+   * two routines would make it a footnote to the thing it is meant to make
+   * survivable; placing it first reframes everything below as "later".
+   */
+  if (input.startHere?.trim()) {
+    drawSectionTitle(state, "Start here");
+    drawCallout(state, input.startHere);
+  }
+
   drawSectionTitle(state, "Morning routine");
   drawParagraph(state, input.morningRoutine);
 
@@ -483,6 +584,38 @@ export async function buildSkinReportPdf(input: SkinReportPdfInput) {
     .map((item) => item.replace(/^[-•]\s*/, "").trim())
     .filter(Boolean);
   drawBulletList(state, avoid);
+
+  /**
+   * Part 2b. Placed after the routines and the avoid list, because it is the
+   * answer to "I have done all this — now what?". The last line, telling the
+   * client to message us if nothing has changed by week 8, is the one that
+   * turns a quiet loss into a conversation.
+   */
+  if (input.timeline?.trim()) {
+    drawSectionTitle(state, "What to expect, week by week");
+    drawParagraph(state, input.timeline);
+  }
+
+  /** Part 2d — the two halves are one section; separating them would bury the safety line. */
+  if (input.goodSigns?.trim() || input.warningSigns?.trim()) {
+    drawSectionTitle(state, "How to tell it is working");
+    if (input.goodSigns?.trim()) {
+      drawLabelledParagraph(state, "Good signs", input.goodSigns);
+    }
+    if (input.warningSigns?.trim()) {
+      drawLabelledParagraph(
+        state,
+        "Stop and message us if",
+        input.warningSigns,
+      );
+    }
+  }
+
+  // Part 2e. The same sentence for every client, so it is not an editor
+  // field — and it feeds client_progress, which already exists.
+  if (input.timeline?.trim() || input.goodSigns?.trim()) {
+    drawParagraph(state, PHOTO_PROMPT);
+  }
 
   if (input.extraNotes.trim()) {
     drawSectionTitle(state, "Extra notes");

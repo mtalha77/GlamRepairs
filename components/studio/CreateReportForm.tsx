@@ -11,6 +11,12 @@ import {
   failedChecks,
   type ReportCheck,
 } from "@/lib/studio/reportQuality";
+import {
+  DEFAULT_GOOD_SIGNS,
+  DEFAULT_START_HERE,
+  DEFAULT_TIMELINE,
+  DEFAULT_WARNING_SIGNS,
+} from "@/lib/studio/reportGuidance";
 
 /**
  * HANDOVER-16 Part 6 — the qualifying checklist, in the editor.
@@ -31,6 +37,14 @@ type ReportDefaults = {
   nightRoutine: string;
   avoidItems: string;
   extraNotes: string;
+};
+
+/** The Part 2 sections, kept separate: they are pre-filled, not review-derived. */
+type GuidanceFields = {
+  startHere: string;
+  timeline: string;
+  goodSigns: string;
+  warningSigns: string;
 };
 
 type CreateReportFormProps = {
@@ -136,9 +150,24 @@ export default function CreateReportForm({
     extraNotes: defaults?.extraNotes ?? "",
   });
   const [photosOpened, setPhotosOpened] = useState(false);
+  /**
+   * Pre-filled rather than blank. A blank "Timeline" box gets skipped on a
+   * busy day and the section quietly stops shipping — the exact failure
+   * Part 2 exists to fix. Starting from real words makes tailoring a
+   * thirty-second edit instead of a writing task.
+   */
+  const [guidance, setGuidance] = useState<GuidanceFields>({
+    startHere: DEFAULT_START_HERE,
+    timeline: DEFAULT_TIMELINE,
+    goodSigns: DEFAULT_GOOD_SIGNS,
+    warningSigns: DEFAULT_WARNING_SIGNS,
+  });
 
   const update = (field: keyof ReportDefaults) => (value: string) =>
     setContent((current) => ({ ...current, [field]: value }));
+
+  const updateGuidance = (field: keyof GuidanceFields) => (value: string) =>
+    setGuidance((current) => ({ ...current, [field]: value }));
 
   const checks = evaluateReport(content, {
     clientFullName,
@@ -251,6 +280,63 @@ export default function CreateReportForm({
           className={formInputClassName}
         />
       </FormField>
+
+      <fieldset className="space-y-4 rounded-2xl border border-brand-lavender/70 bg-brand-lavender/[0.07] p-4">
+        <legend className="px-1 text-sm font-medium text-brand-ink">
+          Guidance sections
+        </legend>
+        <p className="text-xs leading-relaxed text-brand-gray">
+          Pre-filled with sensible wording. Edit them for this client — the
+          timeline for pigmentation is not the timeline for oiliness.
+        </p>
+
+        <FormField id="startHere" label="Start here">
+          <textarea
+            id="startHere"
+            name="startHere"
+            rows={3}
+            disabled={!canSend}
+            value={guidance.startHere}
+            onChange={(event) => updateGuidance("startHere")(event.target.value)}
+            className={formInputClassName}
+          />
+        </FormField>
+        <FormField id="timeline" label="What to expect, week by week">
+          <textarea
+            id="timeline"
+            name="timeline"
+            rows={5}
+            disabled={!canSend}
+            value={guidance.timeline}
+            onChange={(event) => updateGuidance("timeline")(event.target.value)}
+            className={formInputClassName}
+          />
+        </FormField>
+        <FormField id="goodSigns" label="Good signs">
+          <textarea
+            id="goodSigns"
+            name="goodSigns"
+            rows={2}
+            disabled={!canSend}
+            value={guidance.goodSigns}
+            onChange={(event) => updateGuidance("goodSigns")(event.target.value)}
+            className={formInputClassName}
+          />
+        </FormField>
+        <FormField id="warningSigns" label="Stop and message us if">
+          <textarea
+            id="warningSigns"
+            name="warningSigns"
+            rows={3}
+            disabled={!canSend}
+            value={guidance.warningSigns}
+            onChange={(event) =>
+              updateGuidance("warningSigns")(event.target.value)
+            }
+            className={formInputClassName}
+          />
+        </FormField>
+      </fieldset>
 
       {canSend ? <Checklist checks={checks} /> : null}
 
