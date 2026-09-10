@@ -287,6 +287,8 @@ export default function ConsentStep({
       selfieDataUrl: photoDataUrls[0] ?? null,
       photoDataUrls,
       answers: store.answers,
+      // HANDOVER-20 Part 2 — the trigger validates and redeems this.
+      giftCode: store.giftCode,
     });
 
     // HANDOVER-9 §1 — the bank details travel with the summary so the client

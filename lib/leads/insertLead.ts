@@ -30,6 +30,13 @@ export type FunnelProgressInput = {
    * `leads_for_practitioner` serves the redacted version.
    */
   clientNotes?: string | null;
+  /**
+   * HANDOVER-20 Part 2. Written to `gift_code_used`; the `lead_gift_redeem`
+   * trigger validates it, increments `uses_count` atomically, and on a 100%
+   * gift forces the plan and zeroes the price. An invalid code is silently
+   * dropped and grants nothing, so this is safe to write unvalidated.
+   */
+  giftCode?: string | null;
 };
 
 function restConfig() {
@@ -92,6 +99,7 @@ export async function saveFunnelProgress(input: FunnelProgressInput) {
     // on write would be unrecoverable.
     client_notes:
       input.clientNotes?.trim() || clientNotesFromAnswers(input.answers),
+    gift_code_used: input.giftCode?.trim() || null,
     status: "new",
     source: "funnel",
     payment_status: "pending",
@@ -183,6 +191,7 @@ export async function insertLead(
     // out of there (see that file) — without this the completed submission
     // would silently drop a note the progressive save had already stored.
     client_notes: clientNotesFromAnswers(input.answers),
+    gift_code_used: input.giftCode?.trim() || null,
     image_urls: input.imageUrls,
     photo_paths: input.photoPaths,
     photos_expire_at: photosExpireAt,

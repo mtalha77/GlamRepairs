@@ -22,6 +22,11 @@ export type LeadSubmitPayload = {
   /** All assessment photos as compressed JPEG/PNG data URLs. */
   photoDataUrls?: string[];
   answers?: Record<string, unknown>;
+  /**
+   * HANDOVER-20 Part 2 — a gift code claimed by this submission. Validated
+   * and redeemed by a database trigger, never trusted from the client.
+   */
+  giftCode?: string | null;
 };
 
 export type LeadSubmitSuccess = {

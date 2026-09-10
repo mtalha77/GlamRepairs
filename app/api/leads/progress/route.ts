@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { isFunnelPlanId } from "@/lib/funnel/plans";
 import { saveFunnelProgress } from "@/lib/leads/insertLead";
 import { CLIENT_NOTES_MAX_LENGTH } from "@/lib/funnel/clientNotes";
+import { normaliseGiftCode } from "@/lib/gifts/giftCodes";
 import { getRequestPricingRegion } from "@/lib/pricing/geo";
 import { formatRegionPrice } from "@/lib/pricing/regions";
 import { PLAN_OPTIONS } from "@/lib/studio/constants";
@@ -16,6 +17,7 @@ type ProgressBody = {
   answers?: Record<string, unknown>;
   funnelStep?: number;
   clientNotes?: string | null;
+  giftCode?: string | null;
 };
 
 export async function POST(request: Request) {
@@ -61,6 +63,10 @@ export async function POST(request: Request) {
     // and 600 characters in the UI, but the endpoint is public, so the
     // limit has to hold for a request that never went through the form.
     clientNotes: body.clientNotes?.slice(0, CLIENT_NOTES_MAX_LENGTH) ?? null,
+    // Normalised but not validated here. The database trigger is the only
+    // thing that decides whether a code grants anything, so a forged value
+    // in this payload buys nothing.
+    giftCode: body.giftCode ? normaliseGiftCode(body.giftCode) : null,
   });
 
   return NextResponse.json({ ok: true, leadId });

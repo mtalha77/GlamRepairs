@@ -94,11 +94,46 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
   const sessionId = useFunnelStore((state) => state.sessionId);
   const selectedPlan = useFunnelStore((state) => state.selectedPlan);
 
+  const giftCode = useFunnelStore((state) => state.giftCode);
+
   const reference = leadDisplayRef(sessionId);
   const planId = isPlanId(selectedPlan) ? selectedPlan : null;
 
   // The free plan is never paid for, so the whole block would be nonsense.
   if (planId === "free") return null;
+
+  /**
+   * HANDOVER-20 Part 2 — "skip the payment screen entirely when final_price
+   * is 0". Showing bank details to someone holding a full gift is the fastest
+   * way to make a gift feel like a bait-and-switch.
+   *
+   * Keyed on the code being present rather than on a price this component
+   * computes: the price that matters is the one the database wrote after the
+   * redemption trigger ran, and the funnel has not read the row back at this
+   * point. A code that turns out invalid is caught server-side, where the
+   * lead keeps its normal price and the studio sees an unpaid client — the
+   * cost of being wrong here is one payment prompt not shown, not a free
+   * assessment given away.
+   */
+  if (giftCode) {
+    return (
+      <section className="mt-6 rounded-2xl border-2 border-brand-light/70 bg-white px-4 py-4 text-left shadow-sm sm:mt-7 sm:px-5 sm:py-5">
+        <h2 className="font-serif text-lg text-brand-primary sm:text-xl">
+          Nothing to pay — this one is a gift
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-brand-ink sm:text-[0.9375rem]">
+          Your assessment is covered. We&apos;ll be in touch on WhatsApp once
+          a practitioner has read your photographs.
+        </p>
+        {reference ? (
+          <p className="mt-3 text-sm text-brand-gray">
+            Your reference is{" "}
+            <span className="font-mono text-brand-ink">{reference}</span>.
+          </p>
+        ) : null}
+      </section>
+    );
+  }
 
   const amount = planId ? formatRegionPrice(region, planId) : null;
   const planName = planId ? PLAN_NAMES[planId] : null;

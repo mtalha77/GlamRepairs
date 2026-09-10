@@ -185,6 +185,7 @@ export default function PlanSelectionStep({
     (state) => state.selectedPlan,
   ) as PlanId | null;
   const planPreselected = useFunnelStore((state) => state.planPreselected);
+  const giftCode = useFunnelStore((state) => state.giftCode);
   const setSelectedPlan = useFunnelStore((state) => state.setSelectedPlan);
   const unlockFlowStep = useFunnelStore((state) => state.unlockFlowStep);
   const clearStepValidationAttempt = useFunnelStore(
@@ -229,6 +230,24 @@ export default function PlanSelectionStep({
           eyebrow="Plan Selection & Payment"
           title="Choose your plan"
         />
+
+        {/*
+          HANDOVER-20 Part 2 — say the assessment is covered at the moment
+          the prices appear. Someone who arrived through a gift link and then
+          reads a price list assumes the gift did not apply, and the most
+          likely next action is to close the tab.
+
+          The prices stay visible rather than being hidden: the gift covers
+          Skin Clarity, so a recipient choosing Transform is topping up and
+          needs to see what that costs.
+        */}
+        {giftCode ? (
+          <p className="mt-4 rounded-2xl border border-brand-primary/30 bg-brand-lavender/20 px-4 py-3 text-sm leading-relaxed text-brand-ink">
+            <strong className="font-medium">Your gift covers this.</strong>{" "}
+            Skin Clarity is already paid for — pick it and there is nothing to
+            pay.
+          </p>
+        ) : null}
 
         {/* HOTFIX-7 §1, trap (b) — geo set this region as the default;
             never hard-lock by it. A Pakistani student in Manchester, or

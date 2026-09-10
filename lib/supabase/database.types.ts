@@ -200,6 +200,81 @@ export type Database = {
         };
         Relationships: [];
       };
+      /**
+       * HANDOVER-20 Part 2 — gifted assessments.
+       *
+       * `uses_count` is incremented atomically by the `lead_gift_redeem`
+       * trigger, never by the app. Reading it is fine; writing it from here
+       * would race the trigger and could hand out a second free assessment.
+       */
+      gift_codes: {
+        Row: {
+          code: string;
+          kind: string;
+          issued_to_lead: string | null;
+          issued_to_person: string | null;
+          grants_plan: string;
+          discount_pct: number;
+          max_uses: number;
+          uses_count: number;
+          expires_at: string;
+          active: boolean;
+          issued_by: string | null;
+          created_at: string;
+          note: string | null;
+        };
+        Insert: {
+          code: string;
+          kind?: string;
+          issued_to_lead?: string | null;
+          issued_to_person?: string | null;
+          grants_plan?: string;
+          discount_pct?: number;
+          max_uses?: number;
+          uses_count?: number;
+          expires_at?: string;
+          active?: boolean;
+          issued_by?: string | null;
+          created_at?: string;
+          note?: string | null;
+        };
+        Update: {
+          kind?: string;
+          grants_plan?: string;
+          discount_pct?: number;
+          max_uses?: number;
+          expires_at?: string;
+          active?: boolean;
+          note?: string | null;
+        };
+        Relationships: [];
+      };
+      pricing_settings: {
+        Row: {
+          id: string;
+          member_discount_pct: number;
+          updated_by: string | null;
+          updated_at: string;
+          gift_codes_per_month: number;
+          gift_expiry_days: number;
+        };
+        Insert: {
+          id?: string;
+          member_discount_pct?: number;
+          updated_by?: string | null;
+          updated_at?: string;
+          gift_codes_per_month?: number;
+          gift_expiry_days?: number;
+        };
+        Update: {
+          member_discount_pct?: number;
+          updated_by?: string | null;
+          updated_at?: string;
+          gift_codes_per_month?: number;
+          gift_expiry_days?: number;
+        };
+        Relationships: [];
+      };
       leads: {
         Row: {
           id: string;
@@ -643,6 +718,22 @@ export type Database = {
       };
     };
     Functions: {
+      /**
+       * HANDOVER-20 Part 2. The same function the redemption trigger
+       * consults, so a message shown while typing cannot disagree with what
+       * happens on submit. Verified against production: returns not_found,
+       * inactive, expired, already_used and self_redemption, and normalises
+       * case and surrounding whitespace itself.
+       */
+      check_gift_code: {
+        Args: { p_code: string; p_person_key: string };
+        Returns: {
+          valid: boolean;
+          reason: string;
+          grants_plan: string | null;
+          discount_pct: number | null;
+        }[];
+      };
       resolve_pricing_region: {
         Args: { p_country: string | null };
         Returns: {
