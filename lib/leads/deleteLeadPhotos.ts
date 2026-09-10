@@ -119,7 +119,22 @@ export async function deletePhotosForLead(options: {
       response = await fetch(`${base}/storage/v1/object/${getPhotosBucket()}`, {
         method: "DELETE",
         headers: serviceHeaders(key),
-        body: JSON.stringify(paths),
+        /**
+         * `{ prefixes: [...] }`, NOT a bare array.
+         *
+         * This is what the Storage API's delete-objects endpoint expects —
+         * confirmed against @supabase/storage-js, whose `.remove(paths)`
+         * posts `{ prefixes: paths }`. Sending the array on its own returns
+         * 400 and deletes nothing.
+         *
+         * This was the real reason the nightly sweep never removed a single
+         * photograph: the bare-array body shipped in the original
+         * cleanupExpiredPhotos, so every run failed at exactly this call,
+         * logged, and moved on. `photos_deleted_at` was null on all 36 rows
+         * not because the job was not running but because it could not
+         * succeed. Do not "simplify" this back to JSON.stringify(paths).
+         */
+        body: JSON.stringify({ prefixes: paths }),
       });
     } catch (error) {
       return {
@@ -141,7 +156,11 @@ export async function deletePhotosForLead(options: {
         ok: false,
         leadId,
         stage: "storage",
-        message: `Storage delete failed (${response.status}). The photographs are still there, so the record has not been changed.`,
+        // The status alone is not diagnosable — a 400 here took a
+        // production run to trace. Carry a slice of the body through.
+        message:
+          `Storage delete failed (${response.status}${detail ? `: ${detail.slice(0, 160)}` : ""}). ` +
+          "The photographs are still there, so the record has not been changed.",
       };
     }
   }
