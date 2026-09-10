@@ -57,6 +57,38 @@ export default function CustomerTable({
                     a safety flag turns up ("it burns", "it's spreading"), and
                     a note nobody knows exists is a note nobody reads.
                   */}
+                  {/*
+                    HANDOVER-20 Part 1 — a returning client reads as an
+                    opportunity, an accidental resubmit as a problem. Same
+                    badge slot, different word and colour, so the list does
+                    not flatten the two into "duplicate".
+                  */}
+                  {(customer.submissionNo ?? 1) > 1 ? (
+                    <span
+                      title={
+                        customer.duplicateReason === "returning_client"
+                          ? "This person has been assessed before"
+                          : `Submission ${customer.submissionNo}`
+                      }
+                      className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[0.6875rem] ${
+                        customer.duplicateReason === "returning_client"
+                          ? "bg-brand-primary/15 text-brand-primary"
+                          : "bg-brand-error/10 text-brand-error"
+                      }`}
+                    >
+                      {customer.duplicateReason === "returning_client"
+                        ? "Returning"
+                        : `#${customer.submissionNo}`}
+                    </span>
+                  ) : null}
+                  {customer.giftCodeUsed ? (
+                    <span
+                      title={`Arrived via gift code ${customer.giftCodeUsed}`}
+                      className="ml-2 inline-flex items-center rounded-full bg-brand-lavender/40 px-2 py-0.5 text-[0.6875rem] text-brand-primary"
+                    >
+                      Gift
+                    </span>
+                  ) : null}
                   {customer.clientNotes?.trim() ? (
                     <span
                       title="This client left a note"

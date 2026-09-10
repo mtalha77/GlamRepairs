@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+
+import GiftCodeCapture from "@/components/onboarding/GiftCodeCapture";
 
 /**
  * Keeps funnel steps out of the search index.
@@ -43,5 +46,23 @@ export default function OnboardingStepLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      {/*
+        HANDOVER-20 Part 2 — captures `?gift=CODE` into the funnel store on
+        the first step the visitor lands on. In the layout rather than a step
+        page because the code arrives on step 1 and the URL is left behind on
+        the next navigation; capturing it once here means no step has to know
+        about gifts.
+
+        Suspense: useSearchParams opts a client component into CSR bailout,
+        and without a boundary that would deopt every funnel step to
+        client-side rendering.
+      */}
+      <Suspense fallback={null}>
+        <GiftCodeCapture />
+      </Suspense>
+      {children}
+    </>
+  );
 }

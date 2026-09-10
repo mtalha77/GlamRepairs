@@ -34,6 +34,7 @@ import {
   readPhotoPaths,
 } from "@/lib/leads/deleteLeadPhotos";
 import { visiblePhotoCount } from "@/lib/studio/customerTypes";
+import { issueGiftCodeForLead } from "@/lib/gifts/issueGiftCode";
 import {
   describeFailures,
   evaluateReport,
@@ -734,11 +735,36 @@ export async function sendCustomerReportAction(formData: FormData) {
   }
   const fileName = reportFileName(patient.clientName);
 
+  /**
+   * HANDOVER-20 Part 2 — issue the gift before the email, so the code can
+   * travel in it. This is the moment the client is happiest with the
+   * service, which is when a gift is most likely to be passed on.
+   *
+   * Best-effort: a refusal (programme off, unpaid, cap reached, already has
+   * one) must never turn a successful report into an error. If the email
+   * then fails, the code still exists and shows on the lead page as
+   * outstanding, so it can go out with the retry rather than being lost.
+   */
+  let issuedGiftCode: string | null = null;
+  let issuedGiftExpiry: string | null = null;
+  const giftResult = await issueGiftCodeForLead({
+    leadId,
+    issuedByUserId: user.id,
+  });
+  if (giftResult.ok) {
+    issuedGiftCode = giftResult.code;
+    issuedGiftExpiry = giftResult.expiresAt;
+  } else if (giftResult.refusal === "error") {
+    console.error("[sendCustomerReportAction] gift", giftResult.message);
+  }
+
   const emailResult = await sendStudioReportEmail({
     toEmail,
     customerName: customer.fullName,
     pdf,
     fileName,
+    giftCode: issuedGiftCode,
+    giftExpiresAt: issuedGiftExpiry,
   });
 
   if (!emailResult.ok) {
@@ -796,7 +822,9 @@ export async function sendCustomerReportAction(formData: FormData) {
     .in("status", ["new", "reviewing"]);
 
   revalidatePath(`/studio/customers/${leadId}`);
-  redirect(`/studio/customers/${leadId}?reported=1`);
+  redirect(
+    `/studio/customers/${leadId}?reported=1${issuedGiftCode ? `&gift=issued&code=${encodeURIComponent(issuedGiftCode)}` : ""}`,
+  );
 }
 
 export async function submitCustomerReviewAction(formData: FormData) {
@@ -1350,4 +1378,119 @@ export async function anonymiseLeadAction(formData: FormData) {
   revalidatePath(back);
   revalidatePath("/studio/customers");
   redirect(`${back}?anonymised=1`);
+}
+
+/* ── HANDOVER-20 Part 1 — the duplicate review queue ─────────────────────
+ *
+ * Two actions only: keep both, or dismiss one. Nothing merges, because
+ * merging is destructive and the 1-to-30-day case is genuinely ambiguous —
+ * someone may legitimately want a second opinion two weeks later.
+ *
+ * "Dismiss" is the HANDOVER-18 archive, not a delete. A wrongly dismissed
+ * duplicate is restored from the archive screen with nothing lost.
+ */
+
+/** Keep both: clear the classification so it stops appearing in the queue. */
+export async function keepBothSubmissionsAction(formData: FormData) {
+  const { member } = await requireStudioMember();
+  if (!member) {
+    redirect("/studio/login");
+  }
+
+  const leadId = asString(formData, "leadId");
+  if (!leadId) {
+    redirect("/studio/admin/duplicates");
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      // Both fields, not just the reason: leaving `duplicate_of` set would
+      // keep the row hidden from the customers list, which is the opposite
+      // of what "keep both" means.
+      duplicate_reason: null,
+      duplicate_of: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", leadId);
+
+  if (error) {
+    console.error("[keepBothSubmissionsAction]", error.message);
+    redirect(
+      `/studio/admin/duplicates?error=review&message=${encodeURIComponent("Could not update this submission.")}`,
+    );
+  }
+
+  revalidatePath("/studio/admin/duplicates");
+  revalidatePath("/studio/customers");
+  revalidatePath(`/studio/customers/${leadId}`);
+  redirect("/studio/admin/duplicates?kept=1");
+}
+
+/** Dismiss this one: archive it, reversibly, with the reason recorded. */
+export async function dismissDuplicateAction(formData: FormData) {
+  const { user, member } = await requireStudioMember();
+  if (!user || !member) {
+    redirect("/studio/login");
+  }
+
+  const leadId = asString(formData, "leadId");
+  if (!leadId) {
+    redirect("/studio/admin/duplicates");
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: user.id,
+      deletion_reason: "duplicate submission, dismissed from review",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", leadId);
+
+  if (error) {
+    console.error("[dismissDuplicateAction]", error.message);
+    redirect(
+      `/studio/admin/duplicates?error=review&message=${encodeURIComponent("Could not dismiss this submission.")}`,
+    );
+  }
+
+  revalidatePath("/studio/admin/duplicates");
+  revalidatePath("/studio/customers");
+  redirect("/studio/admin/duplicates?dismissed=1");
+}
+
+/* ── HANDOVER-20 Part 2 — issuing a gift code from the studio ───────────── */
+
+export async function issueGiftCodeAction(formData: FormData) {
+  const leadId = asString(formData, "leadId");
+  const back = leadId ? `/studio/customers/${leadId}` : "/studio/customers";
+  const { user, member } = await requireStudioMember();
+  if (!user || !member) {
+    redirect("/studio/login");
+  }
+  if (!member.isSuperAdmin) {
+    redirect(
+      `${back}?error=gift&message=${encodeURIComponent("Only a super admin can issue gift codes.")}`,
+    );
+  }
+  if (!leadId) {
+    redirect("/studio/customers");
+  }
+
+  const result = await issueGiftCodeForLead({
+    leadId,
+    issuedByUserId: user.id,
+  });
+
+  if (!result.ok) {
+    redirect(`${back}?error=gift&message=${encodeURIComponent(result.message)}`);
+  }
+
+  revalidatePath(back);
+  revalidatePath("/studio/admin/gifts");
+  redirect(`${back}?gift=issued&code=${encodeURIComponent(result.code)}`);
 }

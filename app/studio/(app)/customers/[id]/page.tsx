@@ -3,12 +3,15 @@ import { notFound } from "next/navigation";
 import AssignCustomerForm from "@/components/studio/AssignCustomerForm";
 import AnswerList from "@/components/studio/AnswerList";
 import ClientNotesCard from "@/components/studio/ClientNotesCard";
+import PreviousReportPanel from "@/components/studio/PreviousReportPanel";
+import RepeatSubmissionBanner from "@/components/studio/RepeatSubmissionBanner";
 import ComposeEmailForm from "@/components/studio/ComposeEmailForm";
 import CreateReportForm from "@/components/studio/CreateReportForm";
 import ReportGuidelines from "@/components/studio/ReportGuidelines";
 import CustomerStatusForm from "@/components/studio/CustomerStatusForm";
 import EmailHistory from "@/components/studio/EmailHistory";
 import DeletePhotosButton from "@/components/studio/DeletePhotosButton";
+import GiftCodePanel from "@/components/studio/GiftCodePanel";
 import LeadDangerZone from "@/components/studio/LeadDangerZone";
 import PhotoGallery from "@/components/studio/PhotoGallery";
 import ReportHistory from "@/components/studio/ReportHistory";
@@ -17,6 +20,11 @@ import ReviewList from "@/components/studio/ReviewList";
 import VerifyPaymentButton from "@/components/studio/VerifyPaymentButton";
 import { formatBookingWhatsAppMessage } from "@/lib/funnel/formatBookingSummary";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
+import { isGiftProgrammeEnabled } from "@/lib/gifts/giftCodes";
+import {
+  getGiftCapacity,
+  getOutstandingGiftCode,
+} from "@/lib/gifts/issueGiftCode";
 import { formatCustomerAnswers } from "@/lib/studio/answers";
 import { CUSTOMER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/studio/constants";
 import {
@@ -28,8 +36,13 @@ import { listCustomerEmails } from "@/lib/studio/emails";
 import { formatStudioDateTime } from "@/lib/studio/formatDate";
 import { listStudioMembers, requireStudioMember } from "@/lib/studio/member";
 import {
+  getPersonHistory,
+  listSiblingSubmissions,
+} from "@/lib/studio/duplicates";
+import {
   countReportsByAuthor,
   listCustomerReports,
+  listPreviousReportsForPerson,
 } from "@/lib/studio/reports";
 import {
   listCustomerReviews,
@@ -48,6 +61,8 @@ type CustomerDetailPageProps = {
     photos?: string;
     count?: string;
     anonymised?: string;
+    gift?: string;
+    code?: string;
     sender?: string;
     error?: string;
     message?: string;
@@ -81,6 +96,22 @@ export default async function CustomerDetailPage({
       // Drives whether the writing guidelines start expanded.
       user ? countReportsByAuthor(user.id) : Promise.resolve(0),
     ]);
+  // HANDOVER-20 Part 1 — both are no-ops when the lead has no person_key,
+  // so this costs nothing for a first-time submission.
+  const [
+    personHistory,
+    siblingSubmissions,
+    previousReports,
+    outstandingGiftCode,
+    giftCapacity,
+  ] = await Promise.all([
+    getPersonHistory(customer.personKey),
+    listSiblingSubmissions(customer.personKey, customer.id),
+    listPreviousReportsForPerson(customer.personKey, customer.id),
+    getOutstandingGiftCode(customer.personKey),
+    getGiftCapacity(),
+  ]);
+
   // Only fetched for non-super-admins: the redacted copy comes from the
   // view, and reading it for a super admin would just discard work.
   const practitionerNotes = member.isSuperAdmin
@@ -176,6 +207,16 @@ export default async function CustomerDetailPage({
           {query.message || "Could not save the photo review."}
         </p>
       ) : null}
+      {query.gift === "issued" ? (
+        <p className="rounded-xl border border-brand-primary/30 bg-brand-lavender/20 px-4 py-3 text-sm text-brand-ink">
+          Gift code issued: <span className="font-mono">{query.code}</span>
+        </p>
+      ) : null}
+      {query.error === "gift" ? (
+        <p className="rounded-xl bg-brand-error/10 px-4 py-3 text-sm text-brand-error-strong">
+          {query.message || "Could not issue a gift code."}
+        </p>
+      ) : null}
       {query.anonymised ? (
         <p className="rounded-xl border border-brand-primary/30 bg-brand-lavender/20 px-4 py-3 text-sm text-brand-ink">
           Personal data erased and photographs deleted. The record is kept for
@@ -203,6 +244,18 @@ export default async function CustomerDetailPage({
           Could not save customer details.
         </p>
       ) : null}
+
+      {/*
+        Above everything, including the client's note: whether this person
+        has been here before changes how you read the rest of the page.
+      */}
+      <RepeatSubmissionBanner
+        submissionNo={customer.submissionNo}
+        duplicateReason={customer.duplicateReason}
+        duplicateOf={customer.duplicateOf}
+        history={personHistory}
+        siblings={siblingSubmissions}
+      />
 
       {/*
         Above the photographs and the questionnaire, deliberately. Super
@@ -312,6 +365,11 @@ export default async function CustomerDetailPage({
           </h2>
           {canSendReport ? (
             <div className="space-y-5">
+              {/*
+                Above the guidelines and the editor. The moment this is
+                useful is the moment before writing.
+              */}
+              <PreviousReportPanel reports={previousReports} />
               <ReportGuidelines reportsWritten={reportsWritten} />
               <CreateReportForm
                 key={reviews[0]?.id ?? "no-review"}
@@ -355,6 +413,16 @@ export default async function CustomerDetailPage({
           <EmailHistory emails={emails} />
         </div>
       </section>
+
+      {member.isSuperAdmin ? (
+        <GiftCodePanel
+          leadId={customer.id}
+          enabled={isGiftProgrammeEnabled()}
+          paymentVerified={customer.paymentStatus === "verified"}
+          existingCode={outstandingGiftCode}
+          remainingThisMonth={giftCapacity.remaining}
+        />
+      ) : null}
 
       {/*
         Last on the page, deliberately. These are the actions you should

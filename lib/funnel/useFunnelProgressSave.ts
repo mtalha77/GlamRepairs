@@ -12,6 +12,8 @@ function payloadFromStore() {
     email: state.email,
     phone: state.phone,
     selectedPlan: state.selectedPlan,
+    // HANDOVER-20 Part 2 — carried so the gift survives abandonment.
+    giftCode: state.giftCode,
     answers: state.answers,
     // HANDOVER-18 §2 — the client's free-text note from the photo step.
     // Kept in `answers` like every other step value, but lifted to its own
@@ -68,6 +70,7 @@ export function useFunnelProgressSave() {
         state.fullName,
         state.phone,
         state.selectedPlan ?? "",
+        state.giftCode ?? "",
         String(state.onboardingUnlockedStep),
         Object.keys(state.answers).sort().join(","),
         // The key is otherwise a list of answer *names*, so editing the note

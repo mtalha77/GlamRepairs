@@ -200,6 +200,81 @@ export type Database = {
         };
         Relationships: [];
       };
+      /**
+       * HANDOVER-20 Part 2 — gifted assessments.
+       *
+       * `uses_count` is incremented atomically by the `lead_gift_redeem`
+       * trigger, never by the app. Reading it is fine; writing it from here
+       * would race the trigger and could hand out a second free assessment.
+       */
+      gift_codes: {
+        Row: {
+          code: string;
+          kind: string;
+          issued_to_lead: string | null;
+          issued_to_person: string | null;
+          grants_plan: string;
+          discount_pct: number;
+          max_uses: number;
+          uses_count: number;
+          expires_at: string;
+          active: boolean;
+          issued_by: string | null;
+          created_at: string;
+          note: string | null;
+        };
+        Insert: {
+          code: string;
+          kind?: string;
+          issued_to_lead?: string | null;
+          issued_to_person?: string | null;
+          grants_plan?: string;
+          discount_pct?: number;
+          max_uses?: number;
+          uses_count?: number;
+          expires_at?: string;
+          active?: boolean;
+          issued_by?: string | null;
+          created_at?: string;
+          note?: string | null;
+        };
+        Update: {
+          kind?: string;
+          grants_plan?: string;
+          discount_pct?: number;
+          max_uses?: number;
+          expires_at?: string;
+          active?: boolean;
+          note?: string | null;
+        };
+        Relationships: [];
+      };
+      pricing_settings: {
+        Row: {
+          id: string;
+          member_discount_pct: number;
+          updated_by: string | null;
+          updated_at: string;
+          gift_codes_per_month: number;
+          gift_expiry_days: number;
+        };
+        Insert: {
+          id?: string;
+          member_discount_pct?: number;
+          updated_by?: string | null;
+          updated_at?: string;
+          gift_codes_per_month?: number;
+          gift_expiry_days?: number;
+        };
+        Update: {
+          member_discount_pct?: number;
+          updated_by?: string | null;
+          updated_at?: string;
+          gift_codes_per_month?: number;
+          gift_expiry_days?: number;
+        };
+        Relationships: [];
+      };
       leads: {
         Row: {
           id: string;
@@ -227,6 +302,17 @@ export type Database = {
           // step. RAW here. `leads_for_practitioner` serves the redacted
           // version; anything reading this column shows contact details.
           client_notes: string | null;
+          // HANDOVER-20 Part 1 & 2 — all written by database triggers
+          // (lead_identity_resolve, lead_supersede_previous,
+          // lead_gift_redeem). The app reads these; it must not set them.
+          person_key: string | null;
+          submission_no: number | null;
+          duplicate_reason: string | null;
+          duplicate_of: string | null;
+          referred_by_person: string | null;
+          // The one exception: the app WRITES gift_code_used on insert, and
+          // the trigger validates and redeems it (or silently drops it).
+          gift_code_used: string | null;
           // HANDOVER-14's phone capture. The column shipped and is written by
           // lib/leads/insertLead.ts, but it was never added here — which is
           // why writing it typed as `never`. `phone_e164` is derived by a
@@ -278,6 +364,12 @@ export type Database = {
           deleted_by?: string | null;
           deletion_reason?: string | null;
           client_notes?: string | null;
+          person_key?: string | null;
+          submission_no?: number | null;
+          duplicate_reason?: string | null;
+          duplicate_of?: string | null;
+          referred_by_person?: string | null;
+          gift_code_used?: string | null;
           phone?: string | null;
           last_seen_at?: string | null;
           abandoned_at?: string | null;
@@ -316,6 +408,12 @@ export type Database = {
           deleted_by?: string | null;
           deletion_reason?: string | null;
           client_notes?: string | null;
+          person_key?: string | null;
+          submission_no?: number | null;
+          duplicate_reason?: string | null;
+          duplicate_of?: string | null;
+          referred_by_person?: string | null;
+          gift_code_used?: string | null;
           phone?: string | null;
           last_seen_at?: string | null;
           abandoned_at?: string | null;
@@ -572,6 +670,29 @@ export type Database = {
        * `photo_state` is computed in the view so the studio screen and any
        * SQL run by hand cannot disagree about what "overdue" means.
        */
+      /**
+       * HANDOVER-20 Part 1 — one row per person, aggregated by `person_key`.
+       *
+       * ⚠️ Filters `is_test = false`, so a seeded test lead has no history
+       * even when it carries a person_key. Correct for production; worth
+       * knowing before concluding the duplicate banner is broken.
+       */
+      studio_person_history: {
+        Row: {
+          person_key: string;
+          submissions: number;
+          completed: number;
+          paid: number;
+          first_seen: string;
+          last_seen: string;
+          latest_name: string | null;
+          latest_phone: string | null;
+          latest_email: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       studio_photo_status: {
         Row: {
           lead_id: string;
@@ -597,6 +718,22 @@ export type Database = {
       };
     };
     Functions: {
+      /**
+       * HANDOVER-20 Part 2. The same function the redemption trigger
+       * consults, so a message shown while typing cannot disagree with what
+       * happens on submit. Verified against production: returns not_found,
+       * inactive, expired, already_used and self_redemption, and normalises
+       * case and surrounding whitespace itself.
+       */
+      check_gift_code: {
+        Args: { p_code: string; p_person_key: string };
+        Returns: {
+          valid: boolean;
+          reason: string;
+          grants_plan: string | null;
+          discount_pct: number | null;
+        }[];
+      };
       resolve_pricing_region: {
         Args: { p_country: string | null };
         Returns: {

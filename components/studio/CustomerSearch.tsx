@@ -20,6 +20,7 @@ type CustomerSearchProps = {
   initialAssigned?: string;
   initialFunnel?: string;
   initialShowTest?: boolean;
+  initialShowDuplicates?: boolean;
   members?: TeamOption[];
   showAssignmentFilter?: boolean;
 };
@@ -33,6 +34,7 @@ export default function CustomerSearch({
   initialAssigned = "",
   initialFunnel = "",
   initialShowTest = false,
+  initialShowDuplicates = false,
   members = [],
   showAssignmentFilter = false,
 }: CustomerSearchProps) {
@@ -44,21 +46,43 @@ export default function CustomerSearch({
   const [funnel, setFunnel] = useState(initialFunnel);
   const [showTest, setShowTest] = useState(initialShowTest);
 
+  const [showDuplicates, setShowDuplicates] = useState(initialShowDuplicates);
+
+  /**
+   * Takes an override rather than the full positional list. With six
+   * filters, every call site had to restate all of them in the right order
+   * to change one — adding a seventh made that a question of counting
+   * commas. Each caller now names only what it is changing.
+   */
   function applyFilters(
-    nextQuery: string,
-    nextPlan: string,
-    nextPayment: string,
-    nextAssigned: string,
-    nextFunnel: string,
-    nextShowTest: boolean,
+    overrides: Partial<{
+      query: string;
+      plan: string;
+      payment: string;
+      assigned: string;
+      funnel: string;
+      showTest: boolean;
+      showDuplicates: boolean;
+    }> = {},
   ) {
+    const next = {
+      query,
+      plan,
+      payment,
+      assigned,
+      funnel,
+      showTest,
+      showDuplicates,
+      ...overrides,
+    };
     const params = new URLSearchParams();
-    if (nextQuery.trim()) params.set("q", nextQuery.trim());
-    if (nextPlan) params.set("plan", nextPlan);
-    if (nextPayment) params.set("payment", nextPayment);
-    if (nextAssigned) params.set("assigned", nextAssigned);
-    if (nextFunnel) params.set("funnel", nextFunnel);
-    if (nextShowTest) params.set("showTest", "1");
+    if (next.query.trim()) params.set("q", next.query.trim());
+    if (next.plan) params.set("plan", next.plan);
+    if (next.payment) params.set("payment", next.payment);
+    if (next.assigned) params.set("assigned", next.assigned);
+    if (next.funnel) params.set("funnel", next.funnel);
+    if (next.showTest) params.set("showTest", "1");
+    if (next.showDuplicates) params.set("showDuplicates", "1");
     router.push(
       params.size > 0
         ? `/studio/customers?${params.toString()}`
@@ -73,7 +97,7 @@ export default function CustomerSearch({
       className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center"
       onSubmit={(event) => {
         event.preventDefault();
-        applyFilters(query, plan, payment, assigned, funnel, showTest);
+        applyFilters();
       }}
     >
       <TextInput
@@ -91,7 +115,7 @@ export default function CustomerSearch({
         onChange={(event) => {
           const nextPlan = event.target.value;
           setPlan(nextPlan);
-          applyFilters(query, nextPlan, payment, assigned, funnel, showTest);
+          applyFilters({ plan: nextPlan });
         }}
       >
         <option value="">All plans</option>
@@ -109,7 +133,7 @@ export default function CustomerSearch({
         onChange={(event) => {
           const nextPayment = event.target.value;
           setPayment(nextPayment);
-          applyFilters(query, plan, nextPayment, assigned, funnel, showTest);
+          applyFilters({ payment: nextPayment });
         }}
       >
         <option value="">All payments</option>
@@ -125,7 +149,7 @@ export default function CustomerSearch({
           onChange={(event) => {
             const nextAssigned = event.target.value;
             setAssigned(nextAssigned);
-            applyFilters(query, plan, payment, nextAssigned, funnel, showTest);
+            applyFilters({ assigned: nextAssigned });
           }}
         >
           <option value="">All assignments</option>
@@ -145,7 +169,7 @@ export default function CustomerSearch({
         onChange={(event) => {
           const nextFunnel = event.target.value;
           setFunnel(nextFunnel);
-          applyFilters(query, plan, payment, assigned, nextFunnel, showTest);
+          applyFilters({ funnel: nextFunnel });
         }}
       >
         <option value="">All funnels</option>
@@ -158,10 +182,27 @@ export default function CustomerSearch({
           onChange={(event) => {
             const nextShowTest = event.target.checked;
             setShowTest(nextShowTest);
-            applyFilters(query, plan, payment, assigned, funnel, nextShowTest);
+            applyFilters({ showTest: nextShowTest });
           }}
         />
         Show test entries
+      </label>
+      {/*
+        HANDOVER-20 Part 1 — off by default. A row with `duplicate_of` set is
+        an accidental resubmit; a returning client has no `duplicate_of` and
+        is never hidden by this.
+      */}
+      <label className="flex items-center gap-2 text-sm text-brand-gray">
+        <input
+          type="checkbox"
+          checked={showDuplicates}
+          onChange={(event) => {
+            const nextShowDuplicates = event.target.checked;
+            setShowDuplicates(nextShowDuplicates);
+            applyFilters({ showDuplicates: nextShowDuplicates });
+          }}
+        />
+        Show duplicates
       </label>
       <button
         type="submit"

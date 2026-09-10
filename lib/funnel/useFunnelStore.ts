@@ -21,6 +21,18 @@ type FunnelState = {
   /** Plan the user selected (free | clarity | transform), saved on pick. */
   selectedPlan: string | null;
   /**
+   * HANDOVER-20 Part 2 — a gift code carried from /gift/[code].
+   *
+   * Persisted so it survives abandonment: someone who opens a gift link,
+   * gets as far as the photo step and comes back tomorrow must not lose the
+   * gift. It is sent with every progressive save for the same reason.
+   *
+   * This is a claim, not a grant. The database trigger validates it on
+   * insert and silently drops it if invalid, so nothing here can conjure a
+   * free assessment by writing to localStorage.
+   */
+  giftCode: string | null;
+  /**
    * True when the plan was chosen on pricing before the funnel.
    * Skips the in-funnel plan selection step.
    */
@@ -51,6 +63,7 @@ type FunnelState = {
   setAnswer: (key: string, value: unknown) => void;
   setContact: (contact: { email?: string; fullName?: string; phone?: string }) => void;
   setSelectedPlan: (plan: string | null) => void;
+  setGiftCode: (code: string | null) => void;
   setPlanPreselected: (preselected: boolean) => void;
   setSelfieUrl: (url: string | null) => void;
   unlockFlowStep: (flow: FunnelFlow, step: number) => void;
@@ -76,6 +89,7 @@ export const useFunnelStore = create<FunnelState>()(
       fullName: "",
       phone: "",
       selectedPlan: null,
+      giftCode: null,
       planPreselected: false,
       selfieUrl: null,
       bookingUnlockedStep: 1,
@@ -97,6 +111,7 @@ export const useFunnelStore = create<FunnelState>()(
           phone: contact.phone ?? state.phone,
         })),
       setSelectedPlan: (plan) => set({ selectedPlan: plan }),
+      setGiftCode: (code) => set({ giftCode: code }),
       setPlanPreselected: (preselected) => set({ planPreselected: preselected }),
       setSelfieUrl: (url) => set({ selfieUrl: url }),
       unlockFlowStep: (flow, step) =>
@@ -123,6 +138,10 @@ export const useFunnelStore = create<FunnelState>()(
           fullName: "",
           phone: "",
           selectedPlan: null,
+          // Cleared on reset. A code left behind would be re-sent with the
+          // next assessment, where the trigger would reject it as already
+          // used — harmless, but it would show the wrong thing in the funnel.
+          giftCode: null,
           planPreselected: false,
           selfieUrl: null,
           bookingUnlockedStep: 1,
@@ -141,6 +160,7 @@ export const useFunnelStore = create<FunnelState>()(
         fullName: state.fullName,
         phone: state.phone,
         selectedPlan: state.selectedPlan,
+        giftCode: state.giftCode,
         planPreselected: state.planPreselected,
         selfieUrl: state.selfieUrl,
         bookingUnlockedStep: state.bookingUnlockedStep,
