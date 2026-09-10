@@ -13,6 +13,7 @@ type CustomersPageProps = {
     assigned?: string;
     funnel?: string;
     showTest?: string;
+    showDuplicates?: string;
     added?: string;
     bulk?: string;
     error?: string;
@@ -33,6 +34,7 @@ export default async function StudioCustomersPage({
       assigned: isOwner ? params.assigned : undefined,
       funnel: params.funnel,
       showTest: params.showTest === "1",
+      showDuplicates: params.showDuplicates === "1",
     }),
     isOwner ? listStudioMembers() : Promise.resolve([]),
   ]);
@@ -78,6 +80,7 @@ export default async function StudioCustomersPage({
           initialAssigned={params.assigned}
           initialFunnel={params.funnel}
           initialShowTest={params.showTest === "1"}
+          initialShowDuplicates={params.showDuplicates === "1"}
           members={members}
           showAssignmentFilter={isOwner}
         />

@@ -119,3 +119,78 @@ export async function countReportsByAuthor(userId: string) {
 
   return count ?? 0;
 }
+
+/**
+ * HANDOVER-20 Part 1 — the previous reports written for the same person.
+ *
+ * "Continuity is the whole value of a repeat assessment — 'last time we
+ * started you on niacinamide, how did that go?' is worth more than any new
+ * questionnaire." That only works if the practitioner can see what was said
+ * last time without hunting for the earlier lead, so this is fetched onto
+ * the case she is already looking at.
+ *
+ * Joined through `leads.person_key` rather than by name or email: the
+ * database resolves identity phone-first precisely because people mistype
+ * their own email, and re-deriving that here would find fewer matches than
+ * the banner beside it claims exist.
+ */
+export async function listPreviousReportsForPerson(
+  personKey: string | null,
+  excludeLeadId: string,
+): Promise<StudioReport[]> {
+  if (!personKey) return [];
+
+  const supabase = await createServerSupabaseClient();
+
+  const { data: siblings, error: siblingError } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("person_key", personKey)
+    .neq("id", excludeLeadId)
+    .is("deleted_at", null);
+
+  if (siblingError) {
+    console.error("[listPreviousReportsForPerson] leads", siblingError.message);
+    return [];
+  }
+
+  const leadIds = (siblings ?? []).map((row) => row.id);
+  if (leadIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("studio_reports")
+    .select(
+      "id, lead_id, created_by, author_name, noticed, morning_routine, night_routine, avoid_items, extra_notes, start_here, timeline, good_signs, warning_signs, sent_at, created_at",
+    )
+    .in("lead_id", leadIds)
+    // Only reports that actually reached the client. A draft that was never
+    // sent is not what they were told last time.
+    .not("sent_at", "is", null)
+    .order("sent_at", { ascending: false });
+
+  if (error) {
+    console.error("[listPreviousReportsForPerson] reports", error.message);
+    return [];
+  }
+
+  return (data ?? []).map(
+    (row) =>
+      ({
+        id: row.id,
+        leadId: row.lead_id,
+        createdBy: row.created_by,
+        authorName: row.author_name,
+        noticed: row.noticed,
+        morningRoutine: row.morning_routine,
+        nightRoutine: row.night_routine,
+        avoidItems: row.avoid_items,
+        extraNotes: row.extra_notes,
+        startHere: row.start_here,
+        timeline: row.timeline,
+        goodSigns: row.good_signs,
+        warningSigns: row.warning_signs,
+        sentAt: row.sent_at,
+        createdAt: row.created_at,
+      }) satisfies StudioReport,
+  );
+}

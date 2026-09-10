@@ -16,7 +16,7 @@ export {
 } from "@/lib/studio/customerTypes";
 
 const CUSTOMER_COLUMNS =
-  "id, session_id, full_name, email, selected_plan, plan_name, plan_price, answers, image_urls, photo_paths, photos_expire_at, photos_deleted_at, photos_deletion_reason, status, notes, client_notes, deleted_at, deleted_by, deletion_reason, source, payment_status, assigned_to, report_sender_id, funnel_complete, funnel_step, is_test, test_reason, created_at, updated_at";
+  "id, session_id, full_name, email, selected_plan, plan_name, plan_price, answers, image_urls, photo_paths, photos_expire_at, photos_deleted_at, photos_deletion_reason, person_key, submission_no, duplicate_reason, duplicate_of, gift_code_used, referred_by_person, status, notes, client_notes, deleted_at, deleted_by, deletion_reason, source, payment_status, assigned_to, report_sender_id, funnel_complete, funnel_step, is_test, test_reason, created_at, updated_at";
 
 function mapCustomer(
   row: {
@@ -33,6 +33,12 @@ function mapCustomer(
     photos_expire_at: string | null;
     photos_deleted_at: string | null;
     photos_deletion_reason: string | null;
+    person_key: string | null;
+    submission_no: number | null;
+    duplicate_reason: string | null;
+    duplicate_of: string | null;
+    gift_code_used: string | null;
+    referred_by_person: string | null;
     status: CustomerStatus;
     notes: string | null;
     client_notes: string | null;
@@ -66,6 +72,12 @@ function mapCustomer(
     photosExpireAt: row.photos_expire_at,
     photosDeletedAt: row.photos_deleted_at,
     photosDeletionReason: row.photos_deletion_reason,
+    personKey: row.person_key,
+    submissionNo: row.submission_no,
+    duplicateReason: row.duplicate_reason,
+    duplicateOf: row.duplicate_of,
+    giftCodeUsed: row.gift_code_used,
+    referredByPerson: row.referred_by_person,
     status: row.status,
     notes: row.notes,
     clientNotes: row.client_notes,
@@ -113,6 +125,8 @@ export type CustomerListFilters = {
    * debugging (the "Show test entries" toggle).
    */
   showTest?: boolean;
+  /** Show rows the database linked to another as a likely double-submit. */
+  showDuplicates?: boolean;
 };
 
 function isPaymentStatus(value: string): value is PaymentStatus {
@@ -181,6 +195,17 @@ export async function listStudioCustomers(filters: CustomerListFilters = {}) {
 
   if (!filters.showTest) {
     query = query.eq("is_test", false);
+  }
+
+  /**
+   * HANDOVER-20 Part 1 — a row linked to another by `duplicate_of` is an
+   * accidental resubmit, so it is hidden unless asked for. Deliberately NOT
+   * filtered on `duplicate_reason`: a `returning_client` has no
+   * `duplicate_of` and must stay in the list, because they are a customer
+   * rather than a duplicate.
+   */
+  if (!filters.showDuplicates) {
+    query = query.is("duplicate_of", null);
   }
 
   const [{ data, error }, memberNames] = await Promise.all([

@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import AssignCustomerForm from "@/components/studio/AssignCustomerForm";
 import AnswerList from "@/components/studio/AnswerList";
 import ClientNotesCard from "@/components/studio/ClientNotesCard";
+import PreviousReportPanel from "@/components/studio/PreviousReportPanel";
+import RepeatSubmissionBanner from "@/components/studio/RepeatSubmissionBanner";
 import ComposeEmailForm from "@/components/studio/ComposeEmailForm";
 import CreateReportForm from "@/components/studio/CreateReportForm";
 import ReportGuidelines from "@/components/studio/ReportGuidelines";
@@ -28,8 +30,13 @@ import { listCustomerEmails } from "@/lib/studio/emails";
 import { formatStudioDateTime } from "@/lib/studio/formatDate";
 import { listStudioMembers, requireStudioMember } from "@/lib/studio/member";
 import {
+  getPersonHistory,
+  listSiblingSubmissions,
+} from "@/lib/studio/duplicates";
+import {
   countReportsByAuthor,
   listCustomerReports,
+  listPreviousReportsForPerson,
 } from "@/lib/studio/reports";
 import {
   listCustomerReviews,
@@ -81,6 +88,15 @@ export default async function CustomerDetailPage({
       // Drives whether the writing guidelines start expanded.
       user ? countReportsByAuthor(user.id) : Promise.resolve(0),
     ]);
+  // HANDOVER-20 Part 1 — both are no-ops when the lead has no person_key,
+  // so this costs nothing for a first-time submission.
+  const [personHistory, siblingSubmissions, previousReports] =
+    await Promise.all([
+      getPersonHistory(customer.personKey),
+      listSiblingSubmissions(customer.personKey, customer.id),
+      listPreviousReportsForPerson(customer.personKey, customer.id),
+    ]);
+
   // Only fetched for non-super-admins: the redacted copy comes from the
   // view, and reading it for a super admin would just discard work.
   const practitionerNotes = member.isSuperAdmin
@@ -205,6 +221,18 @@ export default async function CustomerDetailPage({
       ) : null}
 
       {/*
+        Above everything, including the client's note: whether this person
+        has been here before changes how you read the rest of the page.
+      */}
+      <RepeatSubmissionBanner
+        submissionNo={customer.submissionNo}
+        duplicateReason={customer.duplicateReason}
+        duplicateOf={customer.duplicateOf}
+        history={personHistory}
+        siblings={siblingSubmissions}
+      />
+
+      {/*
         Above the photographs and the questionnaire, deliberately. Super
         admins see the raw text; everyone else gets the redacted version
         from `leads_for_practitioner`, so contact routes never reach a
@@ -312,6 +340,11 @@ export default async function CustomerDetailPage({
           </h2>
           {canSendReport ? (
             <div className="space-y-5">
+              {/*
+                Above the guidelines and the editor. The moment this is
+                useful is the moment before writing.
+              */}
+              <PreviousReportPanel reports={previousReports} />
               <ReportGuidelines reportsWritten={reportsWritten} />
               <CreateReportForm
                 key={reviews[0]?.id ?? "no-review"}

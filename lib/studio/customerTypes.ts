@@ -29,6 +29,19 @@ export type StudioCustomer = {
    * is why this field must only reach a super-admin surface unredacted.
    */
   clientNotes: string | null;
+  /**
+   * HANDOVER-20 Part 1 — repeat submissions, all set by database triggers.
+   * `personKey` resolves identity phone-first; `submissionNo` counts 1, 2, 3;
+   * `duplicateOf` links a likely double-submit to the row it duplicates.
+   */
+  personKey: string | null;
+  submissionNo: number | null;
+  duplicateReason: string | null;
+  duplicateOf: string | null;
+  /** The gift code redeemed on this lead, if any. */
+  giftCodeUsed: string | null;
+  /** person_key of whoever gifted it, credited by the redemption trigger. */
+  referredByPerson: string | null;
   /** HANDOVER-18 §1 — soft delete. Non-null means archived and hidden. */
   deletedAt: string | null;
   deletedBy: string | null;

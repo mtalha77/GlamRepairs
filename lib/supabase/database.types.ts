@@ -227,6 +227,17 @@ export type Database = {
           // step. RAW here. `leads_for_practitioner` serves the redacted
           // version; anything reading this column shows contact details.
           client_notes: string | null;
+          // HANDOVER-20 Part 1 & 2 — all written by database triggers
+          // (lead_identity_resolve, lead_supersede_previous,
+          // lead_gift_redeem). The app reads these; it must not set them.
+          person_key: string | null;
+          submission_no: number | null;
+          duplicate_reason: string | null;
+          duplicate_of: string | null;
+          referred_by_person: string | null;
+          // The one exception: the app WRITES gift_code_used on insert, and
+          // the trigger validates and redeems it (or silently drops it).
+          gift_code_used: string | null;
           // HANDOVER-14's phone capture. The column shipped and is written by
           // lib/leads/insertLead.ts, but it was never added here — which is
           // why writing it typed as `never`. `phone_e164` is derived by a
@@ -278,6 +289,12 @@ export type Database = {
           deleted_by?: string | null;
           deletion_reason?: string | null;
           client_notes?: string | null;
+          person_key?: string | null;
+          submission_no?: number | null;
+          duplicate_reason?: string | null;
+          duplicate_of?: string | null;
+          referred_by_person?: string | null;
+          gift_code_used?: string | null;
           phone?: string | null;
           last_seen_at?: string | null;
           abandoned_at?: string | null;
@@ -316,6 +333,12 @@ export type Database = {
           deleted_by?: string | null;
           deletion_reason?: string | null;
           client_notes?: string | null;
+          person_key?: string | null;
+          submission_no?: number | null;
+          duplicate_reason?: string | null;
+          duplicate_of?: string | null;
+          referred_by_person?: string | null;
+          gift_code_used?: string | null;
           phone?: string | null;
           last_seen_at?: string | null;
           abandoned_at?: string | null;
@@ -572,6 +595,29 @@ export type Database = {
        * `photo_state` is computed in the view so the studio screen and any
        * SQL run by hand cannot disagree about what "overdue" means.
        */
+      /**
+       * HANDOVER-20 Part 1 — one row per person, aggregated by `person_key`.
+       *
+       * ⚠️ Filters `is_test = false`, so a seeded test lead has no history
+       * even when it carries a person_key. Correct for production; worth
+       * knowing before concluding the duplicate banner is broken.
+       */
+      studio_person_history: {
+        Row: {
+          person_key: string;
+          submissions: number;
+          completed: number;
+          paid: number;
+          first_seen: string;
+          last_seen: string;
+          latest_name: string | null;
+          latest_phone: string | null;
+          latest_email: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       studio_photo_status: {
         Row: {
           lead_id: string;
