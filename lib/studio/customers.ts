@@ -16,7 +16,7 @@ export {
 } from "@/lib/studio/customerTypes";
 
 const CUSTOMER_COLUMNS =
-  "id, session_id, full_name, email, selected_plan, plan_name, plan_price, answers, image_urls, photo_paths, photos_expire_at, photos_deleted_at, status, notes, source, payment_status, assigned_to, report_sender_id, funnel_complete, funnel_step, is_test, test_reason, created_at, updated_at";
+  "id, session_id, full_name, email, selected_plan, plan_name, plan_price, answers, image_urls, photo_paths, photos_expire_at, photos_deleted_at, photos_deletion_reason, status, notes, client_notes, deleted_at, deleted_by, deletion_reason, source, payment_status, assigned_to, report_sender_id, funnel_complete, funnel_step, is_test, test_reason, created_at, updated_at";
 
 function mapCustomer(
   row: {
@@ -32,8 +32,13 @@ function mapCustomer(
     photo_paths: string[];
     photos_expire_at: string | null;
     photos_deleted_at: string | null;
+    photos_deletion_reason: string | null;
     status: CustomerStatus;
     notes: string | null;
+    client_notes: string | null;
+    deleted_at: string | null;
+    deleted_by: string | null;
+    deletion_reason: string | null;
     source: CustomerSource;
     payment_status: PaymentStatus;
     assigned_to: string | null;
@@ -60,8 +65,13 @@ function mapCustomer(
     photoPaths: row.photo_paths ?? [],
     photosExpireAt: row.photos_expire_at,
     photosDeletedAt: row.photos_deleted_at,
+    photosDeletionReason: row.photos_deletion_reason,
     status: row.status,
     notes: row.notes,
+    clientNotes: row.client_notes,
+    deletedAt: row.deleted_at,
+    deletedBy: row.deleted_by,
+    deletionReason: row.deletion_reason,
     source: row.source,
     paymentStatus: row.payment_status ?? "pending",
     assignedTo: row.assigned_to,
@@ -114,6 +124,9 @@ export async function listStudioCustomers(filters: CustomerListFilters = {}) {
   let query = supabase
     .from("leads")
     .select(CUSTOMER_COLUMNS)
+    // HANDOVER-18 §1 — archived leads are hidden from every list. Soft
+    // delete is only a delete if nothing still shows the row.
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   const term = filters.search?.trim();
@@ -204,20 +217,25 @@ export async function getStudioOverviewCounts() {
   // unlike the customer list. All 32 leads seeded before is_test shipped are
   // internal/test data.
   const [all, newest, photos, team] = await Promise.all([
+    // Every headline count excludes archived leads as well as test ones —
+    // an archived client must not keep inflating the dashboard.
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
       .eq("is_test", false),
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
       .eq("status", "new")
+      .is("deleted_at", null)
       .eq("is_test", false),
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
       .not("photos_expire_at", "is", null)
       .is("photos_deleted_at", null)
+      .is("deleted_at", null)
       .eq("is_test", false),
     supabase.from("studio_members").select("user_id", { count: "exact", head: true }),
   ]);
@@ -228,4 +246,60 @@ export async function getStudioOverviewCounts() {
     photosAvailable: photos.count ?? 0,
     teamSize: team.count ?? 0,
   };
+}
+
+/**
+ * HANDOVER-18 §2 — the practitioner-safe version of the client's note.
+ *
+ * Reads `leads_for_practitioner`, whose `client_notes` column is wrapped in
+ * `private.redact_contacts()`. Verified against production: phone numbers
+ * and email addresses become "[removed]" while clinical detail survives
+ * untouched — "worse around my period, roughly 5 days before" and "I use it
+ * 2-3 times a week" both come back unchanged.
+ *
+ * Deliberately a separate query rather than a column on the main customer
+ * fetch. The studio reads the `leads` table directly everywhere, which is
+ * correct for a super admin and wrong for this one field, so the redacted
+ * value has to come from the view or it is not redacted at all.
+ */
+export async function getRedactedClientNotes(leadId: string) {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("leads_for_practitioner")
+    .select("client_notes")
+    .eq("id", leadId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getRedactedClientNotes]", error.message);
+    // Show nothing rather than risk falling back to the raw column.
+    return null;
+  }
+  return data?.client_notes ?? null;
+}
+
+/**
+ * HANDOVER-18 §1 — the archive: soft-deleted leads, super admin only.
+ *
+ * The one query in the studio that deliberately looks for `deleted_at is
+ * not null`. Test leads are included here without a toggle, because
+ * archiving the internal test data is one of the things this screen exists
+ * to let you clean up.
+ */
+export async function listArchivedCustomers() {
+  const supabase = await createServerSupabaseClient();
+  const [{ data, error }, memberNames] = await Promise.all([
+    supabase
+      .from("leads")
+      .select(CUSTOMER_COLUMNS)
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false }),
+    getMemberNameMap(),
+  ]);
+
+  if (error) {
+    console.error("[listArchivedCustomers]", error.message);
+    return [];
+  }
+  return (data ?? []).map((row) => mapCustomer(row, memberNames));
 }

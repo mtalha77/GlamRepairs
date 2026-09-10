@@ -214,6 +214,27 @@ export type Database = {
           photo_paths: string[];
           photos_expire_at: string | null;
           photos_deleted_at: string | null;
+          // HANDOVER-19 — who deleted the photographs and why. `expired` is
+          // the automatic sweep; the rest are a person's decision.
+          photos_deleted_by: string | null;
+          photos_deletion_reason: string | null;
+          // HANDOVER-18 §1 — soft delete. Every studio list filters on
+          // deleted_at being null; the two views already do.
+          deleted_at: string | null;
+          deleted_by: string | null;
+          deletion_reason: string | null;
+          // HANDOVER-18 §2 — the client's own free-text note from the photo
+          // step. RAW here. `leads_for_practitioner` serves the redacted
+          // version; anything reading this column shows contact details.
+          client_notes: string | null;
+          // HANDOVER-14's phone capture. The column shipped and is written by
+          // lib/leads/insertLead.ts, but it was never added here — which is
+          // why writing it typed as `never`. `phone_e164` is derived by a
+          // database trigger and must never be written from the app.
+          phone: string | null;
+          phone_e164: string | null;
+          last_seen_at: string | null;
+          abandoned_at: string | null;
           status: CustomerStatus;
           notes: string | null;
           source: CustomerSource;
@@ -251,6 +272,15 @@ export type Database = {
           photo_paths?: string[];
           photos_expire_at?: string | null;
           photos_deleted_at?: string | null;
+          photos_deleted_by?: string | null;
+          photos_deletion_reason?: string | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
+          deletion_reason?: string | null;
+          client_notes?: string | null;
+          phone?: string | null;
+          last_seen_at?: string | null;
+          abandoned_at?: string | null;
           status?: CustomerStatus;
           notes?: string | null;
           source?: CustomerSource;
@@ -280,6 +310,15 @@ export type Database = {
           photo_paths?: string[];
           photos_expire_at?: string | null;
           photos_deleted_at?: string | null;
+          photos_deleted_by?: string | null;
+          photos_deletion_reason?: string | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
+          deletion_reason?: string | null;
+          client_notes?: string | null;
+          phone?: string | null;
+          last_seen_at?: string | null;
+          abandoned_at?: string | null;
           status?: CustomerStatus;
           notes?: string | null;
           source?: CustomerSource;
@@ -491,7 +530,72 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      /**
+       * HANDOVER-18 §2 — the practitioner-safe projection of `leads`.
+       *
+       * Two things it does that the base table does not: `client_notes` is
+       * wrapped in `private.redact_contacts()` so phone numbers and email
+       * addresses become "[removed]" while clinical detail survives, and
+       * `answers` has the contact keys stripped. It also already filters
+       * `deleted_at is null`.
+       *
+       * Read-only by construction — only the columns the studio actually
+       * needs are listed here.
+       */
+      leads_for_practitioner: {
+        Row: {
+          id: string;
+          first_name: string | null;
+          display_ref: string | null;
+          assigned_to: string | null;
+          status: CustomerStatus;
+          payment_status: PaymentStatus;
+          selected_plan: string | null;
+          plan_name: string | null;
+          funnel_complete: boolean | null;
+          photo_paths: string[] | null;
+          photos_expire_at: string | null;
+          photos_deleted_at: string | null;
+          answers: Record<string, unknown> | null;
+          client_notes: string | null;
+          created_at: string;
+          updated_at: string;
+          assigned_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /**
+       * HANDOVER-19 — every lead's photographs and how long they have left.
+       * `photo_state` is computed in the view so the studio screen and any
+       * SQL run by hand cannot disagree about what "overdue" means.
+       */
+      studio_photo_status: {
+        Row: {
+          lead_id: string;
+          display_ref: string;
+          full_name: string | null;
+          plan_name: string | null;
+          status: CustomerStatus;
+          is_test: boolean;
+          photo_count: number;
+          photo_paths: string[] | null;
+          created_at: string;
+          photos_expire_at: string | null;
+          photos_deleted_at: string | null;
+          photos_deleted_by: string | null;
+          photos_deletion_reason: string | null;
+          days_until_auto_delete: number | null;
+          report_sent_at: string | null;
+          photo_state: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+    };
     Functions: {
       resolve_pricing_region: {
         Args: { p_country: string | null };

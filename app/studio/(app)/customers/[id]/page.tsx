@@ -2,11 +2,14 @@ import { notFound } from "next/navigation";
 
 import AssignCustomerForm from "@/components/studio/AssignCustomerForm";
 import AnswerList from "@/components/studio/AnswerList";
+import ClientNotesCard from "@/components/studio/ClientNotesCard";
 import ComposeEmailForm from "@/components/studio/ComposeEmailForm";
 import CreateReportForm from "@/components/studio/CreateReportForm";
 import ReportGuidelines from "@/components/studio/ReportGuidelines";
 import CustomerStatusForm from "@/components/studio/CustomerStatusForm";
 import EmailHistory from "@/components/studio/EmailHistory";
+import DeletePhotosButton from "@/components/studio/DeletePhotosButton";
+import LeadDangerZone from "@/components/studio/LeadDangerZone";
 import PhotoGallery from "@/components/studio/PhotoGallery";
 import ReportHistory from "@/components/studio/ReportHistory";
 import ReviewForm from "@/components/studio/ReviewForm";
@@ -16,7 +19,10 @@ import { formatBookingWhatsAppMessage } from "@/lib/funnel/formatBookingSummary"
 import { leadDisplayRef } from "@/lib/leads/displayRef";
 import { formatCustomerAnswers } from "@/lib/studio/answers";
 import { CUSTOMER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/studio/constants";
-import { getStudioCustomer } from "@/lib/studio/customers";
+import {
+  getRedactedClientNotes,
+  getStudioCustomer,
+} from "@/lib/studio/customers";
 import { visiblePhotoCount } from "@/lib/studio/customerTypes";
 import { listCustomerEmails } from "@/lib/studio/emails";
 import { formatStudioDateTime } from "@/lib/studio/formatDate";
@@ -39,6 +45,9 @@ type CustomerDetailPageProps = {
     assigned?: string;
     reported?: string;
     reviewed?: string;
+    photos?: string;
+    count?: string;
+    anonymised?: string;
     sender?: string;
     error?: string;
     message?: string;
@@ -72,6 +81,12 @@ export default async function CustomerDetailPage({
       // Drives whether the writing guidelines start expanded.
       user ? countReportsByAuthor(user.id) : Promise.resolve(0),
     ]);
+  // Only fetched for non-super-admins: the redacted copy comes from the
+  // view, and reading it for a super admin would just discard work.
+  const practitionerNotes = member.isSuperAdmin
+    ? null
+    : await getRedactedClientNotes(customer.id);
+
   const reportDefaults = reviewToReportDefaults(reviews[0] ?? null);
   const whatsappSummary = formatBookingWhatsAppMessage({
     answers: customer.answers,
@@ -161,17 +176,69 @@ export default async function CustomerDetailPage({
           {query.message || "Could not save the photo review."}
         </p>
       ) : null}
+      {query.anonymised ? (
+        <p className="rounded-xl border border-brand-primary/30 bg-brand-lavender/20 px-4 py-3 text-sm text-brand-ink">
+          Personal data erased and photographs deleted. The record is kept for
+          accounting.
+        </p>
+      ) : null}
+      {query.error === "archive" || query.error === "anonymise" ? (
+        <p className="rounded-xl bg-brand-error/10 px-4 py-3 text-sm text-brand-error-strong">
+          {query.message || "Could not complete that action."}
+        </p>
+      ) : null}
+      {query.photos === "deleted" ? (
+        <p className="rounded-xl border border-brand-primary/30 bg-brand-lavender/20 px-4 py-3 text-sm text-brand-ink">
+          Deleted {query.count ?? "0"} photograph{query.count === "1" ? "" : "s"}.
+          The client record, assessment and report are kept.
+        </p>
+      ) : null}
+      {query.error === "photos" || query.error === "forbidden" ? (
+        <p className="rounded-xl bg-brand-error/10 px-4 py-3 text-sm text-brand-error-strong">
+          {query.message || "Could not delete the photographs."}
+        </p>
+      ) : null}
       {query.error === "save" ? (
         <p className="rounded-xl bg-brand-error/10 px-4 py-3 text-sm text-brand-error-strong">
           Could not save customer details.
         </p>
       ) : null}
 
+      {/*
+        Above the photographs and the questionnaire, deliberately. Super
+        admins see the raw text; everyone else gets the redacted version
+        from `leads_for_practitioner`, so contact routes never reach a
+        practitioner while the clinical detail is preserved.
+      */}
+      <ClientNotesCard
+        notes={
+          member.isSuperAdmin
+            ? customer.clientNotes
+            : practitionerNotes
+        }
+        redacted={!member.isSuperAdmin}
+      />
+
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-6">
           <div>
             <h2 className="mb-3 font-serif text-xl text-brand-primary">Photos</h2>
             <PhotoGallery customer={customer} />
+            {/*
+              HANDOVER-19 — super admin only, and only while there is
+              something to delete. A staff practitioner reviewing a case has
+              no reason to be able to destroy the evidence they are
+              reviewing.
+            */}
+            {member.isSuperAdmin ? (
+              <div className="mt-4">
+                <DeletePhotosButton
+                  leadId={customer.id}
+                  displayRef={leadDisplayRef(customer.sessionId) ?? customer.id}
+                  photoCount={visiblePhotoCount(customer)}
+                />
+              </div>
+            ) : null}
           </div>
           <div>
             <h2 className="mb-3 font-serif text-xl text-brand-primary">
@@ -288,6 +355,16 @@ export default async function CustomerDetailPage({
           <EmailHistory emails={emails} />
         </div>
       </section>
+
+      {/*
+        Last on the page, deliberately. These are the actions you should
+        have to scroll past everything else to reach.
+      */}
+      <LeadDangerZone
+        leadId={customer.id}
+        displayRef={leadDisplayRef(customer.sessionId) ?? customer.id}
+        canErase={member.isSuperAdmin}
+      />
     </div>
   );
 }
