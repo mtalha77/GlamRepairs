@@ -254,3 +254,81 @@ export async function checkGiftCode(
     discountPct: row.discount_pct === null ? null : Number(row.discount_pct),
   };
 }
+
+export type GiftCodeRow = {
+  code: string;
+  kind: string;
+  grantsPlan: string;
+  discountPct: number;
+  usesCount: number;
+  maxUses: number;
+  expiresAt: string;
+  active: boolean;
+  createdAt: string;
+  issuedToLead: string | null;
+  issuedToPerson: string | null;
+};
+
+export type GiftCodeState = "redeemed" | "expired" | "inactive" | "outstanding";
+
+/** The state as a person would describe it, in priority order. */
+export function giftCodeState(row: GiftCodeRow): GiftCodeState {
+  if (row.usesCount >= row.maxUses) return "redeemed";
+  if (!row.active) return "inactive";
+  if (new Date(row.expiresAt).getTime() < Date.now()) return "expired";
+  return "outstanding";
+}
+
+export async function listGiftCodes(): Promise<GiftCodeRow[]> {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("gift_codes")
+    .select(
+      "code, kind, grants_plan, discount_pct, uses_count, max_uses, expires_at, active, created_at, issued_to_lead, issued_to_person",
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[listGiftCodes]", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row) => ({
+    code: row.code,
+    kind: row.kind,
+    grantsPlan: row.grants_plan,
+    discountPct: Number(row.discount_pct),
+    usesCount: row.uses_count,
+    maxUses: row.max_uses,
+    expiresAt: row.expires_at,
+    active: row.active,
+    createdAt: row.created_at,
+    issuedToLead: row.issued_to_lead,
+    issuedToPerson: row.issued_to_person,
+  }));
+}
+
+/** The outstanding, unused, unexpired code for a person — for the lead page. */
+export async function getOutstandingGiftCode(
+  personKey: string | null,
+): Promise<string | null> {
+  if (!personKey) return null;
+
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("gift_codes")
+    .select("code")
+    .eq("issued_to_person", personKey)
+    .eq("active", true)
+    .lt("uses_count", 1)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getOutstandingGiftCode]", error.message);
+    return null;
+  }
+  return data?.code ?? null;
+}

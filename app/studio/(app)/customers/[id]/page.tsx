@@ -11,6 +11,7 @@ import ReportGuidelines from "@/components/studio/ReportGuidelines";
 import CustomerStatusForm from "@/components/studio/CustomerStatusForm";
 import EmailHistory from "@/components/studio/EmailHistory";
 import DeletePhotosButton from "@/components/studio/DeletePhotosButton";
+import GiftCodePanel from "@/components/studio/GiftCodePanel";
 import LeadDangerZone from "@/components/studio/LeadDangerZone";
 import PhotoGallery from "@/components/studio/PhotoGallery";
 import ReportHistory from "@/components/studio/ReportHistory";
@@ -19,6 +20,11 @@ import ReviewList from "@/components/studio/ReviewList";
 import VerifyPaymentButton from "@/components/studio/VerifyPaymentButton";
 import { formatBookingWhatsAppMessage } from "@/lib/funnel/formatBookingSummary";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
+import { isGiftProgrammeEnabled } from "@/lib/gifts/giftCodes";
+import {
+  getGiftCapacity,
+  getOutstandingGiftCode,
+} from "@/lib/gifts/issueGiftCode";
 import { formatCustomerAnswers } from "@/lib/studio/answers";
 import { CUSTOMER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/studio/constants";
 import {
@@ -55,6 +61,8 @@ type CustomerDetailPageProps = {
     photos?: string;
     count?: string;
     anonymised?: string;
+    gift?: string;
+    code?: string;
     sender?: string;
     error?: string;
     message?: string;
@@ -90,12 +98,19 @@ export default async function CustomerDetailPage({
     ]);
   // HANDOVER-20 Part 1 — both are no-ops when the lead has no person_key,
   // so this costs nothing for a first-time submission.
-  const [personHistory, siblingSubmissions, previousReports] =
-    await Promise.all([
-      getPersonHistory(customer.personKey),
-      listSiblingSubmissions(customer.personKey, customer.id),
-      listPreviousReportsForPerson(customer.personKey, customer.id),
-    ]);
+  const [
+    personHistory,
+    siblingSubmissions,
+    previousReports,
+    outstandingGiftCode,
+    giftCapacity,
+  ] = await Promise.all([
+    getPersonHistory(customer.personKey),
+    listSiblingSubmissions(customer.personKey, customer.id),
+    listPreviousReportsForPerson(customer.personKey, customer.id),
+    getOutstandingGiftCode(customer.personKey),
+    getGiftCapacity(),
+  ]);
 
   // Only fetched for non-super-admins: the redacted copy comes from the
   // view, and reading it for a super admin would just discard work.
@@ -190,6 +205,16 @@ export default async function CustomerDetailPage({
       {query.error === "review" ? (
         <p className="rounded-xl bg-brand-error/10 px-4 py-3 text-sm text-brand-error-strong">
           {query.message || "Could not save the photo review."}
+        </p>
+      ) : null}
+      {query.gift === "issued" ? (
+        <p className="rounded-xl border border-brand-primary/30 bg-brand-lavender/20 px-4 py-3 text-sm text-brand-ink">
+          Gift code issued: <span className="font-mono">{query.code}</span>
+        </p>
+      ) : null}
+      {query.error === "gift" ? (
+        <p className="rounded-xl bg-brand-error/10 px-4 py-3 text-sm text-brand-error-strong">
+          {query.message || "Could not issue a gift code."}
         </p>
       ) : null}
       {query.anonymised ? (
@@ -388,6 +413,16 @@ export default async function CustomerDetailPage({
           <EmailHistory emails={emails} />
         </div>
       </section>
+
+      {member.isSuperAdmin ? (
+        <GiftCodePanel
+          leadId={customer.id}
+          enabled={isGiftProgrammeEnabled()}
+          paymentVerified={customer.paymentStatus === "verified"}
+          existingCode={outstandingGiftCode}
+          remainingThisMonth={giftCapacity.remaining}
+        />
+      ) : null}
 
       {/*
         Last on the page, deliberately. These are the actions you should

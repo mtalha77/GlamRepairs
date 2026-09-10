@@ -26,6 +26,8 @@ export const STUDIO_NAV_LINKS = [
  */
 const STUDIO_ADMIN_LINKS = [
   { href: "/studio/admin/photos", label: "Photo retention" },
+  { href: "/studio/admin/duplicates", label: "Possible duplicates" },
+  { href: "/studio/admin/gifts", label: "Gift codes" },
   { href: "/studio/admin/archive", label: "Archive" },
 ] as const;
 
