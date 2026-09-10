@@ -119,7 +119,11 @@ export async function getStudioOverviewCharts(
       // Excludes test leads — see HOTFIX-5 §4. Every count/metric on the
       // dashboard should reflect real customers, not the 32 internal rows
       // seeded before is_test existed.
-      supabase.from("leads").select("payment_status, created_at").eq("is_test", false),
+      supabase
+        .from("leads")
+        .select("payment_status, created_at")
+        .is("deleted_at", null)
+        .eq("is_test", false),
       supabase.from("studio_reviews").select("created_by, created_at"),
       supabase.from("studio_reports").select("created_by, created_at"),
       supabase.from("studio_emails").select("sent_by"),

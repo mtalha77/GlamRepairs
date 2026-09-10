@@ -1,3 +1,4 @@
+import { clientNotesFromAnswers } from "@/lib/funnel/clientNotes";
 import { sanitizeLeadAnswers } from "@/lib/leads/sanitizeLeadAnswers";
 import type { LeadSubmitPayload } from "@/types/lead";
 
@@ -24,6 +25,11 @@ export type FunnelProgressInput = {
   planPrice?: string | null;
   answers?: Record<string, unknown>;
   funnelStep?: number | null;
+  /**
+   * HANDOVER-18 §2 — the client's own words from the photo step. Stored raw;
+   * `leads_for_practitioner` serves the redacted version.
+   */
+  clientNotes?: string | null;
 };
 
 function restConfig() {
@@ -81,6 +87,11 @@ export async function saveFunnelProgress(input: FunnelProgressInput) {
     plan_name: input.planName ?? null,
     plan_price: input.planPrice ?? null,
     answers: sanitizeLeadAnswers(input.answers),
+    // Trimmed but otherwise untouched. Redaction happens in the view, not
+    // here — the raw text is what a super admin needs to read, and losing it
+    // on write would be unrecoverable.
+    client_notes:
+      input.clientNotes?.trim() || clientNotesFromAnswers(input.answers),
     status: "new",
     source: "funnel",
     payment_status: "pending",
@@ -168,6 +179,10 @@ export async function insertLead(
     currency: input.currency ?? null,
     list_price: input.listPrice ?? null,
     answers: sanitizeLeadAnswers(input.answers),
+    // Derived from the answers blob because `sanitizeLeadAnswers` strips it
+    // out of there (see that file) — without this the completed submission
+    // would silently drop a note the progressive save had already stored.
+    client_notes: clientNotesFromAnswers(input.answers),
     image_urls: input.imageUrls,
     photo_paths: input.photoPaths,
     photos_expire_at: photosExpireAt,

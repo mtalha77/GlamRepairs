@@ -13,6 +13,14 @@ function payloadFromStore() {
     phone: state.phone,
     selectedPlan: state.selectedPlan,
     answers: state.answers,
+    // HANDOVER-18 §2 — the client's free-text note from the photo step.
+    // Kept in `answers` like every other step value, but lifted to its own
+    // column so the studio can badge it and the practitioner view can redact
+    // it without parsing a JSON blob.
+    clientNotes:
+      typeof state.answers["onboarding.clientNotes"] === "string"
+        ? (state.answers["onboarding.clientNotes"] as string)
+        : null,
     funnelStep: Math.max(
       state.onboardingUnlockedStep,
       state.bookingUnlockedStep,
@@ -62,6 +70,11 @@ export function useFunnelProgressSave() {
         state.selectedPlan ?? "",
         String(state.onboardingUnlockedStep),
         Object.keys(state.answers).sort().join(","),
+        // The key is otherwise a list of answer *names*, so editing the note
+        // after the first keystroke would never change it and the save would
+        // never be scheduled. Same bug class as the phone field in
+        // HANDOVER-14.
+        String(state.answers["onboarding.clientNotes"] ?? ""),
       ].join("|");
       if (key === lastKey.current) return;
       lastKey.current = key;

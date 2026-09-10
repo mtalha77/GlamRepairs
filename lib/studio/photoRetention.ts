@@ -119,7 +119,7 @@ export async function listPhotoStatus(state?: PhotoState) {
     console.error("[listPhotoStatus]", error.message);
     return [];
   }
-  return ((data ?? []) as Row[]).map(mapRow);
+  return ((data ?? []) as unknown as Row[]).map(mapRow);
 }
 
 export type PhotoStateCounts = Record<PhotoState, { leads: number; photos: number }>;
@@ -144,7 +144,10 @@ export async function getPhotoStateCounts(): Promise<PhotoStateCounts> {
     return empty;
   }
 
-  for (const row of (data ?? []) as { photo_state: string; photo_count: number }[]) {
+  for (const row of (data ?? []) as unknown as {
+    photo_state: string;
+    photo_count: number;
+  }[]) {
     if (!isPhotoState(row.photo_state)) continue;
     empty[row.photo_state].leads += 1;
     empty[row.photo_state].photos += row.photo_count ?? 0;

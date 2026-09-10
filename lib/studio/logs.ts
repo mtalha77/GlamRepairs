@@ -36,7 +36,11 @@ export async function listStudioLogs(limit = 100): Promise<StudioLog[]> {
   const supabase = await createServerSupabaseClient();
   const [leadsResult, reviewsResult, reportsResult, emailsResult] =
     await Promise.all([
-      supabase.from("leads").select("id, full_name, email, created_at"),
+      // Archived leads drop out of the activity log too (HANDOVER-18 §1).
+      supabase
+        .from("leads")
+        .select("id, full_name, email, created_at")
+        .is("deleted_at", null),
       supabase
         .from("studio_reviews")
         .select("id, lead_id, author_name, decision, created_at"),

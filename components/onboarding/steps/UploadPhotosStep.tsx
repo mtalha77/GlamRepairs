@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import CameraUploadIcon from "@/components/onboarding/CameraUploadIcon";
+import ClientNotesField from "@/components/onboarding/ClientNotesField";
 import UploadSupportNote from "@/components/onboarding/UploadSupportNote";
 import { StepHeader, StepRequiredError } from "@/components/steps";
 import { resolveUnlockTarget } from "@/lib/funnel/funnelProgress";
@@ -319,6 +320,8 @@ export default function UploadPhotosStep() {
         ))}
       </div>
       <StepRequiredError message={error} />
+
+      <ClientNotesField />
 
       <UploadSupportNote />
 

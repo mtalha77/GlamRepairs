@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { isFunnelPlanId } from "@/lib/funnel/plans";
 import { saveFunnelProgress } from "@/lib/leads/insertLead";
+import { CLIENT_NOTES_MAX_LENGTH } from "@/lib/funnel/clientNotes";
 import { getRequestPricingRegion } from "@/lib/pricing/geo";
 import { formatRegionPrice } from "@/lib/pricing/regions";
 import { PLAN_OPTIONS } from "@/lib/studio/constants";
@@ -14,6 +15,7 @@ type ProgressBody = {
   selectedPlan?: string | null;
   answers?: Record<string, unknown>;
   funnelStep?: number;
+  clientNotes?: string | null;
 };
 
 export async function POST(request: Request) {
@@ -55,6 +57,10 @@ export async function POST(request: Request) {
     planPrice,
     answers: body.answers,
     funnelStep: body.funnelStep ?? null,
+    // Capped server-side as well as in the textarea. The field is optional
+    // and 600 characters in the UI, but the endpoint is public, so the
+    // limit has to hold for a request that never went through the form.
+    clientNotes: body.clientNotes?.slice(0, CLIENT_NOTES_MAX_LENGTH) ?? null,
   });
 
   return NextResponse.json({ ok: true, leadId });

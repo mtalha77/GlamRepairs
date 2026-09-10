@@ -51,6 +51,20 @@ export default function CustomerTable({
                   >
                     {customer.fullName || "Unnamed"}
                   </Link>
+                  {/*
+                    HANDOVER-18 §2 — badge the lead when the client wrote
+                    something, so it is obvious before opening. This is where
+                    a safety flag turns up ("it burns", "it's spreading"), and
+                    a note nobody knows exists is a note nobody reads.
+                  */}
+                  {customer.clientNotes?.trim() ? (
+                    <span
+                      title="This client left a note"
+                      className="ml-2 inline-flex items-center gap-1 rounded-full bg-brand-accent/15 px-2 py-0.5 text-[0.6875rem] text-brand-accent"
+                    >
+                      <span aria-hidden>✎</span> Note
+                    </span>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3 text-brand-gray">
                   {customer.email || "—"}

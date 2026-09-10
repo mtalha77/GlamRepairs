@@ -26,6 +26,7 @@ export const STUDIO_NAV_LINKS = [
  */
 const STUDIO_ADMIN_LINKS = [
   { href: "/studio/admin/photos", label: "Photo retention" },
+  { href: "/studio/admin/archive", label: "Archive" },
 ] as const;
 
 type StudioNavProps = {

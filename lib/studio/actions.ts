@@ -1112,3 +1112,242 @@ export async function bulkDeleteLeadPhotosAction(formData: FormData) {
 
   redirect(`${back}?photos=deleted&leads=${deletedLeads}&count=${deletedFiles}`);
 }
+
+/* ── HANDOVER-18 §1 — archiving and deleting a client ────────────────────
+ *
+ * Two levels, deliberately not one:
+ *
+ *   Archive is the button staff see. It hides the lead from every list, is
+ *   fully reversible, and LEAVES THE PHOTOGRAPHS ALONE so a mistake costs
+ *   nothing.
+ *
+ *   Permanent delete is super admin only, reachable only from the archive
+ *   screen, needs the reference typed out, and removes the Storage objects
+ *   before the row. The database cascades the rest.
+ *
+ * The trap this is written against: `DELETE FROM leads` leaves the face
+ * photographs in Storage forever, orphaned, with the record that pointed at
+ * them gone. For a business whose privacy policy promises deletion that is
+ * the worst available outcome — the data is gone from your view but not
+ * from your infrastructure.
+ */
+
+/** Archive. Staff-level, reversible, photographs untouched. */
+export async function archiveLeadAction(formData: FormData) {
+  const { user, member } = await requireStudioMember();
+  if (!user || !member) {
+    redirect("/studio/login");
+  }
+
+  const leadId = asString(formData, "leadId");
+  if (!leadId) {
+    redirect("/studio/customers");
+  }
+  const reason = asString(formData, "reason") || null;
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: user.id,
+      deletion_reason: reason,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", leadId);
+
+  if (error) {
+    console.error("[archiveLeadAction]", error.message);
+    redirect(
+      `/studio/customers/${leadId}?error=archive&message=${encodeURIComponent("Could not archive this client.")}`,
+    );
+  }
+
+  revalidatePath("/studio/customers");
+  revalidatePath("/studio");
+  redirect("/studio/customers?archived=1");
+}
+
+/** Undo an archive. Nothing was destroyed, so this is a plain update. */
+export async function restoreLeadAction(formData: FormData) {
+  const { member } = await requireStudioMember();
+  if (!member) {
+    redirect("/studio/login");
+  }
+
+  const leadId = asString(formData, "leadId");
+  if (!leadId) {
+    redirect("/studio/admin/archive");
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      deleted_at: null,
+      deleted_by: null,
+      deletion_reason: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", leadId);
+
+  if (error) {
+    console.error("[restoreLeadAction]", error.message);
+    redirect(
+      `/studio/admin/archive?error=restore&message=${encodeURIComponent("Could not restore this client.")}`,
+    );
+  }
+
+  revalidatePath("/studio/admin/archive");
+  revalidatePath("/studio/customers");
+  redirect("/studio/admin/archive?restored=1");
+}
+
+/**
+ * Permanent delete. Storage objects first, then the row.
+ *
+ * The typed confirmation is the reference, not a yes/no. "Are you sure?" is
+ * a question people answer yes to without reading; typing GR-8DDFA7 is not
+ * something you do by reflex on the wrong row.
+ */
+export async function permanentlyDeleteLeadAction(formData: FormData) {
+  const back = "/studio/admin/archive";
+  const { user } = await requireSuperAdmin(back);
+
+  const leadId = asString(formData, "leadId");
+  if (!leadId) {
+    redirect(back);
+  }
+
+  const customer = await getStudioCustomer(leadId);
+  if (!customer) {
+    redirect(`${back}?error=delete&message=${encodeURIComponent("That client no longer exists.")}`);
+  }
+
+  // Only ever from the archive screen. Deleting something still visible in
+  // the working list is how the wrong row goes.
+  if (!customer.deletedAt) {
+    redirect(
+      `${back}?error=delete&message=${encodeURIComponent("Archive this client first. Permanent deletion is only available from the archive.")}`,
+    );
+  }
+
+  const expected = leadDisplayRef(customer.sessionId) ?? "";
+  const typed = asString(formData, "confirmRef");
+  if (!expected || typed.toUpperCase() !== expected.toUpperCase()) {
+    redirect(
+      `${back}?error=delete&message=${encodeURIComponent(`Type ${expected} exactly to confirm.`)}`,
+    );
+  }
+
+  // ── The photographs go first, through the shared path. If Storage fails
+  // we stop here: deleting the row now would orphan the files permanently
+  // with nothing left pointing at them.
+  const photoResult = await deletePhotosForLead({
+    leadId,
+    paths: customer.photoPaths ?? [],
+    reason: asString(formData, "reason") === "client_request"
+      ? "client_request"
+      : "other",
+    deletedBy: user.id,
+    note: "permanent client deletion",
+  });
+
+  if (!photoResult.ok && photoResult.stage === "storage") {
+    redirect(
+      `${back}?error=delete&message=${encodeURIComponent(`${photoResult.message} The client record has not been deleted.`)}`,
+    );
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.from("leads").delete().eq("id", leadId);
+
+  if (error) {
+    console.error("[permanentlyDeleteLeadAction]", error.message);
+    redirect(
+      `${back}?error=delete&message=${encodeURIComponent("The photographs were deleted but the record could not be removed.")}`,
+    );
+  }
+
+  revalidatePath(back);
+  revalidatePath("/studio/customers");
+  revalidatePath("/studio");
+  redirect(`${back}?deleted=1&ref=${encodeURIComponent(expected)}`);
+}
+
+/**
+ * HANDOVER-18 §1 — the privacy-request path, kept separate from archiving.
+ *
+ * Archiving tidies your own view. A client exercising their right to
+ * deletion is a legal obligation, and the two must not share a button: the
+ * consequences differ and so does what you have to be able to evidence
+ * afterwards.
+ *
+ * Anonymise rather than delete, because the row is still needed for
+ * accounting. The photographs go for real, the identifying fields are
+ * cleared, and who did it and when is recorded in `deletion_reason`.
+ */
+export async function anonymiseLeadAction(formData: FormData) {
+  const leadId = asString(formData, "leadId");
+  const back = leadId ? `/studio/customers/${leadId}` : "/studio/customers";
+  const { user, member } = await requireSuperAdmin(back);
+
+  if (!leadId) {
+    redirect("/studio/customers");
+  }
+
+  const customer = await getStudioCustomer(leadId);
+  if (!customer) {
+    redirect("/studio/customers");
+  }
+
+  const expected = leadDisplayRef(customer.sessionId) ?? "";
+  const typed = asString(formData, "confirmRef");
+  if (!expected || typed.toUpperCase() !== expected.toUpperCase()) {
+    redirect(
+      `${back}?error=anonymise&message=${encodeURIComponent(`Type ${expected} exactly to confirm.`)}`,
+    );
+  }
+
+  const photoResult = await deletePhotosForLead({
+    leadId,
+    paths: customer.photoPaths ?? [],
+    reason: "client_request",
+    deletedBy: user.id,
+    note: "data deletion request",
+  });
+
+  if (!photoResult.ok && photoResult.stage === "storage") {
+    redirect(
+      `${back}?error=anonymise&message=${encodeURIComponent(`${photoResult.message} Nothing else has been changed.`)}`,
+    );
+  }
+
+  const actionedAt = new Date().toISOString();
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      full_name: null,
+      email: null,
+      phone: null,
+      answers: {},
+      notes: null,
+      client_notes: null,
+      // Who actioned it and when, so the obligation can be evidenced.
+      deletion_reason: `client_request: personal data erased by ${member.displayName} on ${actionedAt}`,
+      updated_at: actionedAt,
+    })
+    .eq("id", leadId);
+
+  if (error) {
+    console.error("[anonymiseLeadAction]", error.message);
+    redirect(
+      `${back}?error=anonymise&message=${encodeURIComponent("The photographs were deleted but the record could not be anonymised.")}`,
+    );
+  }
+
+  revalidatePath(back);
+  revalidatePath("/studio/customers");
+  redirect(`${back}?anonymised=1`);
+}
