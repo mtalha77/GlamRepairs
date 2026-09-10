@@ -9,7 +9,11 @@ import { BellIcon, CloseIcon, MenuIcon } from "@/components/studio/StudioIcons";
 import StudioNav from "@/components/studio/StudioNav";
 import { useStudioNotifications } from "@/components/studio/StudioNotificationsProvider";
 
-export default function StudioMobileHeader() {
+export default function StudioMobileHeader({
+  superAdmin,
+}: {
+  superAdmin?: boolean;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { unreadCount } = useStudioNotifications();
@@ -77,7 +81,11 @@ export default function StudioMobileHeader() {
             onClick={() => setOpen(false)}
           />
           <div className="absolute left-0 right-0 top-full z-20 border-b border-brand-lavender/70 bg-white px-4 py-3 shadow-lg">
-            <StudioNav includeSettings onNavigate={() => setOpen(false)} />
+            <StudioNav
+              includeSettings
+              superAdmin={superAdmin}
+              onNavigate={() => setOpen(false)}
+            />
           </div>
         </>
       ) : null}

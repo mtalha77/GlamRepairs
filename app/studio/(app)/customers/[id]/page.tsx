@@ -7,6 +7,7 @@ import CreateReportForm from "@/components/studio/CreateReportForm";
 import ReportGuidelines from "@/components/studio/ReportGuidelines";
 import CustomerStatusForm from "@/components/studio/CustomerStatusForm";
 import EmailHistory from "@/components/studio/EmailHistory";
+import DeletePhotosButton from "@/components/studio/DeletePhotosButton";
 import PhotoGallery from "@/components/studio/PhotoGallery";
 import ReportHistory from "@/components/studio/ReportHistory";
 import ReviewForm from "@/components/studio/ReviewForm";
@@ -39,6 +40,8 @@ type CustomerDetailPageProps = {
     assigned?: string;
     reported?: string;
     reviewed?: string;
+    photos?: string;
+    count?: string;
     sender?: string;
     error?: string;
     message?: string;
@@ -161,6 +164,17 @@ export default async function CustomerDetailPage({
           {query.message || "Could not save the photo review."}
         </p>
       ) : null}
+      {query.photos === "deleted" ? (
+        <p className="rounded-xl border border-brand-primary/30 bg-brand-lavender/20 px-4 py-3 text-sm text-brand-ink">
+          Deleted {query.count ?? "0"} photograph{query.count === "1" ? "" : "s"}.
+          The client record, assessment and report are kept.
+        </p>
+      ) : null}
+      {query.error === "photos" || query.error === "forbidden" ? (
+        <p className="rounded-xl bg-brand-error/10 px-4 py-3 text-sm text-brand-error-strong">
+          {query.message || "Could not delete the photographs."}
+        </p>
+      ) : null}
       {query.error === "save" ? (
         <p className="rounded-xl bg-brand-error/10 px-4 py-3 text-sm text-brand-error-strong">
           Could not save customer details.
@@ -172,6 +186,21 @@ export default async function CustomerDetailPage({
           <div>
             <h2 className="mb-3 font-serif text-xl text-brand-primary">Photos</h2>
             <PhotoGallery customer={customer} />
+            {/*
+              HANDOVER-19 — super admin only, and only while there is
+              something to delete. A staff practitioner reviewing a case has
+              no reason to be able to destroy the evidence they are
+              reviewing.
+            */}
+            {member.isSuperAdmin ? (
+              <div className="mt-4">
+                <DeletePhotosButton
+                  leadId={customer.id}
+                  displayRef={leadDisplayRef(customer.sessionId) ?? customer.id}
+                  photoCount={visiblePhotoCount(customer)}
+                />
+              </div>
+            ) : null}
           </div>
           <div>
             <h2 className="mb-3 font-serif text-xl text-brand-primary">

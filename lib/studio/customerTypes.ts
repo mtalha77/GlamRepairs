@@ -17,8 +17,22 @@ export type StudioCustomer = {
   photoPaths: string[];
   photosExpireAt: string | null;
   photosDeletedAt: string | null;
+  /** HANDOVER-19 — why the photographs went, shown on the lead page. */
+  photosDeletionReason: string | null;
   status: CustomerStatus;
+  /** Staff-written notes. Distinct from `clientNotes`, which the client wrote. */
   notes: string | null;
+  /**
+   * HANDOVER-18 §2 — the client's own words, from the photo step.
+   *
+   * Redacted for practitioners by `leads_for_practitioner`; raw here, which
+   * is why this field must only reach a super-admin surface unredacted.
+   */
+  clientNotes: string | null;
+  /** HANDOVER-18 §1 — soft delete. Non-null means archived and hidden. */
+  deletedAt: string | null;
+  deletedBy: string | null;
+  deletionReason: string | null;
   source: CustomerSource;
   paymentStatus: PaymentStatus;
   assignedTo: string | null;

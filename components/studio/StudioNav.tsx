@@ -16,17 +16,36 @@ export const STUDIO_NAV_LINKS = [
   { href: "/studio/team", label: "Team" },
 ] as const;
 
+/**
+ * HANDOVER-19 — super-admin-only destinations.
+ *
+ * Photo retention is here rather than under Settings because it is a place
+ * you go to act on a number, not to change a preference. It is passed down
+ * as a prop rather than read from a hook because this is a client component
+ * and the member record is already resolved on the server.
+ */
+const STUDIO_ADMIN_LINKS = [
+  { href: "/studio/admin/photos", label: "Photo retention" },
+] as const;
+
 type StudioNavProps = {
   onNavigate?: () => void;
   includeSettings?: boolean;
+  superAdmin?: boolean;
 };
 
-export default function StudioNav({ onNavigate, includeSettings }: StudioNavProps) {
+export default function StudioNav({
+  onNavigate,
+  includeSettings,
+  superAdmin,
+}: StudioNavProps) {
   const pathname = usePathname();
   const { unreadCount } = useStudioNotifications();
-  const links = includeSettings
-    ? [...STUDIO_NAV_LINKS, { href: "/studio/settings", label: "Settings" }]
-    : STUDIO_NAV_LINKS;
+  const links = [
+    ...STUDIO_NAV_LINKS,
+    ...(superAdmin ? STUDIO_ADMIN_LINKS : []),
+    ...(includeSettings ? [{ href: "/studio/settings", label: "Settings" }] : []),
+  ];
 
   return (
     <nav className="flex flex-col gap-1">

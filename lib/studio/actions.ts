@@ -28,6 +28,11 @@ import {
   reportFileName,
 } from "@/lib/studio/report";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
+import {
+  deletePhotosForLead,
+  isPhotoDeletionReason,
+  readPhotoPaths,
+} from "@/lib/leads/deleteLeadPhotos";
 import { visiblePhotoCount } from "@/lib/studio/customerTypes";
 import {
   describeFailures,
@@ -972,4 +977,138 @@ export async function updatePricingRegionAction(formData: FormData) {
   revalidatePath("/pricing");
   revalidatePath("/");
   redirect("/studio/settings?saved=pricing");
+}
+
+/* ── HANDOVER-19 — deleting photographs, keeping the client ──────────────
+ *
+ * Three real situations need the images gone but the record kept: the report
+ * is finished, the client asked, or it is test data. So this is its own
+ * action, separate from archiving a lead and from deleting one.
+ *
+ * Every path below goes through `deletePhotosForLead`, which deletes the
+ * Storage objects first and only writes the row on success. Nothing here
+ * touches `photos_deleted_at` directly — a row claiming photographs are gone
+ * when they are not is the one failure mode that cannot be noticed later.
+ */
+
+/** Shared gate. Deleting a face permanently is not a staff-level action. */
+async function requireSuperAdmin(redirectTo: string) {
+  const { user, member } = await requireStudioMember();
+  if (!user || !member) {
+    redirect("/studio/login");
+  }
+  if (!member.isSuperAdmin) {
+    redirect(
+      `${redirectTo}?error=forbidden&message=${encodeURIComponent("Only a super admin can delete photographs.")}`,
+    );
+  }
+  return { user, member };
+}
+
+function parseDeletionReason(formData: FormData) {
+  const raw = asString(formData, "reason");
+  if (!isPhotoDeletionReason(raw) || raw === "expired") return null;
+  const note = asString(formData, "reasonNote");
+  // "other" without a note records nothing useful — the whole point of the
+  // reason is that client_request can be evidenced later.
+  if (raw === "other" && !note) return null;
+  return { reason: raw, note: note || null };
+}
+
+export async function deleteLeadPhotosAction(formData: FormData) {
+  const leadId = asString(formData, "leadId");
+  const back = leadId ? `/studio/customers/${leadId}` : "/studio/customers";
+  const { user } = await requireSuperAdmin(back);
+
+  if (!leadId) {
+    redirect("/studio/customers");
+  }
+
+  const parsed = parseDeletionReason(formData);
+  if (!parsed) {
+    redirect(
+      `${back}?error=photos&message=${encodeURIComponent("Choose a reason for deleting the photographs.")}`,
+    );
+  }
+
+  // Re-read the paths server-side rather than trusting the form. The count in
+  // the confirmation dialog is what the operator agreed to, but the authority
+  // on what exists is the row.
+  const paths = (await readPhotoPaths([leadId])).get(leadId) ?? [];
+
+  const result = await deletePhotosForLead({
+    leadId,
+    paths,
+    reason: parsed.reason,
+    deletedBy: user.id,
+    note: parsed.note,
+  });
+
+  if (!result.ok) {
+    redirect(`${back}?error=photos&message=${encodeURIComponent(result.message)}`);
+  }
+
+  revalidatePath(back);
+  revalidatePath("/studio/admin/photos");
+  redirect(`${back}?photos=deleted&count=${result.filesDeleted}`);
+}
+
+/**
+ * The bulk path. Clearing 23 overdue leads one at a time is how it does not
+ * get done — but each lead still goes through the same single-lead function,
+ * so a failure on one does not silently mark the rest.
+ */
+export async function bulkDeleteLeadPhotosAction(formData: FormData) {
+  const back = "/studio/admin/photos";
+  const { user } = await requireSuperAdmin(back);
+
+  const leadIds = formData
+    .getAll("leadIds")
+    .filter((value): value is string => typeof value === "string" && value.length > 0);
+
+  if (leadIds.length === 0) {
+    redirect(`${back}?error=photos&message=${encodeURIComponent("Select at least one client.")}`);
+  }
+
+  const parsed = parseDeletionReason(formData);
+  if (!parsed) {
+    redirect(
+      `${back}?error=photos&message=${encodeURIComponent("Choose a reason for deleting the photographs.")}`,
+    );
+  }
+
+  const pathsByLead = await readPhotoPaths(leadIds);
+  let deletedLeads = 0;
+  let deletedFiles = 0;
+  const failures: string[] = [];
+
+  for (const leadId of leadIds) {
+    const result = await deletePhotosForLead({
+      leadId,
+      paths: pathsByLead.get(leadId) ?? [],
+      reason: parsed.reason,
+      deletedBy: user.id,
+      note: parsed.note,
+    });
+    if (result.ok) {
+      deletedLeads += 1;
+      deletedFiles += result.filesDeleted;
+    } else {
+      failures.push(`${leadDisplayRef(leadId) ?? leadId}: ${result.message}`);
+    }
+  }
+
+  revalidatePath(back);
+  revalidatePath("/studio/customers");
+
+  if (failures.length > 0) {
+    // Report the partial result honestly — some rows were changed.
+    redirect(
+      `${back}?error=photos&message=${encodeURIComponent(
+        `Deleted ${deletedFiles} photographs for ${deletedLeads} of ${leadIds.length} clients. Failed: ${failures.join(" | ")}`,
+      )}`,
+    );
+  }
+
+  redirect(`${back}?photos=deleted&leads=${deletedLeads}&count=${deletedFiles}`);
 }

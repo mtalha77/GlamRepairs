@@ -16,7 +16,7 @@ export {
 } from "@/lib/studio/customerTypes";
 
 const CUSTOMER_COLUMNS =
-  "id, session_id, full_name, email, selected_plan, plan_name, plan_price, answers, image_urls, photo_paths, photos_expire_at, photos_deleted_at, status, notes, source, payment_status, assigned_to, report_sender_id, funnel_complete, funnel_step, is_test, test_reason, created_at, updated_at";
+  "id, session_id, full_name, email, selected_plan, plan_name, plan_price, answers, image_urls, photo_paths, photos_expire_at, photos_deleted_at, photos_deletion_reason, status, notes, client_notes, deleted_at, deleted_by, deletion_reason, source, payment_status, assigned_to, report_sender_id, funnel_complete, funnel_step, is_test, test_reason, created_at, updated_at";
 
 function mapCustomer(
   row: {
@@ -32,8 +32,13 @@ function mapCustomer(
     photo_paths: string[];
     photos_expire_at: string | null;
     photos_deleted_at: string | null;
+    photos_deletion_reason: string | null;
     status: CustomerStatus;
     notes: string | null;
+    client_notes: string | null;
+    deleted_at: string | null;
+    deleted_by: string | null;
+    deletion_reason: string | null;
     source: CustomerSource;
     payment_status: PaymentStatus;
     assigned_to: string | null;
@@ -60,8 +65,13 @@ function mapCustomer(
     photoPaths: row.photo_paths ?? [],
     photosExpireAt: row.photos_expire_at,
     photosDeletedAt: row.photos_deleted_at,
+    photosDeletionReason: row.photos_deletion_reason,
     status: row.status,
     notes: row.notes,
+    clientNotes: row.client_notes,
+    deletedAt: row.deleted_at,
+    deletedBy: row.deleted_by,
+    deletionReason: row.deletion_reason,
     source: row.source,
     paymentStatus: row.payment_status ?? "pending",
     assignedTo: row.assigned_to,

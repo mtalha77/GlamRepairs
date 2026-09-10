@@ -214,6 +214,19 @@ export type Database = {
           photo_paths: string[];
           photos_expire_at: string | null;
           photos_deleted_at: string | null;
+          // HANDOVER-19 — who deleted the photographs and why. `expired` is
+          // the automatic sweep; the rest are a person's decision.
+          photos_deleted_by: string | null;
+          photos_deletion_reason: string | null;
+          // HANDOVER-18 §1 — soft delete. Every studio list filters on
+          // deleted_at being null; the two views already do.
+          deleted_at: string | null;
+          deleted_by: string | null;
+          deletion_reason: string | null;
+          // HANDOVER-18 §2 — the client's own free-text note from the photo
+          // step. RAW here. `leads_for_practitioner` serves the redacted
+          // version; anything reading this column shows contact details.
+          client_notes: string | null;
           status: CustomerStatus;
           notes: string | null;
           source: CustomerSource;
@@ -251,6 +264,12 @@ export type Database = {
           photo_paths?: string[];
           photos_expire_at?: string | null;
           photos_deleted_at?: string | null;
+          photos_deleted_by?: string | null;
+          photos_deletion_reason?: string | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
+          deletion_reason?: string | null;
+          client_notes?: string | null;
           status?: CustomerStatus;
           notes?: string | null;
           source?: CustomerSource;
@@ -280,6 +299,12 @@ export type Database = {
           photo_paths?: string[];
           photos_expire_at?: string | null;
           photos_deleted_at?: string | null;
+          photos_deleted_by?: string | null;
+          photos_deletion_reason?: string | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
+          deletion_reason?: string | null;
+          client_notes?: string | null;
           status?: CustomerStatus;
           notes?: string | null;
           source?: CustomerSource;
