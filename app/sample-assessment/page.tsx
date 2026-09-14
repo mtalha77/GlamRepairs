@@ -4,9 +4,15 @@ import Link from "next/link";
 import Footer from "@/components/home/Footer";
 import { onboardingHref } from "@/components/home/Navbar";
 import SampleAssessmentDocument from "@/components/sample/SampleAssessmentDocument";
-import CredentialsBlock from "@/components/seo/CredentialsBlock";
+import SampleIcon from "@/components/sample/SampleIcons";
 import JsonLd from "@/components/seo/JsonLd";
-import { SAMPLE_VALUE_POINTS } from "@/lib/sample/sampleAssessment";
+import { getPlanSettings } from "@/lib/plans/planSettings";
+import { getServerPricingRegion } from "@/lib/pricing/geo";
+import { formatRegionPrice } from "@/lib/pricing/regions";
+import {
+  SAMPLE_ANNOTATIONS,
+  sampleValueCards,
+} from "@/lib/sample/sampleAssessment";
 import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
 import {
   breadcrumbSchema,
@@ -16,28 +22,43 @@ import {
 } from "@/lib/seo/schema";
 
 /**
- * HANDOVER-22 §3 — /sample-assessment.
+ * /sample-assessment — HANDOVER-22 §3, rebuilt to HANDOVER-23's design.
  *
  * ── The objection this page answers ──────────────────────────────────────
- * "What do I actually get for Rs. 2,000?" is the question that stops the
+ * "What do I actually get for the money?" is the question that stops the
  * sale, and no amount of feature copy answers it. The document itself does.
- * So the sample report is the page: it opens with the assessment, and the
- * selling comes after, once the reader already knows what is being sold.
+ * So the report is the page: it opens with the assessment, and the selling
+ * comes after, once the reader already knows what is being sold.
+ *
+ * ── Why there are two columns ────────────────────────────────────────────
+ * The report alone demonstrates quality to a reader who already knows what
+ * to look for. The annotation column tells everyone else where to look —
+ * that the practitioner named what she saw rather than applying a skin-type
+ * label, that the reader's own answers come back to them, that the timeline
+ * includes the weeks where nothing has happened yet. The report sticks
+ * while that column scrolls, so each note is read against the section it
+ * describes.
+ *
+ * ── The one number that is read, not typed ───────────────────────────────
+ * The follow-up window comes from `plan_settings` and the price from
+ * `pricing_regions`, for the same reason /compare reads them: a marketing
+ * card that outlives the decision to change "30 days" is exactly how these
+ * numbers go stale and start contradicting the pricing page.
  *
  * ── Why the schema is MedicalWebPage and not Product or Review ───────────
  * The temptation is `Product` with an `offers` block, or worse a `Review`.
  * Both would be false: this page is not a purchasable item and nothing on
  * it is a customer's testimonial. `medicalArticleSchema` emits
- * MedicalWebPage with `audience: Patient` — accurate, and the node the
- * site already uses for health-information pages, so this page is indexed
- * as what it is. The same restraint lib/seo/schema.ts documents for
- * Physician/MedicalClinic applies here.
+ * MedicalWebPage with `audience: Patient` — accurate, and the node the site
+ * already uses for health-information pages. The same restraint
+ * lib/seo/schema.ts documents for Physician/MedicalClinic applies here.
  *
- * No `datePublished` fiction either: the sample is undated on purpose (see
- * SAMPLE_PATIENT.reportDate), but schema requires a date, so the date used
- * is the date the page shipped, which is the truthful thing to state — it
- * is when this document was published, not when a client was assessed.
+ * No `datePublished` fiction either: the sample is undated on purpose, but
+ * schema requires a date, so the date used is the date the page shipped —
+ * when this document was published, not when a client was assessed.
  */
+
+export const dynamic = "force-dynamic";
 
 const PUBLISHED = "2026-09-14";
 
@@ -59,8 +80,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function SampleAssessmentPage() {
+export default async function SampleAssessmentPage() {
   const author = AUTHORS[DEFAULT_AUTHOR_SLUG];
+  const [plans, region] = await Promise.all([
+    getPlanSettings(),
+    getServerPricingRegion(),
+  ]);
+  const cards = sampleValueCards({ supportDays: plans.clarity.supportDays });
+  const clarityPrice = formatRegionPrice(region, "clarity");
 
   return (
     <>
@@ -83,90 +110,110 @@ export default function SampleAssessmentPage() {
         )}
       />
 
-      <main className="bg-gradient-to-b from-brand-purple-soft via-white to-brand-lavender/20 px-4 py-12 sm:px-6 sm:py-16">
-        <div className="mx-auto w-full max-w-[44rem]">
-          <nav className="mb-8 text-sm text-brand-gray">
-            <Link href="/" className="underline underline-offset-2">
-              Home
-            </Link>
-            <span aria-hidden> / </span>
-            <span>See a real assessment</span>
-          </nav>
-
-          <header>
-            {/* HANDOVER-23 §1.5 — eyebrow, heading with the emphasis, one
-                line of body. The same three beats every section now opens
-                with, so the page reads as composed rather than stacked. */}
-            <p className="gr-eyebrow mb-3">A real assessment</p>
-            <h1 className="font-serif text-3xl leading-tight text-brand-primary sm:text-4xl">
-              This is what you get
+      <main>
+        <header className="gr-section-glow px-6 pb-[34px] pt-14 text-center">
+          <div className="mx-auto max-w-[1180px]">
+            <p className="gr-eyebrow gr-eyebrow--center">{TITLE}</p>
+            <h1 className="mx-auto mt-3.5 font-serif text-[2rem] font-semibold leading-[1.14] tracking-[-0.02em] text-brand-ink sm:text-[2.5rem]">
+              This is exactly what{" "}
+              <em className="italic text-brand-primary">you receive</em>
             </h1>
-            <p className="mt-4 text-base leading-relaxed text-brand-ink sm:text-lg">
-              Most services describe the report. Below is the whole thing —
-              the same structure, length and wording every client receives,
-              written for a composite client so no one&apos;s real assessment
-              is published. Read it, then decide.
+            <p className="mx-auto mt-3 max-w-[560px] text-[0.9688rem] leading-[1.7] text-brand-gray">
+              A complete assessment, written by hand for one person. Read it in
+              full before you pay anything.
             </p>
-          </header>
-        </div>
+            {/*
+              ⚠️ The supplied design read "shared with permission, identifying
+              details removed". That is not used and must not be reintroduced:
+              it asserts a real client's real report is on this page and that
+              they agreed to it, and neither is true. A composite makes the
+              same argument without making a false claim about a real person's
+              medical information. See lib/sample/sampleAssessment.ts.
+            */}
+            <p className="mt-[18px] inline-block rounded-full border border-[#f0e2c0] bg-brand-cream px-[15px] py-[7px] text-xs font-medium text-[#7a6320]">
+              A demonstration. The client is a composite — no real
+              client&apos;s report is published.
+            </p>
+          </div>
+        </header>
 
-        <div className="mt-10 sm:mt-12">
-          <SampleAssessmentDocument />
-        </div>
+        <div className="mx-auto max-w-[1180px] px-6">
+          <div className="grid items-start gap-9 pb-[70px] pt-3.5 lg:grid-cols-[1.15fr_0.85fr]">
+            <SampleAssessmentDocument />
 
-        <div className="mx-auto mt-12 w-full max-w-[44rem] sm:mt-16">
-          <section>
-            <p className="gr-eyebrow mb-3">What it costs you</p>
-            <h2 className="font-serif text-2xl leading-snug text-brand-primary sm:text-[1.75rem]">
-              What you are paying for
-            </h2>
-            <ul className="mt-5 space-y-3 sm:space-y-4">
-              {SAMPLE_VALUE_POINTS.map((point) => (
-                <li
-                  key={point.title}
-                  className="rounded-2xl border border-brand-lavender/60 bg-white px-4 py-4 shadow-sm sm:px-5 sm:py-5"
+            <div className="flex flex-col gap-3.5">
+              {SAMPLE_ANNOTATIONS.map((note) => (
+                <div
+                  key={note.title}
+                  className="rounded-2xl border border-brand-lavender/45 bg-white px-5 py-[19px] shadow-sm"
                 >
-                  <h3 className="text-sm font-semibold text-brand-primary sm:text-[0.9375rem]">
-                    {point.title}
+                  <span className="mb-[9px] inline-flex items-center rounded-full bg-brand-purple-soft px-[9px] py-1 text-[0.625rem] font-semibold uppercase tracking-[0.11em] text-brand-primary">
+                    {note.section}
+                  </span>
+                  <h3 className="mb-1.5 font-serif text-[1.0625rem] font-semibold leading-[1.3] text-brand-ink">
+                    {note.title}
                   </h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-brand-gray sm:text-[0.9375rem]">
-                    {point.body}
+                  <p className="text-[0.8125rem] leading-[1.7] text-brand-gray">
+                    {note.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <section className="border-t border-brand-lavender/40 bg-white px-6 pb-[74px] pt-16">
+          <div className="mx-auto max-w-[1080px]">
+            <p className="gr-eyebrow gr-eyebrow--center">
+              What you are paying for
+            </p>
+            <h2 className="mt-3.5 text-center font-serif text-[1.85rem] font-semibold leading-[1.18] tracking-[-0.018em] text-brand-ink sm:text-[2.15rem]">
+              Six things a free quiz{" "}
+              <em className="italic text-brand-primary">cannot give you</em>
+            </h2>
+            <p className="mx-auto mb-10 mt-2.5 max-w-[520px] text-center text-[0.9375rem] leading-[1.7] text-brand-gray">
+              The report above is the deliverable. These are the reasons it is
+              worth more than the page it sits on.
+            </p>
+
+            <ul className="grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
+              {cards.map((card, index) => (
+                <li
+                  key={card.title}
+                  /* Alternating grounds rather than one flat fill, so a
+                     three-column grid reads as a set instead of a table. */
+                  className={`gr-card-lift rounded-[1.25rem] border border-transparent px-[22px] py-[26px] ${
+                    index % 2 === 1
+                      ? "bg-brand-purple-soft"
+                      : "bg-brand-cream-card"
+                  }`}
+                >
+                  <span className="mb-[15px] grid h-12 w-12 place-items-center rounded-[14px] bg-white text-brand-primary shadow-sm">
+                    <SampleIcon name={card.icon} />
+                  </span>
+                  <h3 className="mb-[7px] font-serif text-[1.1875rem] font-medium italic leading-[1.3] text-brand-primary">
+                    {card.title}
+                  </h3>
+                  <p className="text-[0.8438rem] leading-[1.7] text-brand-gray">
+                    {card.body}
                   </p>
                 </li>
               ))}
             </ul>
-          </section>
 
-          {/* Who wrote it, stated where the reader is deciding whether to trust it. */}
-          <div className="mt-8 rounded-2xl border border-brand-border-light/60 bg-white px-4 py-4 sm:mt-10 sm:px-5 sm:py-5">
-            <CredentialsBlock />
-          </div>
-
-          <section className="mt-10 rounded-[2rem] bg-brand-cream/70 px-5 py-8 text-center sm:mt-12 sm:px-8 sm:py-10">
-            <h2 className="font-serif text-2xl leading-snug text-brand-primary sm:text-[1.75rem]">
-              Get one written for your skin
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-brand-gray sm:text-[0.9375rem]">
-              A few questions, a few photographs, and your assessment arrives
-              within 24 hours. You choose your plan on the second screen, so
-              you know the price before you answer anything.
-            </p>
-            <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <div className="mt-[42px] text-center">
               <Link
                 href={onboardingHref}
-                className="inline-flex items-center justify-center rounded-full bg-brand-primary px-10 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90 sm:text-sm"
+                className="gr-btn inline-block rounded-full bg-brand-primary px-[34px] py-[15px] text-[0.9375rem] font-medium text-white shadow-[0_10px_24px_-10px_rgba(102,45,145,0.55)] hover:bg-brand-primary-dark"
               >
-                Start my assessment
+                Get my assessment &rarr;
               </Link>
-              <Link
-                href="/pricing"
-                className="inline-flex items-center justify-center rounded-full border border-brand-primary/40 px-10 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] text-brand-primary transition-colors hover:bg-brand-primary/5 sm:text-sm"
-              >
-                See pricing
-              </Link>
+              <span className="mt-3.5 block text-[0.8125rem] text-brand-gray">
+                {clarityPrice}. One payment. Delivered within 24 hours.
+              </span>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </>

@@ -1,186 +1,226 @@
-import Image from "next/image";
-
 import {
-  SAMPLE_CLOSING,
   SAMPLE_PATIENT,
   SAMPLE_SECTIONS,
-  type SampleSection,
+  type SampleBlock,
 } from "@/lib/sample/sampleAssessment";
+import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
+import { CREDENTIALS } from "@/lib/seo/site";
 
 /**
- * HANDOVER-22 §3 — the sample rendered in the delivered report's own layout.
+ * The sample report, in the delivered report's own layout.
  *
  * Server component, deliberately: the whole value of this page is that a
- * crawler and a reader both see the full text of a real assessment in the
+ * crawler and a reader both see the full text of an assessment in the
  * initial HTML. Rendering it client-side would hide the one thing worth
  * indexing.
  *
- * The section headings and their order come from `SAMPLE_SECTIONS`, which
- * mirrors lib/studio/reportPdf.ts. Do not type headings into this file.
+ * Section headings come from SAMPLE_SECTIONS, which mirrors
+ * lib/studio/reportPdf.ts. Do not type headings into this file.
  */
 
-const reportLogo = "/svgs/GLAM REPAIR LOGO-08 2 (1).svg";
-
-function Paragraphs({ text }: { text: string }) {
+function Prose({ paragraphs }: { paragraphs: string[] }) {
   return (
     <>
-      {text.split("\n\n").map((paragraph, index) => (
+      {paragraphs.map((p, i) => (
         <p
-          key={index}
-          className="mt-3 text-sm leading-relaxed text-brand-ink first:mt-0 sm:text-[0.9375rem]"
+          key={i}
+          className="mt-[11px] text-sm leading-[1.75] text-brand-ink/90 first:mt-0"
         >
-          {paragraph}
+          {p}
         </p>
       ))}
     </>
   );
 }
 
-function InfoField({ label, value }: { label: string; value: string }) {
+function Block({ block }: { block: SampleBlock }) {
+  if (block.kind === "prose") return <Prose paragraphs={block.paragraphs} />;
+
+  if (block.kind === "steps") {
+    return (
+      <ol className="mt-1 flex flex-col gap-[9px]">
+        {block.steps.map((step, i) => (
+          <li key={i} className="flex gap-[11px] text-sm leading-[1.6]">
+            <span
+              aria-hidden
+              className="mt-px grid h-[21px] w-[21px] flex-none place-items-center rounded-[7px] bg-brand-cream text-[0.6875rem] font-semibold text-[#7a6320]"
+            >
+              {i + 1}
+            </span>
+            <span className="text-brand-ink/90">
+              <strong className="font-medium text-brand-ink">{step.lead}</strong>{" "}
+              {step.rest}
+            </span>
+          </li>
+        ))}
+      </ol>
+    );
+  }
+
+  if (block.kind === "chips") {
+    return (
+      <ul className="mt-1 flex flex-wrap gap-[7px]">
+        {block.chips.map((chip) => (
+          <li
+            key={chip}
+            className="rounded-full bg-[#fbeceb] px-[11px] py-[5px] text-xs font-medium text-[#a33c2e]"
+          >
+            {chip}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (block.kind === "timeline") {
+    return (
+      /* The rail is a pseudo-less absolute bar rather than a border, so the
+         dots can sit on top of it without a background patch. */
+      <ol className="relative mt-1 flex flex-col gap-3 pl-5">
+        <span
+          aria-hidden
+          className="absolute bottom-1.5 left-[5px] top-1.5 w-[1.5px] bg-brand-lavender"
+        />
+        {block.entries.map((entry) => (
+          <li
+            key={entry.when}
+            className="relative text-[0.8438rem] leading-[1.6] text-brand-ink/90"
+          >
+            <span
+              aria-hidden
+              className="absolute -left-[19px] top-1.5 h-[9px] w-[9px] rounded-full border-2 border-brand-accent bg-white"
+            />
+            <strong className="font-medium text-brand-primary">
+              {entry.when}
+            </strong>{" "}
+            {entry.what}
+          </li>
+        ))}
+      </ol>
+    );
+  }
+
   return (
-    <div>
-      <p className="text-[11px] text-brand-gray sm:text-xs">{label}</p>
-      <p className="mt-0.5 text-sm leading-snug text-brand-ink sm:text-[0.9375rem]">
-        {value}
+    <div className="mt-1 rounded-xl border border-brand-cream bg-brand-cream-light px-[17px] py-[15px]">
+      <p className="text-[0.8125rem] leading-[1.65] text-brand-ink/90">
+        {block.body}
       </p>
     </div>
   );
 }
 
-function Section({ section }: { section: SampleSection }) {
+function MetaField({ label, value }: { label: string; value: string }) {
   return (
-    <section className="mt-8 sm:mt-9">
-      <h2 className="font-serif text-xl leading-snug text-brand-primary sm:text-[1.375rem]">
-        {section.title}
-      </h2>
-
-      <div
-        className={
-          section.callout
-            ? "mt-3 rounded-2xl border border-brand-primary/30 bg-brand-lavender/25 px-4 py-4 sm:mt-4 sm:px-5 sm:py-5"
-            : "mt-3 rounded-2xl bg-brand-purple-soft/70 px-4 py-4 sm:mt-4 sm:px-5 sm:py-5"
-        }
-      >
-        {section.body ? <Paragraphs text={section.body} /> : null}
-
-        {section.bullets ? (
-          <ul className="space-y-2.5 sm:space-y-3">
-            {section.bullets.map((item) => (
-              <li
-                key={item}
-                className="flex items-start gap-2.5 text-sm leading-relaxed text-brand-ink sm:text-[0.9375rem]"
-              >
-                <span
-                  aria-hidden
-                  className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center text-brand-error"
-                >
-                  <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="none">
-                    <path
-                      d="M3 3L9 9M9 3L3 9"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        {section.parts ? (
-          <div className="space-y-4">
-            {section.parts.map((part) => (
-              <div key={part.label}>
-                <h3 className="text-sm font-semibold text-brand-primary sm:text-[0.9375rem]">
-                  {part.label}
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-brand-ink sm:text-[0.9375rem]">
-                  {part.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </section>
+    <div className="min-w-0">
+      <dt className="text-[0.625rem] font-medium uppercase tracking-[0.12em] text-brand-accent">
+        {label}
+      </dt>
+      <dd className="mt-[3px] text-[0.8125rem] font-medium text-brand-ink">
+        {value}
+      </dd>
+    </div>
   );
 }
 
 export default function SampleAssessmentDocument() {
+  const author = AUTHORS[DEFAULT_AUTHOR_SLUG];
+  const initials = author.name
+    .split(" ")
+    .map((part) => part[0])
+    .join("");
+  const degree = CREDENTIALS.find((c) => c.kind === "degree");
+  const membership = CREDENTIALS.find((c) => c.kind === "membership");
+
   return (
-    <article className="mx-auto w-full max-w-[44rem] rounded-[2rem] border border-brand-lavender/60 bg-white px-5 py-7 shadow-sm sm:px-8 sm:py-9">
-      <header className="text-center">
-        <Image
-          src={reportLogo}
-          alt="Glam Repairs"
-          width={121}
-          height={45}
-          unoptimized
-          className="mx-auto h-10 w-auto sm:h-11"
-        />
-        <h1 className="mt-4 font-serif text-[1.625rem] leading-tight text-brand-ink sm:text-[1.875rem]">
-          Skin Assessment
-        </h1>
-        <p className="mt-2 text-xs uppercase tracking-[0.2em] text-brand-gray">
-          Sample document
-        </p>
+    <article className="overflow-hidden rounded-[1.25rem] border border-brand-lavender/45 bg-white shadow-brand lg:sticky lg:top-6">
+      <header className="border-b border-brand-lavender bg-gradient-to-br from-brand-purple-soft via-white to-white px-[30px] pb-[22px] pt-[26px]">
+        <div className="mb-[18px] flex items-center justify-between gap-4">
+          <span className="font-serif text-[1.0625rem] font-semibold tracking-[0.02em] text-brand-primary">
+            GLAM REPAIRS
+          </span>
+          {/*
+            Deliberately not a realistic-looking reference. A plausible one
+            implies a record someone could ask us to produce.
+          */}
+          <span className="rounded-md border border-brand-lavender bg-white px-[9px] py-1 font-mono text-[0.6875rem] text-brand-gray">
+            {SAMPLE_PATIENT.reference}
+          </span>
+        </div>
+
+        <h2 className="font-serif text-2xl font-semibold leading-[1.25] tracking-[-0.01em] text-brand-ink">
+          Skin Guidance Report
+        </h2>
+
+        <dl className="mt-[18px] grid grid-cols-2 gap-[14px] sm:grid-cols-4">
+          <MetaField label="Client" value={SAMPLE_PATIENT.clientName} />
+          <MetaField label="Age" value={SAMPLE_PATIENT.age} />
+          <MetaField label="Concern" value={SAMPLE_PATIENT.concern} />
+          <MetaField label="Location" value={SAMPLE_PATIENT.location} />
+        </dl>
       </header>
 
-      {/*
-        Stated on the document itself, not only in the page around it. A
-        screenshot of this article can travel without the surrounding page,
-        and it must not be mistakable for a real client's report.
-      */}
-      <p className="mt-6 rounded-2xl border border-brand-primary/30 bg-brand-cream/70 px-4 py-3.5 text-sm leading-relaxed text-brand-ink">
-        <strong className="font-medium">This is a demonstration.</strong> The
-        client is a composite written to show the format and the depth of a
-        real assessment. No client&apos;s report, photographs or details appear
-        here, and nothing below is advice for your skin — yours would be
-        written from your own photographs and answers.
-      </p>
+      <div className="px-[30px] pb-[26px] pt-1.5">
+        {SAMPLE_SECTIONS.map((section, index) => (
+          <section
+            key={section.title}
+            className="border-b border-[#f4f1f7] py-[22px] last:border-b-0"
+          >
+            <h3 className="mb-[11px] flex items-center gap-[9px] font-serif text-lg font-medium italic text-brand-primary">
+              <span
+                aria-hidden
+                className="grid h-[22px] w-[22px] flex-none place-items-center rounded-full bg-brand-purple-soft font-sans text-[0.6875rem] font-semibold not-italic text-brand-primary"
+              >
+                {index + 1}
+              </span>
+              {section.title}
+            </h3>
+            <Block block={section.block} />
+          </section>
+        ))}
+      </div>
 
-      <section className="mt-8 sm:mt-9">
-        <h2 className="text-sm font-semibold text-brand-ink sm:text-[0.9375rem]">
-          Client information
-        </h2>
-        <div className="mt-3 grid grid-cols-2 gap-x-5 gap-y-3 sm:gap-x-8 sm:gap-y-4">
-          <InfoField label="Client name" value={SAMPLE_PATIENT.clientName} />
-          <InfoField label="Gender" value={SAMPLE_PATIENT.gender} />
-          <InfoField label="Concern" value={SAMPLE_PATIENT.concern} />
-          <InfoField label="Age" value={SAMPLE_PATIENT.age} />
-          <InfoField label="Plan" value={SAMPLE_PATIENT.plan} />
-          <InfoField label="Location" value={SAMPLE_PATIENT.location} />
-          <InfoField label="Reference" value={SAMPLE_PATIENT.reference} />
-          <InfoField label="Report date" value={SAMPLE_PATIENT.reportDate} />
+      {/* The signature block. Credentials come from lib/seo/site.ts, so this
+          cannot claim a qualification the /credentials page does not list. */}
+      <footer className="border-t border-brand-cream bg-brand-cream-light px-[30px] pb-[26px] pt-[22px]">
+        <div className="flex items-center gap-[14px]">
+          <span
+            aria-hidden
+            className="grid h-[46px] w-[46px] flex-none place-items-center rounded-full bg-gradient-to-br from-brand-primary to-brand-accent font-serif text-base text-white"
+          >
+            {initials}
+          </span>
+          <div>
+            <strong className="block font-serif text-base font-semibold text-brand-ink">
+              {author.name}
+            </strong>
+            <span className="mt-px block text-xs font-medium text-brand-primary">
+              {author.title}
+            </span>
+          </div>
         </div>
-        {/*
-          The real document shows the client's own photographs here. A sample
-          cannot: publishing a client's face is not something the photo-step
-          consent covers, and a stock face would be a fabricated record. So
-          the slot is described rather than filled.
-        */}
-        <p className="mt-5 rounded-2xl border border-dashed border-brand-lavender bg-brand-surface/60 px-4 py-4 text-xs leading-relaxed text-brand-gray sm:text-[0.8125rem]">
-          Your own photographs appear here in the report you receive. They are
-          left out of this sample — a delivered assessment contains an
-          identifiable person, and no client&apos;s photographs are published
-          as marketing.
-        </p>
-      </section>
 
-      {SAMPLE_SECTIONS.map((section) => (
-        <Section key={section.title} section={section} />
-      ))}
-
-      <section className="mt-8 rounded-2xl border border-brand-border-light/60 bg-brand-surface/50 px-4 py-4 sm:mt-9 sm:px-5 sm:py-5">
-        <h2 className="text-sm font-semibold text-brand-ink sm:text-[0.9375rem]">
-          What this assessment is not
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-brand-gray sm:text-[0.9375rem]">
-          {SAMPLE_CLOSING}
+        <p className="mt-3 text-[0.6875rem] leading-[1.75] text-brand-gray">
+          {author.credentials}
+          {degree?.reference ? (
+            <>
+              <br />
+              Degree attested by the {degree.issuer}, Ref. {degree.reference}
+            </>
+          ) : null}
+          {membership?.reference ? (
+            <>
+              <br />
+              Member, {membership.issuer} (Membership No. {membership.reference})
+            </>
+          ) : null}
         </p>
-      </section>
+
+        <p className="mt-3 border-t border-brand-cream pt-3 text-[0.6875rem] italic leading-[1.7] text-[#8a8590]">
+          {author.name.split(" ")[0]} is not a physician or dermatologist. Glam
+          Repairs provides cosmetic skincare guidance and does not diagnose,
+          prescribe for, or treat medical conditions.
+        </p>
+      </footer>
     </article>
   );
 }
