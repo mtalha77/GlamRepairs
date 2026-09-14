@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { createContext, useContext, useState } from "react";
 import Link from "next/link";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
-import { ONBOARDING_PROGRESS } from "@/components/onboarding/onboardingConfig";
+import {
+  ONBOARDING_FORM,
+  ONBOARDING_PROGRESS,
+} from "@/components/onboarding/onboardingConfig";
 import { StepHeader, StepRequiredError } from "@/components/steps";
 import { ONBOARDING_COMPLETE_UNLOCK } from "@/lib/funnel/funnelProgress";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
@@ -227,7 +230,7 @@ type ConsentStepProps = {
 };
 
 export default function ConsentStep({
-  backHref = "/onboarding/step/24",
+  backHref = `/onboarding/step/${ONBOARDING_FORM.consent - 1}`,
   nextHref = "/onboarding/complete",
   region,
 }: ConsentStepProps) {
