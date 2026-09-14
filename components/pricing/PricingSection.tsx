@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import CurrencySwitcher from "@/components/pricing/CurrencySwitcher";
 import PricingCard from "@/components/pricing/PricingCard";
 import { pricingPlans } from "@/components/pricing/pricingPlans";
@@ -8,6 +10,13 @@ type PricingSectionProps = {
   title?: string;
   subtitle?: string;
   showTrustLine?: boolean;
+  /**
+   * HANDOVER-22 §1 — the link to /sample-assessment, directly under the
+   * cards. This is the moment the reader has just seen a number and is
+   * asking what it buys, and the sample answers that better than any line
+   * of copy on this section can.
+   */
+  showSampleLink?: boolean;
 };
 
 const defaultTitle = "Pricing";
@@ -31,6 +40,7 @@ export default async function PricingSection({
   title = defaultTitle,
   subtitle = defaultSubtitle,
   showTrustLine = false,
+  showSampleLink = false,
 }: PricingSectionProps) {
   const [region, regions] = await Promise.all([
     getServerPricingRegion(),
@@ -64,6 +74,19 @@ export default async function PricingSection({
             />
           ))}
         </div>
+
+        {showSampleLink ? (
+          <p className="mt-8 text-center text-sm leading-relaxed text-brand-ink sm:mt-10 sm:text-[0.9375rem]">
+            Not sure what you get for that?{" "}
+            <Link
+              href="/sample-assessment"
+              className="font-medium text-brand-primary underline underline-offset-4 hover:opacity-80"
+            >
+              Read a full sample assessment
+            </Link>{" "}
+            — the whole document, before you pay.
+          </p>
+        ) : null}
 
         {showTrustLine ? (
           <p className="mx-auto mt-10 max-w-3xl text-center text-sm leading-relaxed text-brand-gray sm:mt-12 sm:text-[0.9375rem]">

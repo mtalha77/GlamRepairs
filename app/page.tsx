@@ -59,17 +59,32 @@ export default async function Home() {
       <SkinAssessment />
       <ProblemSection />
       <WhatWeDoSection />
+      {/*
+        HANDOVER-22 §1 — reviews now come BEFORE the plans.
+
+        They used to sit after pricing, which meant the reader met the price
+        with nothing behind it and the proof arrived once the decision was
+        already made. Other people's experience is what makes a number
+        readable, so it goes first.
+
+        (This supersedes the HANDOVER-12 §5 placement, which put the same
+        section after the value proposition and before the FAQ.)
+      */}
+      <TestimonialsSection />
       <PricingSection
-        title="Start free. Glow on your own terms."
+        /*
+         * HANDOVER-22 §1 — the headline reframes the price against what the
+         * reader has already spent rather than against nothing. Almost
+         * everyone arriving here has a shelf of products that did not work;
+         * that is the comparison they are actually making.
+         */
+        title="Less than the products you already bought that didn't work"
         subtitle="No clinic. No commute. Just clarity."
         showTrustLine
+        showSampleLink
       />
       <TrustPrivacySection />
       <WhatYouGetSection />
-      {/* HANDOVER-12 §5 — a trust beat directly after the value proposition
-          and before the questions, which is where a reader decides whether
-          to believe what they have just been told. */}
-      <TestimonialsSection />
       <FaqSection faqs={faqs} />
       {/* HOTFIX-10 §1a — sits above the footer CTA so the blog finally has
           an internal route in from the highest-authority page on the site. */}
