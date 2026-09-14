@@ -3,8 +3,11 @@ import type { Metadata } from "next";
 import ThankYouStep from "@/components/onboarding/steps/ThankYouStep";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 
+// Suffix-free: the root layout template appends "| GlamRepairs", so the
+// old value rendered "Thank You | GlamRepairs | GlamRepairs" — the same
+// fault /pricing already documents and fixed for itself.
 export const metadata: Metadata = {
-  title: "Thank You | GlamRepairs",
+  title: "Thank You",
   description: "Your skin assessment submission has been received.",
 };
 
