@@ -826,6 +826,33 @@ select:autofill {
   transform: scaleX(1);
 }
 
+/* ── HANDOVER-23 §2.2 — View Transitions, and why there are none ──────────
+   §2.2 asks for the native View Transitions API on the grounds that "Next.js
+   16 supports it, it costs nothing". It was implemented, measured in a real
+   Chromium via Playwright, and removed again, because on this stack it does
+   nothing:
+
+   • `experimental.viewTransition` in next.config does NOT wrap navigations
+     in `document.startViewTransition`. It enables React's `<ViewTransition>`
+     component, and without content wrapped in one, no transition starts.
+     Patched `document.startViewTransition` before any app code ran and
+     counted the calls across a client-side navigation: zero.
+   • `<ViewTransition>` is only in React's experimental channel. This project
+     is on react 19.2.4 stable, which exports no such component — checked
+     directly, the only `unstable_*` export is `unstable_useCacheRefresh`.
+   • The pure-CSS `@view-transition { navigation: auto }` route only covers
+     cross-document navigation. App Router navigations are same-document, so
+     it never fires either.
+
+   Getting this would mean moving React to the experimental channel on a
+   production site whose funnel takes payments, to gain a 240ms cross-fade.
+   That trade is not worth making, and shipping the flag with CSS that never
+   runs would have been worse than not shipping it — experimental risk for
+   no effect. Revisit when `<ViewTransition>` reaches a stable React release.
+
+   The funnel's own directional step animation below already provides the
+   effect §2.2 describes, within the flow where it matters most. */
+
 /* ── HANDOVER-23 §2.11 — the sticky Get Started tab (option A) ────────────
    Flush to the edge with left-only rounding, so it reads as attached to the
    page rather than floating near it. The inset highlight on the right edge
