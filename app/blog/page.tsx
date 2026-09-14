@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BlogIndex, { type BlogIndexPost } from "@/components/blog/BlogIndex";
 import JsonLd from "@/components/seo/JsonLd";
 import { listPublishedPosts } from "@/lib/studio/blog";
 import { AUTHORS } from "@/lib/seo/authors";
@@ -29,6 +30,24 @@ function fmt(d: string | null) {
 export default async function BlogIndexPage() {
   const posts = await listPublishedPosts();
 
+  /**
+   * HANDOVER-22 §7 — dates and author names are resolved here, on the
+   * server, rather than in the client component that renders the cards.
+   * `toLocaleDateString` follows the machine's locale, so formatting in the
+   * browser would produce a different string from the one the server sent
+   * and hydration would mismatch on any visitor whose locale is not en-GB.
+   */
+  const cards: BlogIndexPost[] = posts.map((post) => ({
+    id: post.id,
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    cluster: post.cluster,
+    authorName: AUTHORS[post.authorSlug]?.name ?? null,
+    publishedLabel: fmt(post.publishedAt),
+    readingMinutes: post.readingMinutes,
+  }));
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
       <JsonLd
@@ -51,44 +70,7 @@ export default async function BlogIndexPage() {
         </p>
       </header>
 
-      {posts.length === 0 ? (
-        <p className="mt-16 rounded-xl bg-black/[0.035] px-5 py-6 text-black/60">
-          Nothing published yet. New articles appear here as they are reviewed.
-        </p>
-      ) : (
-        <ul className="mt-14 divide-y divide-black/10">
-          {posts.map((post) => {
-            const author = AUTHORS[post.authorSlug];
-            return (
-              <li key={post.id} className="py-8">
-                {post.cluster ? (
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8a63b5]">
-                    {post.cluster}
-                  </p>
-                ) : null}
-                <h2 className="mt-2 text-2xl font-semibold leading-snug">
-                  <Link
-                    href={`/blog/${post.slug}`}
-                    className="underline-offset-4 hover:underline"
-                  >
-                    {post.title}
-                  </Link>
-                </h2>
-                {post.excerpt ? (
-                  <p className="mt-2 leading-relaxed text-black/70">
-                    {post.excerpt}
-                  </p>
-                ) : null}
-                <p className="mt-3 text-sm text-black/50">
-                  {author ? `${author.name} · ` : ""}
-                  {fmt(post.publishedAt)}
-                  {post.readingMinutes ? ` · ${post.readingMinutes} min read` : ""}
-                </p>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <BlogIndex posts={cards} />
 
       <section className="mt-16 rounded-2xl bg-[#662d91] px-7 py-8 text-[#fff3da]">
         <h2 className="text-2xl font-semibold">

@@ -159,7 +159,11 @@ export default async function BlogPostPage({
         dangerouslySetInnerHTML={{ __html: html }}
       />
 
-      <RelatedReading currentSlug={post.slug} cluster={post.cluster} />
+      <RelatedReading
+        currentSlug={post.slug}
+        cluster={post.cluster}
+        relatedSlugs={post.relatedSlugs}
+      />
 
       <section className="mt-14 rounded-2xl bg-[#662d91] px-7 py-8 text-[#fff3da]">
         <h2 className="text-2xl font-semibold">Not sure this is your pattern?</h2>

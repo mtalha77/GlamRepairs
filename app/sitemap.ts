@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { abs } from "@/lib/seo/site";
 import { listAuthors } from "@/lib/seo/authors";
 import { listPublishedForSitemap } from "@/lib/studio/blog";
+import { AIR_QUALITY_CITIES } from "@/lib/airQuality/cities";
+import { isAirQualityConfigured } from "@/lib/airQuality/provider";
 
 /**
  * sitemap.xml
@@ -44,6 +46,12 @@ const STATIC_ROUTES: {
 }[] = [
   { path: "/", priority: 1.0, changeFrequency: "weekly" },
   { path: "/pricing", priority: 0.9, changeFrequency: "monthly" },
+  // The page that answers "what do I actually get?" — high priority
+  // because it is the one conversion asset that is also indexable prose.
+  { path: "/sample-assessment", priority: 0.9, changeFrequency: "monthly" },
+  // Sourced, figure-by-figure comparison — the kind of page that earns
+  // citations rather than just ranking.
+  { path: "/compare", priority: 0.8, changeFrequency: "monthly" },
   { path: "/blog", priority: 0.8, changeFrequency: "weekly" },
   { path: "/about", priority: 0.7, changeFrequency: "monthly" },
   { path: "/credentials", priority: 0.5, changeFrequency: "monthly" },
@@ -52,6 +60,25 @@ const STATIC_ROUTES: {
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
 ];
+
+/**
+ * HANDOVER-22 §6 — the air-quality pages are listed only when they exist.
+ *
+ * They 404 without an API key, and a sitemap that lists 404s is worse than
+ * one that omits a page: it is a direct signal to Google that the file
+ * cannot be trusted. Conditional here rather than always-on for that reason.
+ */
+function airQualityEntries(): MetadataRoute.Sitemap {
+  if (!isAirQualityConfigured()) return [];
+  return [
+    { url: abs("/air-quality"), changeFrequency: "daily", priority: 0.6 },
+    ...AIR_QUALITY_CITIES.map((city) => ({
+      url: abs(`/air-quality/${city.slug}`),
+      changeFrequency: "daily" as const,
+      priority: 0.7,
+    })),
+  ];
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((r) => ({
@@ -79,5 +106,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticEntries, ...authorEntries, ...postEntries];
+  return [
+    ...staticEntries,
+    ...airQualityEntries(),
+    ...authorEntries,
+    ...postEntries,
+  ];
 }

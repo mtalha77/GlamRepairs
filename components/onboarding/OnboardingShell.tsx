@@ -49,7 +49,7 @@ export default function OnboardingShell({
 
   // HOTFIX-9 §1 — a user who skips the event-date step is walking a
   // 24-step funnel, so they should be counting down 24, not watching the
-  // bar jump 19 → 21 out of 25 and wondering what it missed. Applies to
+  // bar jump 20 → 22 out of 26 and wondering what it missed. Applies to
   // /onboarding/* only; the booking flow numbers itself separately.
   const isOnboarding = pathname.startsWith("/onboarding");
   const displayTotalSteps = isOnboarding

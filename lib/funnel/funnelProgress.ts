@@ -10,8 +10,9 @@ import type { FunnelFlow } from "@/lib/funnel/useFunnelStore";
 /**
  * Steps the current answers make irrelevant, so navigation jumps over them.
  *
- * - planSelection (21): the plan was already chosen on /pricing.
- * - eventDate (20): the user said they have no event coming up, so asking
+ * - earlyPlanSelection (2) and planSelection (22): the plan was already
+ *   chosen on /pricing, so neither asking nor confirming is needed.
+ * - eventDate (21): the user said they have no event coming up, so asking
  *   for its date is a visible bug (HOTFIX-9 §1).
  */
 export type OnboardingSkips = {
@@ -29,7 +30,21 @@ export function isSkippedOnboardingStep(
   skips: OnboardingSkips,
 ): boolean {
   if (skips.skipEventDate && step === ONBOARDING_FORM.eventDate) return true;
-  if (skips.skipPlanSelection && step === ONBOARDING_FORM.planSelection) {
+  /**
+   * One flag covers both plan steps. A user who arrived from a pricing CTA
+   * has answered this question already, so they should meet it neither at
+   * step 2 nor at the step 22 confirmation.
+   *
+   * Deliberately keyed on `planPreselected` rather than "a plan is set" —
+   * see useOnboardingSkips. Someone who picks at step 2 must still be able
+   * to press Back and change it, and a bare "plan is set" test would skip
+   * them straight past their own answer.
+   */
+  if (
+    skips.skipPlanSelection &&
+    (step === ONBOARDING_FORM.earlyPlanSelection ||
+      step === ONBOARDING_FORM.planSelection)
+  ) {
     return true;
   }
   return false;
@@ -37,9 +52,9 @@ export function isSkippedOnboardingStep(
 
 /**
  * Walks past every skipped step in the given direction, so consecutive
- * skips chain correctly: with both a preselected plan and no event, step 19
- * Next has to clear 20 AND 21 and land on 22, and step 22 Back has to clear
- * 21 AND 20 and land on 19. Handling them as two independent adjustments
+ * skips chain correctly: with both a preselected plan and no event, step 20
+ * Next has to clear 21 AND 22 and land on 23, and step 23 Back has to clear
+ * 22 AND 21 and land on 20. Handling them as two independent adjustments
  * would stop after the first.
  */
 export function adjustOnboardingHrefForSkips(
@@ -65,7 +80,7 @@ export function adjustOnboardingHrefForSkips(
 
 /**
  * How many steps before `step` are being skipped — used to keep the progress
- * indicator truthful. A bar that jumps 19 → 21 out of 25 looks broken, so a
+ * indicator truthful. A bar that jumps 20 → 22 out of 26 looks broken, so a
  * skipping user counts down a shorter funnel instead.
  */
 export function countSkippedOnboardingStepsBefore(

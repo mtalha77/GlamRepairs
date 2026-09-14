@@ -44,6 +44,29 @@ async function guard() {
   return { user, member };
 }
 
+/**
+ * HANDOVER-22 §8 — the cap is enforced here, not only in the editor.
+ *
+ * The editor disables further checkboxes at three, but a form post is a form
+ * post: the limit has to hold on the server or it is decoration. Self-links
+ * are dropped for the same reason — the editor cannot list the current post,
+ * but a hand-made request could.
+ */
+const MAX_RELATED_SLUGS = 3;
+
+function relatedSlugsFrom(formData: FormData, ownSlug: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of formData.getAll("related_slugs")) {
+    const slug = String(raw).trim();
+    if (!slug || slug === ownSlug || seen.has(slug)) continue;
+    seen.add(slug);
+    out.push(slug);
+    if (out.length === MAX_RELATED_SLUGS) break;
+  }
+  return out;
+}
+
 /** Shared field mapping, so save and publish can never drift apart. */
 function payloadFrom(formData: FormData, userId: string) {
   const title = String(formData.get("title") ?? "").trim();
@@ -64,6 +87,7 @@ function payloadFrom(formData: FormData, userId: string) {
         String(formData.get("meta_description") ?? "").trim() || null,
       target_keyword: String(formData.get("target_keyword") ?? "").trim() || null,
       cluster: String(formData.get("cluster") ?? "").trim() || null,
+      related_slugs: relatedSlugsFrom(formData, slug),
       reviewer_slug: String(formData.get("reviewer_slug") ?? "").trim() || null,
       author_slug: String(formData.get("author_slug") ?? "ayma-arif").trim(),
       reading_minutes: readingMinutes(body),

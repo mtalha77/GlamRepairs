@@ -31,10 +31,25 @@ import type { BlogPost } from "@/lib/studio/blog";
 const CLUSTERS = ["diagnostic", "ingredient", "routine", "myth", "pakistan"] as const;
 const MIN_PUBLISH_CHARS = 1200;
 
+/**
+ * HANDOVER-22 §8. Three is the cap because the public component shows
+ * three; letting the editor pick five would silently discard two and the
+ * studio would have no way to tell which. The server enforces the same
+ * number — see relatedSlugsFrom in lib/studio/blogActions.ts.
+ */
+const MAX_RELATED = 3;
+
 type Props = {
   post: BlogPost | null;
   authors: { slug: string; name: string }[];
   reviewers: { slug: string; name: string; credentials: string }[];
+  /**
+   * Every other post, for the related-posts picker. Drafts are included and
+   * labelled: choosing one before it publishes is the normal workflow, and
+   * the public component skips any pick that is not published yet rather
+   * than rendering a dead link.
+   */
+  otherPosts: { slug: string; title: string; status: string }[];
 };
 
 function Field({
@@ -60,7 +75,12 @@ function Field({
 const input =
   "w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-[#662d91]";
 
-export default function BlogEditor({ post, authors, reviewers }: Props) {
+export default function BlogEditor({
+  post,
+  authors,
+  reviewers,
+  otherPosts,
+}: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, start] = useTransition();
@@ -71,6 +91,20 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
   const [body, setBody] = useState(post?.bodyMarkdown ?? "");
   const [reviewer, setReviewer] = useState(post?.reviewerSlug ?? "");
   const [metaDesc, setMetaDesc] = useState(post?.metaDescription ?? "");
+  const [related, setRelated] = useState<string[]>(
+    (post?.relatedSlugs ?? []).slice(0, MAX_RELATED),
+  );
+
+  function toggleRelated(slug: string) {
+    setDirty(true);
+    setRelated((current) =>
+      current.includes(slug)
+        ? current.filter((value) => value !== slug)
+        : current.length >= MAX_RELATED
+          ? current
+          : [...current, slug],
+    );
+  }
 
   const chars = body.trim().length;
   const words = body.trim() ? body.trim().split(/\s+/).length : 0;
@@ -335,6 +369,80 @@ export default function BlogEditor({ post, authors, reviewers }: Props) {
                 </span>
               </Field>
             </div>
+          </div>
+
+          {/*
+            HANDOVER-22 §8 — related posts.
+
+            A picker rather than free text: a typed slug that does not exist
+            fails silently at read time, and "Related reading" quietly losing
+            an entry is the kind of bug nobody reports. Checkboxes can only
+            produce slugs that exist.
+
+            Unpicked boxes disable at three rather than pushing the oldest
+            out, so the editor is never surprised by which one vanished.
+          */}
+          <div className="rounded-xl border border-neutral-200 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Related posts
+            </p>
+            <p className="mt-1.5 text-xs text-neutral-400">
+              Up to {MAX_RELATED}. Leave empty and the post falls back to
+              others in the same cluster.
+            </p>
+
+            {otherPosts.length === 0 ? (
+              <p className="mt-3 text-xs text-neutral-400">
+                No other posts yet.
+              </p>
+            ) : (
+              <ul className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
+                {otherPosts.map((other) => {
+                  const checked = related.includes(other.slug);
+                  const atCap = !checked && related.length >= MAX_RELATED;
+                  return (
+                    <li key={other.slug}>
+                      <label
+                        className={`flex items-start gap-2 text-sm ${
+                          atCap ? "text-neutral-400" : "text-neutral-700"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={atCap}
+                          onChange={() => toggleRelated(other.slug)}
+                          className="mt-1"
+                        />
+                        <span>
+                          {other.title}
+                          {other.status !== "published" ? (
+                            <span className="ml-1.5 text-xs text-amber-700">
+                              ({other.status})
+                            </span>
+                          ) : null}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {/*
+              Submitted as hidden inputs rather than as the checkboxes
+              themselves: a disabled checkbox is omitted from FormData, so
+              using them directly would drop picks the moment the cap was
+              reached.
+            */}
+            {related.map((slug) => (
+              <input
+                key={slug}
+                type="hidden"
+                name="related_slugs"
+                value={slug}
+              />
+            ))}
           </div>
         </aside>
       </div>

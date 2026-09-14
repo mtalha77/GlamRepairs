@@ -25,98 +25,103 @@ const STEP_METADATA: Record<number, Metadata> = {
     description: "Start your personalized skin guidance assessment.",
   },
   2: {
+    title: "Choose Your Plan | GlamRepairs",
+    description:
+      "Pick the plan that fits before you answer anything — no surprises later.",
+  },
+  3: {
     title: "Your Program | GlamRepairs",
     description: "Learn what is included in your personalized skin guidance program.",
   },
-  3: {
+  4: {
     title: "Skin Type | GlamRepairs",
     description: "Select your skin type to personalize your treatment program.",
   },
-  4: {
+  5: {
     title: "Improve Areas | GlamRepairs",
     description: "Select the face areas you would like to improve.",
   },
-  5: {
+  6: {
     title: "Skin Tone | GlamRepairs",
     description: "Select the color closest to your skin tone.",
   },
-  6: {
+  7: {
     title: "Primary Concern | GlamRepairs",
     description: "Select your main skin concern to personalize your guidance.",
   },
-  7: {
+  8: {
     title: "Concern Duration | GlamRepairs",
     description: "Tell us how long you have been dealing with your skin concern.",
   },
-  8: {
+  9: {
     title: "Daily Routine | GlamRepairs",
     description: "Tell us about your daily skincare routine.",
   },
-  9: {
+  10: {
     title: "Skincare Products | GlamRepairs",
     description: "Select the skincare products you currently use.",
   },
-  10: {
+  11: {
     title: "You're Not Alone | GlamRepairs",
     description: "Join thousands who have found help with similar skin concerns.",
   },
-  11: {
+  12: {
     title: "Treatment Fit | GlamRepairs",
     description: "See how well your personalized treatment program matches your skin profile.",
   },
-  12: {
+  13: {
     title: "Location | GlamRepairs",
     description: "Share your location so we can tailor recommendations to your climate.",
   },
-  13: {
+  14: {
     title: "Ingredients Fit | GlamRepairs",
     description: "See how well your treatment program matches your goals.",
   },
-  14: {
+  15: {
     title: "About You | GlamRepairs",
     description: "Share a few basics to personalize your skin guidance report.",
   },
-  15: {
+  16: {
     title: "Lifestyle | GlamRepairs",
     description: "Share sleep, water, stress, and diet habits that affect your skin.",
   },
-  16: {
+  17: {
     title: "Improvement Goals | GlamRepairs",
     description: "Select what you hope Glam repair will help you improve.",
   },
-  17: {
+  18: {
     title: "Skincare Journey Feelings | GlamRepairs",
     description: "Select how you want to feel during your glam skincare journey.",
   },
-  18: {
+  19: {
     title: "Skin Condition Trend | GlamRepairs",
     description: "See how skin condition can worsen without glam.",
   },
-  19: {
+  20: {
     title: "Special Event | GlamRepairs",
     description: "Select if you have a special event coming up.",
   },
-  20: {
+  21: {
     title: "Event Date | GlamRepairs",
     description: "Tell us when your special event is.",
   },
-  21: {
+  22: {
     title: "Plan Selection | GlamRepairs",
     description: "Choose your Clarity or Transform plan to continue.",
   },
-  22: {
+  23: {
     title: "Photo Guide | GlamRepairs",
     description: "Learn how to take clear photos for an accurate skin assessment.",
   },
-  23: {
+  24: {
     title: "Photo Upload | GlamRepairs",
     description: "Upload front face and concern area photos in clear, natural light.",
   },
-  24: {
+  25: {
     title: "Skin Results Timeline | GlamRepairs",
     description: "See when most users notice skin improvements.",
   },
-  25: {
+  26: {
     title: "Consent and Trust | GlamRepairs",
     description: "Review and agree to our privacy and photo usage terms.",
   },
@@ -166,7 +171,7 @@ export default async function OnboardingStepPage({ params }: StepPageProps) {
       : "/";
 
   const nextLabel =
-    stepNumber === 11 || stepNumber === 13 || stepNumber === 18
+    stepNumber === 12 || stepNumber === 14 || stepNumber === 19
       ? "Let's make it 100%"
       : stepNumber === ONBOARDING_FORM.welcome
         ? "Get My Skin Assessment →"
@@ -178,7 +183,10 @@ export default async function OnboardingStepPage({ params }: StepPageProps) {
   // cookies()/headers(), which is what keeps this route dynamic instead of
   // caching one visitor's currency for everyone — see PricingSection.tsx).
   // Only these two steps show a price, so only these two pay for the lookup.
-  if (stepNumber === ONBOARDING_FORM.planSelection) {
+  if (
+    stepNumber === ONBOARDING_FORM.earlyPlanSelection ||
+    stepNumber === ONBOARDING_FORM.planSelection
+  ) {
     const [region, regions] = await Promise.all([
       getServerPricingRegion(),
       listActivePricingRegions(),
@@ -189,6 +197,7 @@ export default async function OnboardingStepPage({ params }: StepPageProps) {
         nextHref={nextHref}
         region={region}
         regions={regions}
+        step={progressStep}
       />
     );
   }

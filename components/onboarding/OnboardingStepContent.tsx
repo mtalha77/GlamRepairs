@@ -41,56 +41,59 @@ function StepPlaceholder({ stepNumber }: { stepNumber: number }) {
 }
 
 /**
- * Single funnel — URL step N === progress N/25.
- * Plan (24) and Consent (25) are rendered by the step page, not here.
+ * Single funnel — URL step N === progress N/26.
+ *
+ * Steps 2 and 22 (plan selection, early and confirmation) and 26 (consent)
+ * are rendered by the step page rather than here, because they need the
+ * pricing region resolved server-side.
  */
 export default function OnboardingStepContent({ stepNumber }: StepContentProps) {
   switch (stepNumber) {
     case 1:
       return <ContactStep />;
-    case 2:
-      return <ProgramIntroContent />;
     case 3:
-      return <SkinTypeStep />;
+      return <ProgramIntroContent />;
     case 4:
-      return <ImproveAreasStep />;
+      return <SkinTypeStep />;
     case 5:
-      return <SkinToneStep />;
+      return <ImproveAreasStep />;
     case 6:
-      return <PrimaryConcernStep />;
+      return <SkinToneStep />;
     case 7:
-      return <ConcernDurationStep />;
+      return <PrimaryConcernStep />;
     case 8:
-      return <DailyRoutineStep />;
+      return <ConcernDurationStep />;
     case 9:
-      return <SkincareProductsStep />;
+      return <DailyRoutineStep />;
     case 10:
-      return <NotAloneStep />;
+      return <SkincareProductsStep />;
     case 11:
-      return <TreatmentFitStep />;
+      return <NotAloneStep />;
     case 12:
-      return <LocationStep />;
+      return <TreatmentFitStep />;
     case 13:
-      return <IngredientsFitStep />;
+      return <LocationStep />;
     case 14:
-      return <AboutYouStep />;
+      return <IngredientsFitStep />;
     case 15:
-      return <LifestyleStep />;
+      return <AboutYouStep />;
     case 16:
-      return <GlamImproveGoalsStep />;
+      return <LifestyleStep />;
     case 17:
-      return <SkincareJourneyFeelStep />;
+      return <GlamImproveGoalsStep />;
     case 18:
-      return <SkinConditionWorseningStep />;
+      return <SkincareJourneyFeelStep />;
     case 19:
-      return <SpecialEventStep />;
+      return <SkinConditionWorseningStep />;
     case 20:
+      return <SpecialEventStep />;
+    case 21:
       return <EventDateStep />;
-    case 22:
-      return <UploadInstructionStep />;
     case 23:
-      return <UploadPhotosStep />;
+      return <UploadInstructionStep />;
     case 24:
+      return <UploadPhotosStep />;
+    case 25:
       return <SkinResultsTimelineStep />;
     default:
       return <StepPlaceholder stepNumber={stepNumber} />;

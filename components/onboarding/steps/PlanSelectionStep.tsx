@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
-import { ONBOARDING_PROGRESS } from "@/components/onboarding/onboardingConfig";
+import {
+  ONBOARDING_FORM,
+  ONBOARDING_PROGRESS,
+} from "@/components/onboarding/onboardingConfig";
 import CurrencySwitcher from "@/components/pricing/CurrencySwitcher";
 import CredentialsBlock from "@/components/seo/CredentialsBlock";
 import { StepHeader, StepRequiredError } from "@/components/steps";
@@ -168,14 +171,23 @@ type PlanSelectionStepProps = {
   nextHref?: string;
   region: PricingRegion;
   regions: PricingRegion[];
+  /**
+   * HANDOVER-22 §4 — this component now renders at two points in the funnel:
+   * step 2 (the first real choice) and step 22 (the confirmation before
+   * payment). The step number drives the progress bar and the wording, so
+   * neither one has to lie about where the reader is.
+   */
+  step?: number;
 };
 
 export default function PlanSelectionStep({
-  backHref = "/onboarding/step/20",
-  nextHref = "/onboarding/step/22",
+  backHref = `/onboarding/step/${ONBOARDING_FORM.planSelection - 1}`,
+  nextHref = `/onboarding/step/${ONBOARDING_FORM.planSelection + 1}`,
   region,
   regions,
+  step = ONBOARDING_PROGRESS.planSelection,
 }: PlanSelectionStepProps) {
+  const isEarly = step === ONBOARDING_FORM.earlyPlanSelection;
   const plans = PLAN_META.map((plan) => ({
     ...plan,
     price: formatRegionPrice(region, plan.id),
@@ -216,7 +228,7 @@ export default function PlanSelectionStep({
 
   return (
     <OnboardingShell
-      currentStep={ONBOARDING_PROGRESS.planSelection}
+      currentStep={step}
       footer={
         <PlanSelectionFooter
           backHref={backHref}
@@ -227,9 +239,22 @@ export default function PlanSelectionStep({
     >
       <div>
         <StepHeader
-          eyebrow="Plan Selection & Payment"
-          title="Choose your plan"
+          eyebrow={isEarly ? "Your plan" : "Plan Selection & Payment"}
+          title={isEarly ? "Choose your plan" : "Confirm your plan"}
         />
+
+        {/*
+          HANDOVER-22 §4 — the price is shown before the questionnaire, not
+          after it. Two of the three real abandonments happened at the steps
+          immediately before the old reveal, so the cost of asking late is
+          measured in lost clients, not in a worse first impression.
+        */}
+        {isEarly ? (
+          <p className="mt-3 text-sm leading-relaxed text-brand-gray">
+            Pick the one that fits. You can change it before you pay — nothing
+            is charged yet.
+          </p>
+        ) : null}
 
         {/*
           HANDOVER-20 Part 2 — say the assessment is covered at the moment
