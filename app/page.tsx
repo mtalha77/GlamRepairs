@@ -82,6 +82,7 @@ export default async function Home() {
         subtitle="No clinic. No commute. Just clarity."
         showTrustLine
         showSampleLink
+        showCompareStrip
       />
       <TrustPrivacySection />
       <WhatYouGetSection />

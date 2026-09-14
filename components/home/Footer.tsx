@@ -15,6 +15,10 @@ const pageLinks = [
   { label: "About Us", href: "/about" },
   { label: "Contact Us", href: "/contact" },
   { label: "Pricing", href: "/pricing" },
+  // HANDOVER-22 §3 and §5b — the two pages that answer "what do I get?" and
+  // "why you and not a clinic?", reachable from every page on the site.
+  { label: "See a real assessment", href: "/sample-assessment" },
+  { label: "Compare the options", href: "/compare" },
 ];
 
 const resourceLinks = [

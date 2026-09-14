@@ -104,6 +104,22 @@ export async function resolvePricingRegion(
   return mapRow(row as PricingRegionRow);
 }
 
+/**
+ * One region by code, regardless of where the visitor is.
+ *
+ * Almost everything on the site should use the visitor's own region instead.
+ * The exception is a page whose *other* figures are tied to one market —
+ * /compare quotes Lahore clinic fees in rupees, and putting a £12 price
+ * beside them would compare nothing. Returns null when the code is unknown,
+ * so the caller decides what to do rather than silently getting DEFAULT.
+ */
+export async function getPricingRegionByCode(
+  code: string,
+): Promise<PricingRegion | null> {
+  const regions = await listActivePricingRegions();
+  return regions.find((region) => region.code === code) ?? null;
+}
+
 export function priceForPlan(region: PricingRegion, planId: FunnelPlanId): number {
   if (planId === "free") return region.priceFree;
   if (planId === "clarity") return region.priceClarity;

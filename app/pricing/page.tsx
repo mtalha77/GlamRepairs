@@ -69,7 +69,10 @@ export default async function PricingPage() {
             a written report you keep. One payment, no subscription.
           </p>
         </header>
-        <PricingSection />
+        {/* HANDOVER-22 §5a/§3 — the comparison strip and the sample link
+            belong here more than anywhere: this is the page where someone
+            is looking at a number and deciding whether it is worth it. */}
+        <PricingSection showCompareStrip showSampleLink />
         <FeaturesComparisonSection />
         {/* HANDOVER-12 §5 — after the price comparison, before the FAQ. */}
         <TestimonialsSection />

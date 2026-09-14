@@ -435,6 +435,50 @@ export type Database = {
         };
         Relationships: [];
       };
+      /**
+       * HANDOVER-21 / HANDOVER-22 §5b — what each plan actually includes.
+       *
+       * Every photo limit, support duration and video-call flag on the site
+       * is supposed to come from here rather than being typed into a
+       * component. The comparison matrix is the first consumer; the photo
+       * step is the next.
+       */
+      plan_settings: {
+        Row: {
+          plan_key: string;
+          label: string;
+          photos_required: number;
+          photos_max: number;
+          includes_video_call: boolean;
+          video_minutes: number | null;
+          includes_whatsapp: boolean;
+          support_days: number | null;
+          expert_review: boolean;
+        };
+        Insert: {
+          plan_key: string;
+          label: string;
+          photos_required?: number;
+          photos_max?: number;
+          includes_video_call?: boolean;
+          video_minutes?: number | null;
+          includes_whatsapp?: boolean;
+          support_days?: number | null;
+          expert_review?: boolean;
+        };
+        Update: {
+          plan_key?: string;
+          label?: string;
+          photos_required?: number;
+          photos_max?: number;
+          includes_video_call?: boolean;
+          video_minutes?: number | null;
+          includes_whatsapp?: boolean;
+          support_days?: number | null;
+          expert_review?: boolean;
+        };
+        Relationships: [];
+      };
       pricing_regions: {
         Row: {
           code: string;
