@@ -20,6 +20,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import StickyGetStartedTab from "@/components/cta/StickyGetStartedTab";
 import JsonLd from "@/components/seo/JsonLd";
 import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
@@ -186,6 +187,7 @@ export default function RootLayout({
             /onboarding/* and while the plans are on screen. */}
         <StickyGetStartedTab />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
