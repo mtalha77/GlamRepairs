@@ -34,6 +34,9 @@ const privacyCards = [
     title: "Never Shared Publicly",
     description:
       "We never publish your photos, use them in marketing, or sell them. They are never attached to messages or shown to anyone outside the practitioner working on your case.",
+    // HANDOVER-23 §1.2 — the one card with no artwork, which left the space
+    // the layout reserves under the copy visibly empty next to the other two.
+    illustration: "notShared" as const,
   },
   {
     title: "Deletion On Request",

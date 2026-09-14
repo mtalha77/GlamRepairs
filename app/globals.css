@@ -826,6 +826,27 @@ select:autofill {
   transform: scaleX(1);
 }
 
+/* ── HANDOVER-23 §2.9 — inputs ────────────────────────────────────────────
+   The border already moves to brand-primary on focus, on a 150ms colour
+   transition, in every step and form component. What was missing is the
+   other half of §2.9: "a visible focus ring for keyboard users."
+
+   Those components set `outline-none` so the mouse focus state is just the
+   border. That is a reasonable look and a genuine accessibility problem —
+   a keyboard user tabbing through a 26-step funnel had only a subtle border
+   shift to tell them where they were, and on the fields with an error state
+   the border was already coloured.
+
+   `:focus-visible` is what makes this safe to fix globally: the ring
+   appears for keyboard focus and never for a mouse click, so nothing about
+   the pointer experience changes. Deliberately an outline and not a
+   box-shadow — §2.9 says no glow, no shadow bloom — and outline does not
+   participate in layout, so no field shifts when it appears. */
+:where(input, textarea, select, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
 /* ── HANDOVER-23 §2.10 — skeletons ────────────────────────────────────────
    "A spinner communicates waiting; a skeleton communicates loading."
 
