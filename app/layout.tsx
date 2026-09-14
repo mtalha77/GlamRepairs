@@ -20,6 +20,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
+import StickyGetStartedTab from "@/components/cta/StickyGetStartedTab";
 import JsonLd from "@/components/seo/JsonLd";
 import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
 import { graph, organizationSchema, personSchema, websiteSchema } from "@/lib/seo/schema";
@@ -168,6 +169,9 @@ export default function RootLayout({
           `}
         </Script>
         {children}
+        {/* HANDOVER-22 §2 — mounted site-wide; it suppresses itself across
+            /onboarding/* and while the plans are on screen. */}
+        <StickyGetStartedTab />
         <Analytics />
       </body>
     </html>
