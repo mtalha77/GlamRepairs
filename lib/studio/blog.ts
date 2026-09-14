@@ -24,6 +24,11 @@ export type BlogPost = {
   metaDescription: string | null;
   targetKeyword: string | null;
   cluster: string | null;
+  /**
+   * HANDOVER-22 §8 — up to 3 slugs chosen in the studio. Always an array;
+   * empty means the public page falls back to same-cluster posts.
+   */
+  relatedSlugs: string[];
   heroImageUrl: string | null;
   readingMinutes: number | null;
   authorSlug: string;
@@ -37,7 +42,7 @@ export type BlogPost = {
 
 const COLUMNS =
   "id, slug, title, excerpt, body_markdown, meta_title, meta_description, " +
-  "target_keyword, cluster, hero_image_url, reading_minutes, author_slug, " +
+  "target_keyword, cluster, related_slugs, hero_image_url, reading_minutes, author_slug, " +
   "reviewer_slug, reviewed_at, status, published_at, updated_at, created_at";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -52,6 +57,10 @@ function mapRow(row: any): BlogPost {
     metaDescription: row.meta_description,
     targetKeyword: row.target_keyword,
     cluster: row.cluster,
+    // Defensive: the column is NOT NULL with a '{}' default, but a row
+    // read through an older projection would otherwise map to undefined
+    // and every `.length` downstream would throw.
+    relatedSlugs: Array.isArray(row.related_slugs) ? row.related_slugs : [],
     heroImageUrl: row.hero_image_url,
     readingMinutes: row.reading_minutes,
     authorSlug: row.author_slug,

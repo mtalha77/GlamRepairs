@@ -569,6 +569,8 @@ export type Database = {
           meta_description: string | null;
           target_keyword: string | null;
           cluster: string | null;
+          /** HANDOVER-22 §8 — up to 3 slugs, chosen in the studio. Never null. */
+          related_slugs: string[];
           hero_image_url: string | null;
           reading_minutes: number | null;
           author_slug: string;
@@ -591,6 +593,7 @@ export type Database = {
           meta_description?: string | null;
           target_keyword?: string | null;
           cluster?: string | null;
+          related_slugs?: string[];
           hero_image_url?: string | null;
           reading_minutes?: number | null;
           author_slug?: string;
@@ -613,6 +616,7 @@ export type Database = {
           meta_description?: string | null;
           target_keyword?: string | null;
           cluster?: string | null;
+          related_slugs?: string[];
           hero_image_url?: string | null;
           reading_minutes?: number | null;
           author_slug?: string;

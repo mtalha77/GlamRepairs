@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import BlogEditor from "@/components/studio/BlogEditor";
 import { requireStudioMember } from "@/lib/studio/member";
-import { getPostById } from "@/lib/studio/blog";
+import { getPostById, listAllPosts } from "@/lib/studio/blog";
 import { listAuthors, listReviewers } from "@/lib/seo/authors";
 
 /**
@@ -24,6 +24,17 @@ export default async function StudioBlogEditorPage({
   const post = isNew ? null : await getPostById(id);
   if (!isNew && !post) notFound();
 
+  // HANDOVER-22 §8 — candidates for the related-posts picker. Archived posts
+  // are excluded: they are not coming back, so offering them is offering a
+  // link that will never resolve.
+  const otherPosts = (await listAllPosts())
+    .filter((other) => other.id !== post?.id && other.status !== "archived")
+    .map((other) => ({
+      slug: other.slug,
+      title: other.title,
+      status: other.status,
+    }));
+
   return (
     <BlogEditor
       post={post}
@@ -33,6 +44,7 @@ export default async function StudioBlogEditorPage({
         name: a.name,
         credentials: a.credentials,
       }))}
+      otherPosts={otherPosts}
     />
   );
 }
