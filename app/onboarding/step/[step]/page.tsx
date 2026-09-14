@@ -19,110 +19,120 @@ import { listActivePricingRegions } from "@/lib/pricing/regions";
 
 const TOTAL_STEPS = ONBOARDING_TOTAL_STEPS;
 
+/**
+ * Per-step titles, WITHOUT a "| GlamRepairs" suffix.
+ *
+ * The root layout declares `title.template` as "%s | GlamRepairs", so Next
+ * appends the site name itself. Every entry here used to carry the suffix as
+ * well, which rendered "Consent and Trust | GlamRepairs | GlamRepairs" in the
+ * browser tab — verified on production before this change. These are noindex
+ * pages so nothing was lost in search, but it was visible to anyone in the
+ * funnel with more than one tab open.
+ */
 const STEP_METADATA: Record<number, Metadata> = {
   1: {
-    title: "Welcome | GlamRepairs",
+    title: "Welcome",
     description: "Start your personalized skin guidance assessment.",
   },
   2: {
-    title: "Choose Your Plan | GlamRepairs",
+    title: "Choose Your Plan",
     description:
       "Pick the plan that fits before you answer anything — no surprises later.",
   },
   3: {
-    title: "Your Program | GlamRepairs",
+    title: "Your Program",
     description: "Learn what is included in your personalized skin guidance program.",
   },
   4: {
-    title: "Skin Type | GlamRepairs",
+    title: "Skin Type",
     description: "Select your skin type to personalize your treatment program.",
   },
   5: {
-    title: "Improve Areas | GlamRepairs",
+    title: "Improve Areas",
     description: "Select the face areas you would like to improve.",
   },
   6: {
-    title: "Skin Tone | GlamRepairs",
+    title: "Skin Tone",
     description: "Select the color closest to your skin tone.",
   },
   7: {
-    title: "Primary Concern | GlamRepairs",
+    title: "Primary Concern",
     description: "Select your main skin concern to personalize your guidance.",
   },
   8: {
-    title: "Concern Duration | GlamRepairs",
+    title: "Concern Duration",
     description: "Tell us how long you have been dealing with your skin concern.",
   },
   9: {
-    title: "Daily Routine | GlamRepairs",
+    title: "Daily Routine",
     description: "Tell us about your daily skincare routine.",
   },
   10: {
-    title: "Skincare Products | GlamRepairs",
+    title: "Skincare Products",
     description: "Select the skincare products you currently use.",
   },
   11: {
-    title: "You're Not Alone | GlamRepairs",
+    title: "You're Not Alone",
     description: "Join thousands who have found help with similar skin concerns.",
   },
   12: {
-    title: "Treatment Fit | GlamRepairs",
+    title: "Treatment Fit",
     description: "See how well your personalized treatment program matches your skin profile.",
   },
   13: {
-    title: "Location | GlamRepairs",
+    title: "Location",
     description: "Share your location so we can tailor recommendations to your climate.",
   },
   14: {
-    title: "Ingredients Fit | GlamRepairs",
+    title: "Ingredients Fit",
     description: "See how well your treatment program matches your goals.",
   },
   15: {
-    title: "About You | GlamRepairs",
+    title: "About You",
     description: "Share a few basics to personalize your skin guidance report.",
   },
   16: {
-    title: "Lifestyle | GlamRepairs",
+    title: "Lifestyle",
     description: "Share sleep, water, stress, and diet habits that affect your skin.",
   },
   17: {
-    title: "Improvement Goals | GlamRepairs",
+    title: "Improvement Goals",
     description: "Select what you hope Glam repair will help you improve.",
   },
   18: {
-    title: "Skincare Journey Feelings | GlamRepairs",
+    title: "Skincare Journey Feelings",
     description: "Select how you want to feel during your glam skincare journey.",
   },
   19: {
-    title: "Skin Condition Trend | GlamRepairs",
+    title: "Skin Condition Trend",
     description: "See how skin condition can worsen without glam.",
   },
   20: {
-    title: "Special Event | GlamRepairs",
+    title: "Special Event",
     description: "Select if you have a special event coming up.",
   },
   21: {
-    title: "Event Date | GlamRepairs",
+    title: "Event Date",
     description: "Tell us when your special event is.",
   },
   22: {
-    title: "Plan Selection | GlamRepairs",
+    title: "Plan Selection",
     description: "Choose your Clarity or Transform plan to continue.",
   },
   23: {
-    title: "Photo Guide | GlamRepairs",
+    title: "Photo Guide",
     description: "Learn how to take clear photos for an accurate skin assessment.",
   },
   24: {
-    title: "Photo Upload | GlamRepairs",
+    title: "Photo Upload",
     description: "Upload front face and concern area photos in clear, natural light.",
   },
   25: {
-    title: "Skin Results Timeline | GlamRepairs",
+    title: "Skin Results Timeline",
     description: "See when most users notice skin improvements.",
   },
   26: {
-    title: "Consent and Trust | GlamRepairs",
+    title: "Consent and Trust",
     description: "Review and agree to our privacy and photo usage terms.",
   },
 };
@@ -139,7 +149,9 @@ export async function generateMetadata({ params }: StepPageProps): Promise<Metad
 
   return (
     STEP_METADATA[metaStep] ?? {
-      title: `Step ${metaStep} | GlamRepairs`,
+      // Suffix-free for the same reason as the entries above — the
+      // layout template adds "| GlamRepairs".
+      title: `Step ${metaStep}`,
       description: "Complete your personalized skin guidance assessment.",
     }
   );
