@@ -826,6 +826,47 @@ select:autofill {
   transform: scaleX(1);
 }
 
+/* ── HANDOVER-23 §2.10 — skeletons ────────────────────────────────────────
+   "A spinner communicates waiting; a skeleton communicates loading."
+
+   The shimmer is a background-position sweep on a gradient, not an opacity
+   pulse. A pulse makes the whole block breathe, which draws the eye to the
+   placeholder; a sweep reads as light passing over a surface that is
+   already there, which is the impression wanted — that the content exists
+   and is arriving.
+
+   Slow on purpose (1.8s). A fast shimmer reads as urgency, and urgency is
+   the opposite of what a loading state should communicate on a page where
+   someone has just paid. */
+@keyframes gr-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.gr-skeleton {
+  background-image: linear-gradient(
+    90deg,
+    var(--brand-cream-light) 0%,
+    var(--brand-purple-soft) 35%,
+    var(--brand-cream-light) 70%
+  );
+  background-size: 200% 100%;
+  animation: gr-shimmer 1.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gr-skeleton {
+    animation: none;
+    background-image: none;
+    background-color: var(--brand-cream-light);
+  }
+}
+
 /* ── HANDOVER-23 §2.2 — View Transitions, and why there are none ──────────
    §2.2 asks for the native View Transitions API on the grounds that "Next.js
    16 supports it, it costs nothing". It was implemented, measured in a real
