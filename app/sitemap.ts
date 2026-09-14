@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { abs } from "@/lib/seo/site";
 import { listAuthors } from "@/lib/seo/authors";
 import { listPublishedForSitemap } from "@/lib/studio/blog";
+import { AIR_QUALITY_CITIES } from "@/lib/airQuality/cities";
+import { isAirQualityConfigured } from "@/lib/airQuality/provider";
 
 /**
  * sitemap.xml
@@ -59,6 +61,25 @@ const STATIC_ROUTES: {
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
 ];
 
+/**
+ * HANDOVER-22 §6 — the air-quality pages are listed only when they exist.
+ *
+ * They 404 without an API key, and a sitemap that lists 404s is worse than
+ * one that omits a page: it is a direct signal to Google that the file
+ * cannot be trusted. Conditional here rather than always-on for that reason.
+ */
+function airQualityEntries(): MetadataRoute.Sitemap {
+  if (!isAirQualityConfigured()) return [];
+  return [
+    { url: abs("/air-quality"), changeFrequency: "daily", priority: 0.6 },
+    ...AIR_QUALITY_CITIES.map((city) => ({
+      url: abs(`/air-quality/${city.slug}`),
+      changeFrequency: "daily" as const,
+      priority: 0.7,
+    })),
+  ];
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((r) => ({
     url: abs(r.path),
@@ -85,5 +106,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticEntries, ...authorEntries, ...postEntries];
+  return [
+    ...staticEntries,
+    ...airQualityEntries(),
+    ...authorEntries,
+    ...postEntries,
+  ];
 }
