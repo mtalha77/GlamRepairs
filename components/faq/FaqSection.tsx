@@ -181,9 +181,14 @@ export default function FaqSection({
   if (faqs.length === 0) return null;
 
   return (
-    <section className="bg-brand-cream-light px-6 pb-[72px] pt-[60px]">
+    <section
+      /* HANDOVER-23 §1.4 — the radial replaces the flat cream. Same ground
+         colour underneath, so nothing else on the page shifts. */
+      className="gr-section-glow px-6 pb-[72px] pt-[60px]"
+    >
       <div className="mx-auto max-w-[780px]">
         <header className="mb-[26px] text-center">
+          <p className="gr-eyebrow gr-eyebrow--center mb-3">Before you ask</p>
           <h2 className="font-serif text-[1.7rem] font-semibold leading-[1.18] tracking-[-0.015em] text-brand-ink sm:text-[2.1rem]">
             {heading} <em className="italic text-brand-primary">{headingEmphasis}</em>
           </h2>

@@ -32,6 +32,32 @@
   --brand-info: #7eb8ff;
   --brand-surface-muted: #ececec;
   --brand-purple-tint: #faf8ff;
+
+  /* ── HANDOVER-23 §1.3 — purple-tinted, layered shadows ──────────────────
+     Neutral grey shadows on a purple and cream palette read as dirt rather
+     than depth: grey over warm cream is the one combination that looks like
+     a printing error. Tinting the shadow with the brand purple, layering
+     three stops, and giving the outer two a large negative spread is what
+     makes a card look lifted off the page rather than outlined on it.
+
+     Three stops, each doing a different job:
+       1px   — the contact edge, so the card meets the page
+       12px  — the body of the shadow
+       36px  — the long ambient falloff that reads as height
+
+     Opacity climbs with distance (.05 → .22 → .34) because a diffuse
+     shadow that fades out entirely reads as a blur, not a light source. */
+  --shadow-brand-sm:
+    0 1px 2px rgba(102, 45, 145, 0.05),
+    0 4px 10px -6px rgba(102, 45, 145, 0.18);
+  --shadow-brand:
+    0 1px 2px rgba(102, 45, 145, 0.05),
+    0 12px 28px -12px rgba(102, 45, 145, 0.22),
+    0 36px 64px -32px rgba(102, 45, 145, 0.34);
+  --shadow-brand-lg:
+    0 2px 4px rgba(102, 45, 145, 0.06),
+    0 18px 40px -16px rgba(102, 45, 145, 0.26),
+    0 52px 90px -40px rgba(102, 45, 145, 0.38);
 }
 
 @theme inline {
@@ -62,6 +88,23 @@
   --color-brand-info: var(--brand-info);
   --color-brand-surface-muted: var(--brand-surface-muted);
   --color-brand-purple-tint: var(--brand-purple-tint);
+  /* ── HANDOVER-23 §1.3 ─────────────────────────────────────────────────
+     Tailwind's own shadow scale is overridden here rather than the 62
+     `shadow-sm` usages being rewritten one by one. Same geometry, purple
+     tint: every existing card, chip and panel picks it up, nothing can be
+     missed, and a future component gets it for free by using the ordinary
+     utility. The explicit `shadow-brand*` utilities below remain for the
+     places that want the full three-stop lift deliberately. */
+  --shadow-sm:
+    0 1px 2px rgba(102, 45, 145, 0.05), 0 2px 6px -2px rgba(102, 45, 145, 0.14);
+  --shadow-md:
+    0 1px 2px rgba(102, 45, 145, 0.05), 0 6px 16px -8px rgba(102, 45, 145, 0.2);
+  --shadow-lg: var(--shadow-brand);
+  --shadow-xl: var(--shadow-brand-lg);
+
+  --shadow-brand-sm: var(--shadow-brand-sm);
+  --shadow-brand: var(--shadow-brand);
+  --shadow-brand-lg: var(--shadow-brand-lg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-playfair);
@@ -632,16 +675,92 @@ select:autofill {
   transform: translateY(-1px);
 }
 
-/* Cards: a longer, softer lift with the shadow deepening to match. */
+/* Cards: a longer, softer lift with the shadow deepening to match.
+
+   HANDOVER-23 §1.3/§2.4 — the shadow is now the layered brand shadow at
+   rest as well as on hover, and the border warms to lavender. Previously
+   the card had no resting shadow at all and gained a single-stop one on
+   hover, which is what made the lift read as the card switching on rather
+   than rising. */
 .gr-card-lift {
+  box-shadow: var(--shadow-brand-sm);
   transition:
     transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1),
+    border-color 0.3s cubic-bezier(0.2, 0.7, 0.3, 1),
     box-shadow 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .gr-card-lift:hover {
   transform: translateY(-5px);
-  box-shadow: 0 12px 28px -12px rgba(102, 45, 145, 0.28);
+  border-color: var(--brand-lavender);
+  box-shadow: var(--shadow-brand);
+}
+
+/* ── HANDOVER-23 §1.4 — section depth ─────────────────────────────────────
+   One soft radial behind the top of a section, over the cream ground. Costs
+   nothing (no image, no extra request) and stops a long page reading as a
+   stack of flat fills.
+
+   ⚠️ Deliberately NOT a global. §1.4 is explicit: "Not on every section, or
+   it stops reading as deliberate." Three places only — the reviews, the
+   comparison, and the FAQ. Each is a moment where the reader is weighing
+   something up, and the lift separates it from the section before it. */
+.gr-section-glow {
+  background:
+    radial-gradient(
+      880px 400px at 50% -10%,
+      var(--brand-purple-soft) 0%,
+      transparent 60%
+    ),
+    var(--brand-cream-light);
+}
+
+/* The same depth over a white ground, for sections that sit between two
+   white ones and would look like a colour change rather than a lift. */
+.gr-section-glow--white {
+  background:
+    radial-gradient(
+      880px 400px at 50% -10%,
+      var(--brand-purple-soft) 0%,
+      transparent 60%
+    ),
+    #ffffff;
+}
+
+/* ── HANDOVER-23 §1.5 — the eyebrow ───────────────────────────────────────
+   Small letterspaced uppercase label with a short rule either side. The
+   rules are pseudo-elements so the markup stays one element, and they are
+   fixed at 26px rather than flexing, because a rule that grows with the
+   label draws attention to the label's length instead of the label. */
+.gr-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brand-accent);
+}
+
+.gr-eyebrow--center {
+  justify-content: center;
+}
+
+.gr-eyebrow::before,
+.gr-eyebrow::after {
+  content: "";
+  height: 1px;
+  width: 26px;
+  flex: none;
+  background: var(--brand-lavender);
+}
+
+/* Left-aligned variant: a rule trailing off to the right only. A leading
+   rule on a left-aligned label pushes the text off the column edge, which
+   breaks the alignment the rest of the section is built on. */
+.gr-eyebrow:not(.gr-eyebrow--center)::before {
+  display: none;
 }
 
 /* Links: an underline that grows from the left rather than fading in.

@@ -94,6 +94,10 @@ export default function SampleAssessmentPage() {
           </nav>
 
           <header>
+            {/* HANDOVER-23 §1.5 — eyebrow, heading with the emphasis, one
+                line of body. The same three beats every section now opens
+                with, so the page reads as composed rather than stacked. */}
+            <p className="gr-eyebrow mb-3">A real assessment</p>
             <h1 className="font-serif text-3xl leading-tight text-brand-primary sm:text-4xl">
               This is what you get
             </h1>
@@ -112,6 +116,7 @@ export default function SampleAssessmentPage() {
 
         <div className="mx-auto mt-12 w-full max-w-[44rem] sm:mt-16">
           <section>
+            <p className="gr-eyebrow mb-3">What it costs you</p>
             <h2 className="font-serif text-2xl leading-snug text-brand-primary sm:text-[1.75rem]">
               What you are paying for
             </h2>

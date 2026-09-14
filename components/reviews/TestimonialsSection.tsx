@@ -20,10 +20,14 @@ export default function TestimonialsSection() {
   return (
     <section
       aria-labelledby="testimonials-heading"
-      className="bg-brand-purple-tint px-6 pb-16 pt-14"
+      /* HANDOVER-23 §1.4 — one of the three sections that get the radial.
+         This is where a reader decides whether to believe the claims above
+         it, so lifting it off the flat run of sections is the point. */
+      className="gr-section-glow px-6 pb-16 pt-14"
     >
       <div className="mx-auto max-w-5xl">
         <header className="mb-[34px] text-center">
+          <p className="gr-eyebrow gr-eyebrow--center mb-3">In their words</p>
           <h2
             id="testimonials-heading"
             className="font-serif text-[1.7rem] font-semibold leading-[1.18] tracking-[-0.015em] text-brand-ink sm:text-[2.1rem]"
