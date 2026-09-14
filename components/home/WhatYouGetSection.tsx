@@ -53,7 +53,7 @@ function ConcernPill({
       <span className="flex size-[38px] shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-[#f1e7ff] to-[#e3d2fb]">
         <Image src={icon} alt="" width={22} height={22} className="h-4 w-auto" />
       </span>
-      <span className="font-inter text-[18px] uppercase leading-none tracking-tight text-brand-primary lg:text-[20px]">
+      <span className="font-sans text-[18px] uppercase leading-none tracking-tight text-brand-primary lg:text-[20px]">
         {label}
       </span>
     </div>
@@ -66,10 +66,10 @@ export default function WhatYouGetSection() {
       <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-[50px]">
         <header className="max-w-[1034px]">
           <h2 className="font-serif text-[34px] uppercase leading-[1.05] text-brand-primary sm:text-[48px] lg:text-[62px]">
-            <span className="font-inter not-italic">What You</span>{" "}
+            <span className="font-sans not-italic">What You</span>{" "}
             <span className="italic">get</span>
           </h2>
-          <p className="mt-3 font-inter text-[15px] font-normal leading-[1.35] text-[#1b1b1b] sm:text-[17px] lg:mt-4 lg:text-[20px] lg:leading-[1.2]">
+          <p className="mt-3 font-sans text-[15px] font-normal leading-[1.35] text-[#1b1b1b] sm:text-[17px] lg:mt-4 lg:text-[20px] lg:leading-[1.2]">
             Our skin guidance process is designed to make professional skincare
             support more accessible. Share your concerns, upload clear photos,
             and receive a personalized skin report with routine recommendations,
@@ -90,7 +90,7 @@ export default function WhatYouGetSection() {
                 className="rotate-180 object-cover mix-blend-color-burn"
               />
               <p className="absolute left-5 top-1/2 z-10 w-[7.25rem] -translate-y-1/2 font-serif text-[24px] leading-[1.15] max-[380px]:w-[6.5rem] lg:left-6 lg:w-auto lg:text-[28px]">
-                <span className="block font-inter not-italic font-normal tracking-tight text-[#1b1b1b]">
+                <span className="block font-sans not-italic font-normal tracking-tight text-[#1b1b1b]">
                   Get rid of your
                 </span>
                 <span className="block italic text-brand-primary">
@@ -112,12 +112,12 @@ export default function WhatYouGetSection() {
               <h3 className="font-serif text-[28px] italic text-brand-primary lg:text-[32px]">
                 Skin Analysis
               </h3>
-              <p className="mt-2 font-inter text-[16px] italic text-brand-primary lg:text-[18px]">
+              <p className="mt-2 font-sans text-[16px] italic text-brand-primary lg:text-[18px]">
                 Real advice. Real skin. Real results
               </p>
               <Link
                 href={BOOKING_START_HREF}
-                className="relative mt-6 inline-flex items-center justify-center rounded-full bg-white px-[35px] py-3 font-inter text-[15px] font-medium uppercase leading-none tracking-tight text-brand-accent shadow-[0_0_18px_4px_rgba(255,243,218,0.9)] transition-colors hover:bg-brand-cream lg:text-[16px]"
+                className="relative mt-6 inline-flex items-center justify-center rounded-full bg-white px-[35px] py-3 font-sans text-[15px] font-medium uppercase leading-none tracking-tight text-brand-accent shadow-[0_0_18px_4px_rgba(255,243,218,0.9)] transition-colors hover:bg-brand-cream lg:text-[16px]"
               >
                 Get my skin Assessment
               </Link>
@@ -129,7 +129,7 @@ export default function WhatYouGetSection() {
             <h3 className="font-serif text-[28px] italic text-brand-primary lg:text-[32px]">
               Progress Tracking
             </h3>
-            <p className="mt-3 max-w-[369px] font-inter text-[16px] font-normal leading-[1.35] text-[#242424] lg:text-[18px]">
+            <p className="mt-3 max-w-[369px] font-sans text-[16px] font-normal leading-[1.35] text-[#242424] lg:text-[18px]">
               A structured weekly skincare plan designed around your unique skin
               concerns, helping you build healthy habits, maintain consistency,
               and achieve visible results over time.
@@ -157,7 +157,7 @@ export default function WhatYouGetSection() {
               {weeks.map((w) => (
                 <span
                   key={w.label}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 font-inter text-[7px] font-medium tracking-tight text-[#242424]/60 lg:text-[8px] ${w.className}`}
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 font-sans text-[7px] font-medium tracking-tight text-[#242424]/60 lg:text-[8px] ${w.className}`}
                 >
                   {w.label}
                 </span>
