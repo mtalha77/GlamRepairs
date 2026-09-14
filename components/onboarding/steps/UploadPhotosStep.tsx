@@ -284,7 +284,14 @@ export default function UploadPhotosStep() {
                   alt={`${slot.label} photo`}
                   fill
                   sizes="(max-width: 640px) 30vw, 120px"
-                  className="object-cover"
+                  /* HANDOVER-23 §2.1 — scale in from 0.94, staggered by
+                     slot so several photos added at once arrive in order
+                     rather than all at the same instant. Keyed on the data
+                     URL so replacing a photo re-runs the animation and the
+                     swap is visible. */
+                  key={photos[index]}
+                  style={{ animationDelay: `${index * 60}ms` }}
+                  className="photo-thumb-in object-cover"
                   unoptimized
                 />
               ) : (

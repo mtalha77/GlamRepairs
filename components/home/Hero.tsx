@@ -27,12 +27,12 @@ export default function Hero() {
         <h1 className="font-serif text-[40px] italic leading-[1.05] tracking-[-0.32px] text-white sm:text-[56px] lg:text-[72px]">
           <span className="block">Everyone Deserves</span>
           <span className="block">
-            <span className="font-inter font-medium not-italic">Healthy</span>{" "}
+            <span className="font-sans font-medium not-italic">Healthy</span>{" "}
             Skin
           </span>
         </h1>
 
-        <p className="mt-6 max-w-[659px] font-inter text-base font-normal leading-[1.35] text-white sm:text-lg lg:mt-[54px] lg:text-[24px]">
+        <p className="mt-6 max-w-[659px] font-sans text-base font-normal leading-[1.35] text-white sm:text-lg lg:mt-[54px] lg:text-[24px]">
           Share your concerns &amp; receive a personalized skincare routine from
           a certified{" "}
           <span className="font-serif italic">Aesthetics Expert</span>, with
@@ -42,7 +42,7 @@ export default function Hero() {
 
         <Link
           href={BOOKING_START_HREF}
-          className="group relative mt-8 inline-flex items-center justify-center gap-2 overflow-hidden rounded-[30px] bg-white/10 px-[35px] py-[15px] font-inter text-sm font-medium uppercase leading-none tracking-[-0.54px] text-white backdrop-blur-sm transition-all duration-300 ease-out hover:scale-[1.04] hover:bg-white/20 hover:shadow-[0_10px_30px_rgba(255,255,255,0.22)] active:scale-95 lg:mt-9 lg:text-[18px]"
+          className="group relative mt-8 inline-flex items-center justify-center gap-2 overflow-hidden rounded-[30px] bg-white/10 px-[35px] py-[15px] font-sans text-sm font-medium uppercase leading-none tracking-[-0.54px] text-white backdrop-blur-sm transition-all duration-300 ease-out hover:scale-[1.04] hover:bg-white/20 hover:shadow-[0_10px_30px_rgba(255,255,255,0.22)] active:scale-95 lg:mt-9 lg:text-[18px]"
         >
           <span
             aria-hidden

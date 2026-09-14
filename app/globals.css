@@ -32,6 +32,32 @@
   --brand-info: #7eb8ff;
   --brand-surface-muted: #ececec;
   --brand-purple-tint: #faf8ff;
+
+  /* ── HANDOVER-23 §1.3 — purple-tinted, layered shadows ──────────────────
+     Neutral grey shadows on a purple and cream palette read as dirt rather
+     than depth: grey over warm cream is the one combination that looks like
+     a printing error. Tinting the shadow with the brand purple, layering
+     three stops, and giving the outer two a large negative spread is what
+     makes a card look lifted off the page rather than outlined on it.
+
+     Three stops, each doing a different job:
+       1px   — the contact edge, so the card meets the page
+       12px  — the body of the shadow
+       36px  — the long ambient falloff that reads as height
+
+     Opacity climbs with distance (.05 → .22 → .34) because a diffuse
+     shadow that fades out entirely reads as a blur, not a light source. */
+  --shadow-brand-sm:
+    0 1px 2px rgba(102, 45, 145, 0.05),
+    0 4px 10px -6px rgba(102, 45, 145, 0.18);
+  --shadow-brand:
+    0 1px 2px rgba(102, 45, 145, 0.05),
+    0 12px 28px -12px rgba(102, 45, 145, 0.22),
+    0 36px 64px -32px rgba(102, 45, 145, 0.34);
+  --shadow-brand-lg:
+    0 2px 4px rgba(102, 45, 145, 0.06),
+    0 18px 40px -16px rgba(102, 45, 145, 0.26),
+    0 52px 90px -40px rgba(102, 45, 145, 0.38);
 }
 
 @theme inline {
@@ -62,10 +88,26 @@
   --color-brand-info: var(--brand-info);
   --color-brand-surface-muted: var(--brand-surface-muted);
   --color-brand-purple-tint: var(--brand-purple-tint);
+  /* ── HANDOVER-23 §1.3 ─────────────────────────────────────────────────
+     Tailwind's own shadow scale is overridden here rather than the 62
+     `shadow-sm` usages being rewritten one by one. Same geometry, purple
+     tint: every existing card, chip and panel picks it up, nothing can be
+     missed, and a future component gets it for free by using the ordinary
+     utility. The explicit `shadow-brand*` utilities below remain for the
+     places that want the full three-stop lift deliberately. */
+  --shadow-sm:
+    0 1px 2px rgba(102, 45, 145, 0.05), 0 2px 6px -2px rgba(102, 45, 145, 0.14);
+  --shadow-md:
+    0 1px 2px rgba(102, 45, 145, 0.05), 0 6px 16px -8px rgba(102, 45, 145, 0.2);
+  --shadow-lg: var(--shadow-brand);
+  --shadow-xl: var(--shadow-brand-lg);
+
+  --shadow-brand-sm: var(--shadow-brand-sm);
+  --shadow-brand: var(--shadow-brand);
+  --shadow-brand-lg: var(--shadow-brand-lg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-playfair);
-  --font-inter: var(--font-inter);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -449,6 +491,26 @@ select:autofill {
   will-change: transform;
 }
 
+/* ── HANDOVER-23 §2.1 — photo thumbnails ──────────────────────────────────
+   Each thumbnail scales in from 0.94 with a fade. The stagger is applied as
+   an inline delay by the component, because the slot index is what decides
+   it and a CSS nth-child would break the moment a slot is skipped. */
+@keyframes photo-thumb-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.photo-thumb-in {
+  animation: photo-thumb-in 0.26s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
 @keyframes map-dot-pulse {
   0%,
   100% {
@@ -512,6 +574,22 @@ select:autofill {
     transition: none;
   }
 
+  /* The tab still appears and disappears — that is information, not
+     decoration — but it does so without travel, and the hover stops
+     resizing. */
+  .gr-sticky-tab,
+  .gr-sticky-tab__arrow {
+    transition: opacity 0.2s;
+  }
+
+  .gr-sticky-tab:hover {
+    padding-right: 13px;
+  }
+
+  .gr-sticky-tab:hover .gr-sticky-tab__arrow {
+    transform: none;
+  }
+
   .map-dot {
     animation: none;
     opacity: 0.85;
@@ -519,6 +597,10 @@ select:autofill {
   }
 
   .animated-count {
+    animation: none;
+  }
+
+  .photo-thumb-in {
     animation: none;
   }
 }
@@ -633,16 +715,92 @@ select:autofill {
   transform: translateY(-1px);
 }
 
-/* Cards: a longer, softer lift with the shadow deepening to match. */
+/* Cards: a longer, softer lift with the shadow deepening to match.
+
+   HANDOVER-23 §1.3/§2.4 — the shadow is now the layered brand shadow at
+   rest as well as on hover, and the border warms to lavender. Previously
+   the card had no resting shadow at all and gained a single-stop one on
+   hover, which is what made the lift read as the card switching on rather
+   than rising. */
 .gr-card-lift {
+  box-shadow: var(--shadow-brand-sm);
   transition:
     transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1),
+    border-color 0.3s cubic-bezier(0.2, 0.7, 0.3, 1),
     box-shadow 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .gr-card-lift:hover {
   transform: translateY(-5px);
-  box-shadow: 0 12px 28px -12px rgba(102, 45, 145, 0.28);
+  border-color: var(--brand-lavender);
+  box-shadow: var(--shadow-brand);
+}
+
+/* ── HANDOVER-23 §1.4 — section depth ─────────────────────────────────────
+   One soft radial behind the top of a section, over the cream ground. Costs
+   nothing (no image, no extra request) and stops a long page reading as a
+   stack of flat fills.
+
+   ⚠️ Deliberately NOT a global. §1.4 is explicit: "Not on every section, or
+   it stops reading as deliberate." Three places only — the reviews, the
+   comparison, and the FAQ. Each is a moment where the reader is weighing
+   something up, and the lift separates it from the section before it. */
+.gr-section-glow {
+  background:
+    radial-gradient(
+      880px 400px at 50% -10%,
+      var(--brand-purple-soft) 0%,
+      transparent 60%
+    ),
+    var(--brand-cream-light);
+}
+
+/* The same depth over a white ground, for sections that sit between two
+   white ones and would look like a colour change rather than a lift. */
+.gr-section-glow--white {
+  background:
+    radial-gradient(
+      880px 400px at 50% -10%,
+      var(--brand-purple-soft) 0%,
+      transparent 60%
+    ),
+    #ffffff;
+}
+
+/* ── HANDOVER-23 §1.5 — the eyebrow ───────────────────────────────────────
+   Small letterspaced uppercase label with a short rule either side. The
+   rules are pseudo-elements so the markup stays one element, and they are
+   fixed at 26px rather than flexing, because a rule that grows with the
+   label draws attention to the label's length instead of the label. */
+.gr-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brand-accent);
+}
+
+.gr-eyebrow--center {
+  justify-content: center;
+}
+
+.gr-eyebrow::before,
+.gr-eyebrow::after {
+  content: "";
+  height: 1px;
+  width: 26px;
+  flex: none;
+  background: var(--brand-lavender);
+}
+
+/* Left-aligned variant: a rule trailing off to the right only. A leading
+   rule on a left-aligned label pushes the text off the column edge, which
+   breaks the alignment the rest of the section is built on. */
+.gr-eyebrow:not(.gr-eyebrow--center)::before {
+  display: none;
 }
 
 /* Links: an underline that grows from the left rather than fading in.
@@ -666,6 +824,148 @@ select:autofill {
 
 .gr-link-underline:hover::after {
   transform: scaleX(1);
+}
+
+/* ── HANDOVER-23 §2.9 — inputs ────────────────────────────────────────────
+   The border already moves to brand-primary on focus, on a 150ms colour
+   transition, in every step and form component. What was missing is the
+   other half of §2.9: "a visible focus ring for keyboard users."
+
+   Those components set `outline-none` so the mouse focus state is just the
+   border. That is a reasonable look and a genuine accessibility problem —
+   a keyboard user tabbing through a 26-step funnel had only a subtle border
+   shift to tell them where they were, and on the fields with an error state
+   the border was already coloured.
+
+   `:focus-visible` is what makes this safe to fix globally: the ring
+   appears for keyboard focus and never for a mouse click, so nothing about
+   the pointer experience changes. Deliberately an outline and not a
+   box-shadow — §2.9 says no glow, no shadow bloom — and outline does not
+   participate in layout, so no field shifts when it appears. */
+:where(input, textarea, select, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+/* ── HANDOVER-23 §2.10 — skeletons ────────────────────────────────────────
+   "A spinner communicates waiting; a skeleton communicates loading."
+
+   The shimmer is a background-position sweep on a gradient, not an opacity
+   pulse. A pulse makes the whole block breathe, which draws the eye to the
+   placeholder; a sweep reads as light passing over a surface that is
+   already there, which is the impression wanted — that the content exists
+   and is arriving.
+
+   Slow on purpose (1.8s). A fast shimmer reads as urgency, and urgency is
+   the opposite of what a loading state should communicate on a page where
+   someone has just paid. */
+@keyframes gr-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.gr-skeleton {
+  background-image: linear-gradient(
+    90deg,
+    var(--brand-cream-light) 0%,
+    var(--brand-purple-soft) 35%,
+    var(--brand-cream-light) 70%
+  );
+  background-size: 200% 100%;
+  animation: gr-shimmer 1.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gr-skeleton {
+    animation: none;
+    background-image: none;
+    background-color: var(--brand-cream-light);
+  }
+}
+
+/* ── HANDOVER-23 §2.2 — View Transitions, and why there are none ──────────
+   §2.2 asks for the native View Transitions API on the grounds that "Next.js
+   16 supports it, it costs nothing". It was implemented, measured in a real
+   Chromium via Playwright, and removed again, because on this stack it does
+   nothing:
+
+   • `experimental.viewTransition` in next.config does NOT wrap navigations
+     in `document.startViewTransition`. It enables React's `<ViewTransition>`
+     component, and without content wrapped in one, no transition starts.
+     Patched `document.startViewTransition` before any app code ran and
+     counted the calls across a client-side navigation: zero.
+   • `<ViewTransition>` is only in React's experimental channel. This project
+     is on react 19.2.4 stable, which exports no such component — checked
+     directly, the only `unstable_*` export is `unstable_useCacheRefresh`.
+   • The pure-CSS `@view-transition { navigation: auto }` route only covers
+     cross-document navigation. App Router navigations are same-document, so
+     it never fires either.
+
+   Getting this would mean moving React to the experimental channel on a
+   production site whose funnel takes payments, to gain a 240ms cross-fade.
+   That trade is not worth making, and shipping the flag with CSS that never
+   runs would have been worse than not shipping it — experimental risk for
+   no effect. Revisit when `<ViewTransition>` reaches a stable React release.
+
+   The funnel's own directional step animation below already provides the
+   effect §2.2 describes, within the flow where it matters most. */
+
+/* ── HANDOVER-23 §2.11 — the sticky Get Started tab (option A) ────────────
+   Flush to the edge with left-only rounding, so it reads as attached to the
+   page rather than floating near it. The inset highlight on the right edge
+   is what sells "attached": a flat fill against the viewport edge looks
+   like a button that has been cropped.
+
+   The hover widens the tab rather than darkening it. Darkening is the state
+   change every other button on the site uses, and reusing it here would
+   make a persistent element feel like it had been clicked. Widening is
+   padding, not width, so it is still only the box model on one axis and
+   never triggers layout on the page itself. */
+.gr-sticky-tab {
+  background: linear-gradient(
+    160deg,
+    #7a3aa8 0%,
+    var(--brand-primary) 55%,
+    var(--brand-primary-dark) 100%
+  );
+  box-shadow:
+    -6px 8px 24px -8px rgba(102, 45, 145, 0.55),
+    inset -1px 0 0 rgba(255, 255, 255, 0.14);
+  transition:
+    padding-right 0.26s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.26s cubic-bezier(0.2, 0.7, 0.3, 1),
+    filter 0.26s ease-out,
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1),
+    opacity 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.gr-sticky-tab:hover {
+  padding-right: 19px;
+  filter: brightness(1.06);
+  box-shadow:
+    -8px 10px 30px -8px rgba(102, 45, 145, 0.7),
+    inset -1px 0 0 rgba(255, 255, 255, 0.2);
+}
+
+.gr-sticky-tab__arrow {
+  transition: transform 0.26s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.gr-sticky-tab:hover .gr-sticky-tab__arrow {
+  transform: translateX(3px);
+}
+
+/* Vertical type needs more letterspacing than horizontal to stay legible —
+   the glyphs stack, so the optical gap reads tighter at the same value. */
+.gr-sticky-tab__label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.16em;
 }
 
 .notification-toast {

@@ -11,7 +11,7 @@ import Logo, {
 export const onboardingHref = "/onboarding/step/1";
 
 const navPillBase =
-  "inline-flex h-[39px] items-center justify-center whitespace-nowrap rounded-[50px] font-inter uppercase leading-none transition-colors";
+  "inline-flex h-[39px] items-center justify-center whitespace-nowrap rounded-[50px] font-sans uppercase leading-none transition-colors";
 
 /**
  * The left pill row and the Get Started pill are sized separately.
@@ -170,7 +170,7 @@ export default function Navbar({ className = "", theme = "dark" }: NavbarProps) 
                 key={link.label}
                 href={link.href}
                 onClick={closeMenu}
-                className={`rounded-full px-4 py-2 text-center font-inter text-[15px] uppercase leading-none text-white transition-colors hover:bg-white/10 ${
+                className={`rounded-full px-4 py-2 text-center font-sans text-[15px] uppercase leading-none text-white transition-colors hover:bg-white/10 ${
                   isLinkActive(link.href) ? "bg-white/10" : ""
                 }`}
               >
@@ -180,7 +180,7 @@ export default function Navbar({ className = "", theme = "dark" }: NavbarProps) 
             <Link
               href={onboardingHref}
               onClick={closeMenu}
-              className="rounded-full bg-[rgba(234,215,255,0.5)] px-4 py-2 text-center font-inter text-[15px] uppercase leading-none text-white transition-colors hover:bg-[rgba(234,215,255,0.7)]"
+              className="rounded-full bg-[rgba(234,215,255,0.5)] px-4 py-2 text-center font-sans text-[15px] uppercase leading-none text-white transition-colors hover:bg-[rgba(234,215,255,0.7)]"
             >
               Get Started
             </Link>

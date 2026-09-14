@@ -56,6 +56,7 @@ export default function AirQualityIndexPage() {
         </nav>
 
         <header>
+          <p className="gr-eyebrow mb-3">Live readings</p>
           <h1 className="font-serif text-3xl leading-tight text-brand-primary sm:text-4xl">
             Air quality and your skin
           </h1>

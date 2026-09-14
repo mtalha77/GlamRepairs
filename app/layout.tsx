@@ -17,7 +17,7 @@
  *                                 single biggest lever for a YMYL site
  */
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Playfair_Display } from "next/font/google";
+import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import StickyGetStartedTab from "@/components/cta/StickyGetStartedTab";
@@ -30,30 +30,49 @@ import "./globals.css";
 const GA_MEASUREMENT_ID = "G-5B70X63TRH";
 
 /**
- * HANDOVER-15 §2 — fonts, with two of its instructions deliberately NOT
- * followed. Both were checked before being rejected.
+ * Fonts — HANDOVER-23 §0, measured rather than assumed.
  *
- * ⚠️ "Delete Inter entirely — it is used nowhere." It is used in 17 places.
- * The claim is true of the CSS variable `--font-inter`, which appears only
- * in the declaration below, but the Tailwind utility `font-inter` (mapped to
- * it in globals.css) is on Hero, Navbar, SkinAssessment and
- * WhatYouGetSection — the entire above-the-fold homepage. Deleting it would
- * silently drop the hero to a fallback face.
+ * ── What the 152 KB actually is ──────────────────────────────────────────
+ * §0 reports 152 KB of fonts across four families. Confirmed exactly, by
+ * reading the built @font-face rules and the file sizes they point at. The
+ * figure is the four PRELOADED latin subsets:
  *
- * ⚠️ "Geist Mono is studio pages only." It is also on /credentials (the HEC
- * reference chip), /about (CredentialsCard) and the funnel's PaymentDetails
- * — account number and IBAN, where a monospace face is doing real work.
- * Moving it into the studio layout would break all three.
+ *   Inter latin              47.3 KB
+ *   Playfair Display italic  38.0 KB
+ *   Playfair Display normal  37.6 KB
+ *   Geist latin              28.6 KB
+ *                           ────────
+ *                           151.5 KB
  *
- * What genuinely helps, and is applied:
- * • `display: "swap"` on all four. Text paints immediately in a fallback
- *   instead of staying invisible while the face downloads — the single
- *   biggest perceived-speed win available here, and it costs nothing.
- * • `preload: false` on Geist Mono. It stays available everywhere it is
- *   used, but stops emitting a <link rel=preload> on every page in the
- *   layout. A browser only downloads a font when something rendered
- *   actually needs it, so the funnel and marketing pages no longer fetch a
- *   face they never show. That is §2's stated intent, without its breakage.
+ * ── What was done, and what §0 asked for that would not have worked ──────
+ *
+ * ✅ Inter is gone, and it was the largest single face — 47.3 KB, 31% of the
+ *    preloaded payload. But it could not simply be deleted: `font-inter` was
+ *    on 19 elements across Hero, Navbar, SkinAssessment and WhatYouGetSection
+ *    — the entire above-the-fold homepage. Deleting the family alone would
+ *    have dropped all of it to a system fallback. The 19 usages were migrated
+ *    to `font-sans` (Geist) first, which is why this is a real 47.3 KB saving
+ *    rather than a visible regression. Inter and Geist are both neutral
+ *    grotesques, so the substitution is close — but it IS a substitution, and
+ *    the hero now sets in Geist.
+ *
+ * ⚠️ Geist Mono was NOT moved into the studio layout. Two reasons, both
+ *    checked:
+ *      1. It already carries `preload: false`, so it is not in the 152 KB at
+ *         all. Moving it frees zero bytes on any page.
+ *      2. It is used on four PUBLIC surfaces — /credentials (the HEC
+ *         reference), /gift/[code], components/about/CredentialsCard and the
+ *         funnel's PaymentDetails, where account number and IBAN are set in
+ *         monospace because a monospace face is doing real work there.
+ *         Scoping it to the studio would break all four.
+ *    The instruction would have cost four broken surfaces to save nothing.
+ *
+ * ℹ️ `display: "swap"` was already on all four families, added in HANDOVER-15.
+ *    Nothing to do.
+ *
+ * Playfair keeps both styles: the italic is load-bearing on ProblemCard,
+ * TrustPrivacyCard, WhatYouGetSection and TestimonialDeck, where serif italic
+ * in brand-primary is the site's house emphasis.
  */
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -72,12 +91,6 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
   style: ["normal", "italic"],
-  display: "swap",
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
   display: "swap",
 });
 
@@ -139,7 +152,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${inter.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
     >
       <body
         suppressHydrationWarning

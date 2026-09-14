@@ -43,16 +43,20 @@ export async function generateMetadata({
       url: `/blog/${post.slug}`,
       publishedTime: post.publishedAt ?? undefined,
       modifiedTime: post.updatedAt,
-      // No `images` when there's no hero — Next's file-convention
-      // app/opengraph-image.tsx fills that gap automatically, so a share
-      // is never imageless even before Ayma adds hero images to posts.
+      // HANDOVER-23 §1.1 — `opengraph-image.tsx` in this same route segment
+      // now generates a per-post typographic card, so Next attaches a
+      // distinct image to every post automatically. A real `hero_image_url`
+      // still wins when one is set.
       ...(post.heroImageUrl ? { images: [post.heroImageUrl] } : {}),
     },
-    // Large-image cards need a genuinely large, post-specific image. Without
-    // a hero, `summary` is the honest card type — a repeated brand fallback
-    // isn't "large image" content, it's just not-blank.
+    // Large-image cards need a genuinely large, post-specific image. That
+    // used to mean `summary` without a hero, because a repeated brand
+    // fallback is not "large image" content, it is just not-blank. The
+    // generated per-post card IS post-specific — it carries that post's
+    // headline and cluster — so `summary_large_image` is now honest for
+    // every post rather than only the ones with a photograph.
     twitter: {
-      card: post.heroImageUrl ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
     },

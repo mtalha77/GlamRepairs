@@ -88,7 +88,7 @@ function Tag({ label, icon, tone, className = "" }: TagProps) {
       <span className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-white">
         {icon}
       </span>
-      <span className="whitespace-nowrap font-inter text-[17px] font-normal uppercase leading-none tracking-[-0.01em] text-[#1b1b1b] sm:text-[20px] lg:text-[22px]">
+      <span className="whitespace-nowrap font-sans text-[17px] font-normal uppercase leading-none tracking-[-0.01em] text-[#1b1b1b] sm:text-[20px] lg:text-[22px]">
         {label}
       </span>
     </div>
@@ -128,7 +128,7 @@ function Quote({ className = "" }: { className?: string }) {
           strokeLinecap="round"
         />
       </svg>
-      <p className="relative px-8 py-6 text-center font-inter text-[17px] italic leading-tight tracking-[-0.03em] text-[#1b1b1b] sm:text-[22px] lg:whitespace-nowrap lg:px-6 lg:py-7 lg:text-[28px]">
+      <p className="relative px-8 py-6 text-center font-sans text-[17px] italic leading-tight tracking-[-0.03em] text-[#1b1b1b] sm:text-[22px] lg:whitespace-nowrap lg:px-6 lg:py-7 lg:text-[28px]">
         &ldquo;We don&apos;t scan your skin. We read it.&rdquo;
       </p>
     </div>

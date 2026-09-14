@@ -135,7 +135,12 @@ export default async function ComparePage() {
         )}
       />
 
-      <main className="mx-auto max-w-5xl px-5 py-14 sm:px-6 sm:py-16">
+      {/* HANDOVER-23 §1.4 — the third and last section to get the radial.
+          A comparison is the densest reading on the site, and lifting the
+          page off a flat white ground is what stops the matrix looking
+          like a spreadsheet. */}
+      <main className="gr-section-glow--white px-5 py-14 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-5xl">
         <nav className="mb-8 text-sm text-brand-gray">
           <Link href="/" className="underline underline-offset-2">
             Home
@@ -145,6 +150,7 @@ export default async function ComparePage() {
         </nav>
 
         <header className="max-w-3xl">
+          <p className="gr-eyebrow mb-3">Honestly compared</p>
           <h1 className="font-serif text-3xl leading-tight text-brand-primary sm:text-4xl">
             {TITLE}
           </h1>
@@ -370,6 +376,7 @@ export default async function ComparePage() {
             </Link>
           </div>
         </section>
+        </div>
       </main>
       <Footer />
     </>
