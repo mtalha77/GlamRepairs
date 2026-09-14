@@ -554,6 +554,22 @@ select:autofill {
     transition: none;
   }
 
+  /* The tab still appears and disappears — that is information, not
+     decoration — but it does so without travel, and the hover stops
+     resizing. */
+  .gr-sticky-tab,
+  .gr-sticky-tab__arrow {
+    transition: opacity 0.2s;
+  }
+
+  .gr-sticky-tab:hover {
+    padding-right: 13px;
+  }
+
+  .gr-sticky-tab:hover .gr-sticky-tab__arrow {
+    transform: none;
+  }
+
   .map-dot {
     animation: none;
     opacity: 0.85;
@@ -784,6 +800,59 @@ select:autofill {
 
 .gr-link-underline:hover::after {
   transform: scaleX(1);
+}
+
+/* ── HANDOVER-23 §2.11 — the sticky Get Started tab (option A) ────────────
+   Flush to the edge with left-only rounding, so it reads as attached to the
+   page rather than floating near it. The inset highlight on the right edge
+   is what sells "attached": a flat fill against the viewport edge looks
+   like a button that has been cropped.
+
+   The hover widens the tab rather than darkening it. Darkening is the state
+   change every other button on the site uses, and reusing it here would
+   make a persistent element feel like it had been clicked. Widening is
+   padding, not width, so it is still only the box model on one axis and
+   never triggers layout on the page itself. */
+.gr-sticky-tab {
+  background: linear-gradient(
+    160deg,
+    #7a3aa8 0%,
+    var(--brand-primary) 55%,
+    var(--brand-primary-dark) 100%
+  );
+  box-shadow:
+    -6px 8px 24px -8px rgba(102, 45, 145, 0.55),
+    inset -1px 0 0 rgba(255, 255, 255, 0.14);
+  transition:
+    padding-right 0.26s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.26s cubic-bezier(0.2, 0.7, 0.3, 1),
+    filter 0.26s ease-out,
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1),
+    opacity 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.gr-sticky-tab:hover {
+  padding-right: 19px;
+  filter: brightness(1.06);
+  box-shadow:
+    -8px 10px 30px -8px rgba(102, 45, 145, 0.7),
+    inset -1px 0 0 rgba(255, 255, 255, 0.2);
+}
+
+.gr-sticky-tab__arrow {
+  transition: transform 0.26s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.gr-sticky-tab:hover .gr-sticky-tab__arrow {
+  transform: translateX(3px);
+}
+
+/* Vertical type needs more letterspacing than horizontal to stay legible —
+   the glyphs stack, so the optical gap reads tighter at the same value. */
+.gr-sticky-tab__label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.16em;
 }
 
 .notification-toast {

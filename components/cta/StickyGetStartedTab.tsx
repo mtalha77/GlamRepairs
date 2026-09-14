@@ -45,8 +45,29 @@ const SUPPRESSED_PREFIXES = [
   "/p/",
 ];
 
-/** Roughly one hero's worth of scrolling. */
-const HERO_SCROLL_PX = 320;
+/**
+ * HANDOVER-23 §2.11 — "appear after roughly 400px of scroll". Raised from
+ * 320px, which on a laptop put the tab on screen while the hero was still
+ * partly visible.
+ */
+const HERO_SCROLL_PX = 400;
+
+function Arrow({ className }: { className: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
 
 export default function StickyGetStartedTab() {
   const pathname = usePathname();
@@ -95,42 +116,55 @@ export default function StickyGetStartedTab() {
 
   return (
     <>
-      {/* Tablet and up: the vertical tab on the right edge. */}
+      {/*
+        Tablet and up: the vertical tab, flush to the right edge.
+
+        HANDOVER-23 §2.11, option A. The arrow is what makes it read as an
+        action rather than a label — without it, a vertical word on the edge
+        of the screen looks like a section marker.
+
+        py-[22px] px-[13px] on a 12px cap-height label clears the 44px
+        minimum tap target on both axes.
+      */}
       <Link
         href={onboardingHref}
         aria-hidden={!visible}
         tabIndex={visible ? undefined : -1}
-        className={`fixed right-0 top-1/2 z-40 hidden -translate-y-1/2 rounded-l-2xl bg-brand-primary py-6 pl-3 pr-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-lg transition-all duration-300 hover:pr-3.5 sm:block ${
+        className={`gr-sticky-tab fixed right-0 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-center justify-center gap-2.5 rounded-l-2xl py-[22px] pl-[13px] pr-[13px] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:flex ${
           visible
             ? "translate-x-0 opacity-100"
             : "pointer-events-none translate-x-full opacity-0"
         }`}
-        style={{ writingMode: "vertical-rl" }}
       >
-        Get Started
+        <Arrow className="gr-sticky-tab__arrow h-[13px] w-[13px] flex-none" />
+        <span className="gr-sticky-tab__label whitespace-nowrap text-xs font-semibold uppercase">
+          Get Started
+        </span>
       </Link>
 
       {/*
         Under 640px a right-edge vertical tab covers a usable share of a
-        phone screen and sits under the thumb during scrolling. A pill above
-        the bottom edge is the same affordance where the thumb already is.
-        `env(safe-area-inset-bottom)` keeps it clear of the iOS home bar.
+        phone screen and sits under the thumb during scrolling, and vertical
+        type at that size is cramped and easy to mis-tap. A horizontal pill
+        at the bottom right is the same affordance where the thumb already
+        is. `env(safe-area-inset-bottom)` keeps it clear of the iOS home bar.
       */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 transition-all duration-300 sm:hidden ${
+        className={`fixed bottom-0 right-0 z-40 px-4 transition-all duration-300 sm:hidden ${
           visible
             ? "translate-y-0 opacity-100"
             : "pointer-events-none translate-y-4 opacity-0"
         }`}
-        style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+        style={{ paddingBottom: "calc(1.125rem + env(safe-area-inset-bottom))" }}
       >
         <Link
           href={onboardingHref}
           aria-hidden={!visible}
           tabIndex={visible ? undefined : -1}
-          className="inline-flex items-center justify-center rounded-full bg-brand-primary px-8 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-white shadow-lg"
+          className="inline-flex items-center gap-[9px] rounded-full bg-gradient-to-br from-[#7a3aa8] to-brand-primary px-[22px] py-3.5 text-sm font-medium text-white shadow-[0_10px_26px_-8px_rgba(102,45,145,0.6)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
         >
           Get Started
+          <Arrow className="h-[15px] w-[15px] flex-none" />
         </Link>
       </div>
     </>
