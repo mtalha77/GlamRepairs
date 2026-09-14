@@ -11,10 +11,43 @@ import Logo, {
 export const onboardingHref = "/onboarding/step/1";
 
 const navPillBase =
-  "inline-flex h-[39px] items-center justify-center whitespace-nowrap rounded-[50px] px-[25px] font-inter text-[16px] uppercase leading-none transition-colors";
+  "inline-flex h-[39px] items-center justify-center whitespace-nowrap rounded-[50px] font-inter uppercase leading-none transition-colors";
 
-export const navLinks = [
+/**
+ * The left pill row and the Get Started pill are sized separately.
+ *
+ * HANDOVER-22 §3 added a fourth link, and the logo is absolutely centred:
+ * at 1024px it occupies 409–616px, leaving ~359px for the whole left row.
+ * Four pills at 16px/25px need ~590px, so they would run under the logo.
+ * Shrinking the type and padding below xl is what buys the room back.
+ */
+const navLinkPill = `${navPillBase} px-[14px] text-[13px] xl:px-[25px] xl:text-[16px]`;
+const navCtaPill = `${navPillBase} px-[25px] text-[16px]`;
+
+export type NavLink = {
+  label: string;
+  href: string;
+  /**
+   * Shown in the desktop pill row, where horizontal space is the binding
+   * constraint (see navLinkPill). Falls back to `label`. The full label is
+   * always used in the mobile menu, which has the width for it.
+   */
+  shortLabel?: string;
+};
+
+export const navLinks: NavLink[] = [
   { label: "About", href: "/about" },
+  /**
+   * HANDOVER-22 §3 — between About and Pricing on purpose. A visitor who has
+   * just read who we are and is about to see a price is exactly the person
+   * who needs to know what the price buys, and the sample answers that
+   * better than the pricing page can.
+   */
+  {
+    label: "See a real assessment",
+    href: "/sample-assessment",
+    shortLabel: "Sample",
+  },
   { label: "Pricing", href: "/pricing" },
   { label: "Contact", href: "/contact" },
 ];
@@ -47,14 +80,14 @@ export default function Navbar({ className = "", theme = "dark" }: NavbarProps) 
 
   const linkPillClass = (active: boolean) => {
     if (isLight) {
-      return `${navPillBase} ${
+      return `${navLinkPill} ${
         active
           ? "bg-[#ead7ff] text-brand-primary"
           : "bg-transparent text-brand-primary/80 hover:text-brand-primary"
       }`;
     }
 
-    return `${navPillBase} text-white ${
+    return `${navLinkPill} text-white ${
       active
         ? "bg-white/5"
         : "bg-transparent opacity-80 hover:opacity-100"
@@ -62,8 +95,8 @@ export default function Navbar({ className = "", theme = "dark" }: NavbarProps) 
   };
 
   const getStartedClass = isLight
-    ? `${navPillBase} ml-auto bg-[#ead7ff] text-brand-primary hover:bg-[#e0c8f5]`
-    : `${navPillBase} ml-auto bg-[rgba(234,215,255,0.5)] text-white hover:bg-[rgba(234,215,255,0.7)]`;
+    ? `${navCtaPill} ml-auto bg-[#ead7ff] text-brand-primary hover:bg-[#e0c8f5]`
+    : `${navCtaPill} ml-auto bg-[rgba(234,215,255,0.5)] text-white hover:bg-[rgba(234,215,255,0.7)]`;
 
   const logoVariant = isLight ? "color" : "white";
   const logoClass = isLight ? NAVBAR_LOGO_COLOR_CLASS : NAVBAR_LOGO_CLASS;
@@ -73,14 +106,14 @@ export default function Navbar({ className = "", theme = "dark" }: NavbarProps) 
       className={`absolute inset-x-0 top-0 z-30 h-[4.5rem] md:h-20 xl:h-24 ${className}`.trim()}
     >
       <div className="relative mx-auto hidden h-full max-w-[1440px] items-center justify-between px-[50px] lg:flex">
-        <div className="flex items-center gap-[15px]">
+        <div className="flex items-center gap-[8px] xl:gap-[15px]">
           {navLinks.map((link) => (
             <Link
               key={link.label}
               href={link.href}
               className={linkPillClass(isLinkActive(link.href))}
             >
-              {link.label}
+              {link.shortLabel ?? link.label}
             </Link>
           ))}
         </div>
