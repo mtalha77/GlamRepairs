@@ -491,6 +491,26 @@ select:autofill {
   will-change: transform;
 }
 
+/* ── HANDOVER-23 §2.1 — photo thumbnails ──────────────────────────────────
+   Each thumbnail scales in from 0.94 with a fade. The stagger is applied as
+   an inline delay by the component, because the slot index is what decides
+   it and a CSS nth-child would break the moment a slot is skipped. */
+@keyframes photo-thumb-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.photo-thumb-in {
+  animation: photo-thumb-in 0.26s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
 @keyframes map-dot-pulse {
   0%,
   100% {
@@ -577,6 +597,10 @@ select:autofill {
   }
 
   .animated-count {
+    animation: none;
+  }
+
+  .photo-thumb-in {
     animation: none;
   }
 }

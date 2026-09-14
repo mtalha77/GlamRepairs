@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 import AnimatedSlideIn from "@/components/home/AnimatedSlideIn";
 
@@ -17,9 +18,21 @@ import AnimatedSlideIn from "@/components/home/AnimatedSlideIn";
  * cards that are already in the document; it never fetches.
  *
  * ── Motion ───────────────────────────────────────────────────────────────
- * Reuses AnimatedSlideIn rather than adding a library. It already handles
- * reveal-once and `prefers-reduced-motion`, and §7 is explicit that no new
- * motion dependency should arrive for this.
+ * Entrances reuse AnimatedSlideIn, which already handles reveal-once and
+ * `prefers-reduced-motion`.
+ *
+ * HANDOVER-23 §3 — the grid additionally gets `@formkit/auto-animate`
+ * (~2 KB), which is the one place on the public site where it earns its
+ * weight: filtering genuinely adds and removes list items, and without it
+ * the remaining cards jump to their new positions. auto-animate reads
+ * `prefers-reduced-motion` itself, so no guard is needed here.
+ *
+ * ⚠️ It is deliberately NOT on the FAQ, which §3 also suggests. FAQ rows
+ * are hidden with the `hidden` attribute rather than removed from the
+ * array — the FAQPage schema marks up every question, and marking up
+ * content absent from the DOM is a structured data violation. Nothing
+ * enters or leaves, so auto-animate would have nothing to animate. The
+ * accordion's own 0fr→1fr transition already covers §2.6.
  */
 
 export type BlogIndexPost = {
@@ -55,6 +68,7 @@ function ClusterPill({ cluster }: { cluster: string }) {
 
 export default function BlogIndex({ posts }: { posts: BlogIndexPost[] }) {
   const [active, setActive] = useState<string>(ALL);
+  const [gridRef] = useAutoAnimate<HTMLUListElement>();
 
   const clusters = Array.from(
     new Set(posts.map((post) => post.cluster).filter((c) => c !== null)),
@@ -143,7 +157,7 @@ export default function BlogIndex({ posts }: { posts: BlogIndexPost[] }) {
       ) : null}
 
       {rest.length > 0 ? (
-        <ul className="mt-6 grid gap-5 sm:grid-cols-2">
+        <ul ref={gridRef} className="mt-6 grid gap-5 sm:grid-cols-2">
           {rest.map((post, index) => (
             <li key={post.id} className="h-full">
               <AnimatedSlideIn
