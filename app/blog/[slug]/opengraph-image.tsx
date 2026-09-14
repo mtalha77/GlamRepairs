@@ -121,8 +121,22 @@ export default async function BlogOpengraphImage({
             {SITE.name}
           </div>
           {author ? (
+            /*
+              One text child, not three.
+
+              Satori (what `next/og` renders with) throws
+              "Expected <div> to have explicit display: flex ... if it has
+              more than one child node" — and `{author.name} · {author.title}`
+              is three child nodes, not one string. That 500'd this route on
+              production while every local check passed, because the route
+              cannot render locally at all without a reachable database.
+
+              A template literal collapses it to a single child. `display:
+              flex` would also satisfy Satori, but the single string is the
+              honest shape: this is one line of text, not a layout.
+            */
             <div style={{ fontSize: 26, color: "#4a4a4a" }}>
-              {author.name} · {author.title}
+              {`${author.name} · ${author.title}`}
             </div>
           ) : null}
         </div>
