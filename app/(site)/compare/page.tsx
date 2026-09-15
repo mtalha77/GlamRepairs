@@ -7,6 +7,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import { buildCompareMatrix } from "@/lib/compare/compareMatrix";
 import { compareSource } from "@/lib/compare/sources";
 import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
+import { SOCIAL_CARD } from "@/lib/seo/site";
 
 /**
  * HANDOVER-22 §5b — /compare.
@@ -47,11 +48,31 @@ export const metadata: Metadata = {
   title: "Compared with the alternatives",
   description: DESCRIPTION,
   alternates: { canonical: "/compare" },
+  /*
+   * HOTFIX-25 §2.4 — same defect as /sample-assessment, same fix.
+   *
+   * §2.4 named only that page; this one had it too, and it was found by
+   * checking every public route rather than the one the brief mentioned.
+   * Declaring `openGraph` without `images` replaced the inherited object
+   * and dropped the `og:image` that app/opengraph-image.tsx supplies
+   * everywhere else, so the "why us and not a clinic" page shared with no
+   * thumbnail on WhatsApp, X and Facebook. See SOCIAL_CARD in
+   * lib/seo/site.ts.
+   *
+   * ⚠️ Keep `images` if you edit `openGraph`. It does not fall back.
+   */
   openGraph: {
     title: `${TITLE} | GlamRepairs`,
     description: DESCRIPTION,
     url: "/compare",
     type: "article",
+    images: [SOCIAL_CARD],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${TITLE} | GlamRepairs`,
+    description: DESCRIPTION,
+    images: [SOCIAL_CARD.url],
   },
 };
 
