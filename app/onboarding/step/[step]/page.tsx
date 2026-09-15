@@ -118,7 +118,7 @@ const STEP_METADATA: Record<number, Metadata> = {
   },
   22: {
     title: "Plan Selection",
-    description: "Choose your Clarity or Transform plan to continue.",
+    description: "Confirm your plan to continue.",
   },
   23: {
     title: "Photo Guide",

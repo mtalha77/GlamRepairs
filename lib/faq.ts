@@ -213,10 +213,13 @@ export const FAQS: Faq[] = [
     q: "Can I ask questions after I get my report?",
     group: "practical",
     tags: ["home", "pricing", "about"],
+    // HANDOVER-27 §1.4 — one paid plan, so one answer. This described the
+    // two-tier split ("Clarity includes one, Transform includes two"), which
+    // is a distinction that no longer exists.
     a:
-      "Yes. Clarity includes one follow-up check in after two weeks. " +
-      "Transform includes two follow-ups across a month, plus direct " +
-      "WhatsApp access during your plan.",
+      "Yes. Skin Transform includes two follow-up check-ins across a month, " +
+      "direct WhatsApp access to your practitioner for 30 days, and a 15 " +
+      "minute video consultation.",
   },
   {
     id: "outside-pakistan",

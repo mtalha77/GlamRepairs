@@ -14,7 +14,17 @@
  * adopted yet, rather than one named platform.
  */
 
-export const LAST_UPDATED = "2026-09-03";
+/*
+ * HANDOVER-27 §1.4 — moved from 2026-09-03 because the plan structure
+ * changed in this document, and that is a substantive change.
+ *
+ * This is not bookkeeping. The Terms themselves say the version published
+ * when you purchase is the version that applies, and LegalPage renders this
+ * date visibly and as a <time> element for exactly that reason. Editing the
+ * plans without moving the date would leave a reader unable to tell which
+ * version they agreed to.
+ */
+export const LAST_UPDATED = "2026-09-15";
 
 export const INTRO = `These terms apply when you use glamrepairs.com or purchase a skin consultation from us. By completing an assessment you agree to them, so please read them first.`;
 
@@ -38,7 +48,7 @@ We will tell you how to send your photographs when you book. You may be able to 
 - If you would prefer not to use a third-party service, tell us and we will arrange for you to send your photographs directly to us.
 How we handle photographs is set out in our Privacy Policy.
 ## Plans and payment
-We offer three plans. Skin Starter is complimentary. Skin Clarity and Skin Transform are paid.
+We offer two plans. Skin Starter is complimentary and available for a limited period. Skin Transform is paid, and includes a 15 minute video consultation with your practitioner.
 **Paid plans are charged as a single one-time fee. They are not subscriptions and do not renew automatically.**
 - Prices are shown in Pakistani Rupees and include any applicable taxes unless stated otherwise.
 - We will give you payment instructions when you book. Your consultation begins once we have confirmed payment and received your completed questionnaire and usable photographs.
@@ -47,7 +57,7 @@ We offer three plans. Skin Starter is complimentary. Skin Clarity and Skin Trans
 ## Notifications
 We will send you messages about your own consultation — payment confirmations, appointment reminders, requests for better photographs, and delivery of your report — by email, by messaging service, or in your account. These are service messages, not marketing, and you will receive them as part of using the service. Marketing is separate and requires your opt-in.
 ## Delivery
-Skin Clarity assessments are delivered within 24 hours of confirmed payment and receipt of your completed questionnaire and usable photographs. Skin Transform assessments are delivered within 24 hours with priority review.
+Skin Transform assessments are delivered within 24 hours of confirmed payment and receipt of your completed questionnaire and usable photographs.
 Reports are sent to the email address you provide, and are available in your account if you have one. It is your responsibility to give us a working address and to check your spam folder.
 If your photographs are unusable — too dark, blurred, filtered, or not showing the area of concern — we will ask you to retake them. The delivery window restarts when we receive usable photographs.
 ## Appointments and video consultations

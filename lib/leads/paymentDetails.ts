@@ -7,14 +7,15 @@ import { PAYMENT } from "@/lib/seo/site";
  * components/onboarding/PaymentDetails.tsx and reads the same constants.
  *
  * `amount` is always passed in already formatted for the client's region
- * (formatRegionPrice) — never derived here. See the note on PAYMENT.
+ * (formatRegionPrice, which reads `plan_prices`) — never derived here. See
+ * the note on PAYMENT.
  */
 export type PaymentTextInput = {
-  /** Region-formatted, e.g. "Rs. 2,000" or "$15". */
+  /** Region-formatted, e.g. "Rs. 3,000" or "$22". */
   amount?: string | null;
   /** e.g. "GR-8DDFA7". */
   reference?: string | null;
-  /** e.g. "Clarity". */
+  /** e.g. "Skin Transform". */
   planName?: string | null;
 };
 

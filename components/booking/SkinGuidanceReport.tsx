@@ -208,7 +208,10 @@ export default function SkinGuidanceReport() {
     email,
     sessionId,
     intro:
-      "Hi Glam Repair! I finished the free skin quiz and want to upgrade to a Premium plan.",
+      // HANDOVER-27 §1.4 — "a Premium plan" is not a plan that exists, and
+      // never was. Naming the real one matters more now there is only one:
+      // this message is the first thing Ayma reads on WhatsApp.
+      "Hi Glam Repair! I finished the free skin quiz and want the full Skin Transform assessment.",
   });
 
   return (
@@ -351,9 +354,16 @@ export default function SkinGuidanceReport() {
           <h2 className="font-serif text-xl leading-snug text-brand-primary sm:text-[1.375rem]">
             Ready for a deeper routine?
           </h2>
+          {/*
+            HANDOVER-27 §1.4 — this is the one upsell a free-quiz reader
+            sees, so it names the plan and says the video consultation
+            outright. "Upgrade" alone described a tier ladder that no longer
+            exists.
+          */}
           <p className="mt-2 text-xs leading-relaxed text-brand-gray sm:mt-3 sm:text-[0.8125rem]">
-            Upgrade for a manual expert review, personalized AM + PM routine, and
-            a written skin assessment — we&apos;ll send your quiz answers ahead
+            Skin Transform adds a written assessment read by a certified
+            practitioner, a personalised morning and evening routine, and a 15
+            minute video consultation — we&apos;ll send your quiz answers ahead
             on WhatsApp.
           </p>
           <div className="mt-4 flex flex-col items-stretch gap-3 sm:mt-5 sm:flex-row sm:items-center sm:justify-end">
