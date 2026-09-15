@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import CompareMatrixTable from "@/components/compare/CompareMatrixTable";
-import Footer from "@/components/home/Footer";
 import { onboardingHref } from "@/components/home/Navbar";
 import JsonLd from "@/components/seo/JsonLd";
 import { buildCompareMatrix } from "@/lib/compare/compareMatrix";
@@ -378,7 +377,6 @@ export default async function ComparePage() {
         </section>
         </div>
       </main>
-      <Footer />
     </>
   );
 }

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import Footer from "@/components/home/Footer";
 import { onboardingHref } from "@/components/home/Navbar";
 import SampleAssessmentDocument from "@/components/sample/SampleAssessmentDocument";
 import SampleIcon from "@/components/sample/SampleIcons";
@@ -111,7 +110,16 @@ export default async function SampleAssessmentPage() {
       />
 
       <main>
-        <header className="gr-section-glow px-6 pb-[34px] pt-14 text-center">
+        {/*
+          HOTFIX-25 §1.1 — a <section>, not a <header>.
+
+          This is the page's hero, not site navigation. As a <header> it was
+          the only <header> on the page, contained zero links and zero
+          images, and an SEO crawl read that as "the site header is empty"
+          rather than "this page has no site header". The real site header
+          now comes from app/(site)/layout.tsx and sits above this.
+        */}
+        <section className="gr-section-glow px-6 pb-[34px] pt-14 text-center">
           <div className="mx-auto max-w-[1180px]">
             <p className="gr-eyebrow gr-eyebrow--center">{TITLE}</p>
             <h1 className="mx-auto mt-3.5 font-serif text-[2rem] font-semibold leading-[1.14] tracking-[-0.02em] text-brand-ink sm:text-[2.5rem]">
@@ -135,7 +143,7 @@ export default async function SampleAssessmentPage() {
               client&apos;s report is published.
             </p>
           </div>
-        </header>
+        </section>
 
         <div className="mx-auto max-w-[1180px] px-6">
           <div className="grid items-start gap-9 pb-[70px] pt-3.5 lg:grid-cols-[1.15fr_0.85fr]">
@@ -215,7 +223,6 @@ export default async function SampleAssessmentPage() {
           </div>
         </section>
       </main>
-      <Footer />
     </>
   );
 }

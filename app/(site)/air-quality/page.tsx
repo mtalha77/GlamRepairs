@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
-import Footer from "@/components/home/Footer";
 import JsonLd from "@/components/seo/JsonLd";
 import { AIR_QUALITY_CITIES } from "@/lib/airQuality/cities";
 import { isAirQualityConfigured } from "@/lib/airQuality/provider";
@@ -92,7 +91,6 @@ export default function AirQualityIndexPage() {
           changed helps nobody.
         </p>
       </main>
-      <Footer />
     </>
   );
 }

@@ -17,9 +17,7 @@
  *    give the homepage two competing H1s.
  */
 import type { Metadata } from "next";
-import Footer from "@/components/home/Footer";
 import FaqSection from "@/components/faq/FaqSection";
-import Navbar from "@/components/home/Navbar";
 import FeaturesComparisonSection from "@/components/pricing/FeaturesComparisonSection";
 import PricingSection from "@/components/pricing/PricingSection";
 import TestimonialsSection from "@/components/reviews/TestimonialsSection";
@@ -54,10 +52,6 @@ export default async function PricingPage() {
         faqs.map((faq) => ({ question: faq.q, answer: faq.a })),
         "/pricing",
       ))} />
-      <section className="relative bg-white">
-        <Navbar theme="light" />
-        <div className="h-[4.5rem] md:h-20 xl:h-24" aria-hidden />
-      </section>
       <main>
         {/* Page H1. Sits above PricingSection, whose own heading is an h2. */}
         <header className="mx-auto max-w-3xl px-6 pt-10 text-center">
@@ -78,7 +72,6 @@ export default async function PricingPage() {
         <TestimonialsSection />
         <FaqSection faqs={faqs} />
       </main>
-      <Footer />
     </>
   );
 }

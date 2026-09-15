@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
-import Footer from "@/components/home/Footer";
 import { onboardingHref } from "@/components/home/Navbar";
 import JsonLd from "@/components/seo/JsonLd";
 import { AIR_QUALITY_BANDS } from "@/lib/airQuality/bands";
@@ -250,7 +249,6 @@ export default async function AirQualityCityPage({ params }: PageProps) {
           , licensed under the Open Database License.
         </p>
       </main>
-      <Footer />
     </>
   );
 }
