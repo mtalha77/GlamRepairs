@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import JsonLd from "@/components/seo/JsonLd";
-import { listReviewers } from "@/lib/seo/authors";
+import { listReviewers, PRACTITIONER } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph } from "@/lib/seo/schema";
 import { SITE } from "@/lib/seo/site";
 
@@ -59,7 +59,21 @@ const SECTIONS = [
   {
     h: "What this content is not",
     p: [
-      "Our articles are general information. They are not a diagnosis, and they are not a substitute for seeing a doctor. A personalised assessment from us is exactly that — personalised guidance from a certified aesthetician — and it is also not a medical diagnosis.",
+      /*
+        HOTFIX-25 §2.2 — read from PRACTITIONER.title, not retyped.
+
+        This line said "a certified aesthetician". lib/seo/authors.ts is
+        explicit that the one title for this person is "Certified Aesthetics
+        Practitioner" and that no second variant may creep back in anywhere
+        she is named — because inconsistent titles for one named person
+        undercut the Person schema and `sameAs` wiring, whose entire purpose
+        is telling Google these mentions are the same entity. "Aesthetician"
+        also implies a licensed title she does not hold.
+
+        Interpolating the registry means it cannot drift again, rather than
+        being correct until the next person retypes it.
+      */
+      `Our articles are general information. They are not a diagnosis, and they are not a substitute for seeing a doctor. A personalised assessment from us is exactly that — personalised guidance from a ${PRACTITIONER.title.toLowerCase()} — and it is also not a medical diagnosis.`,
       "If a skin concern is painful, spreading, changing shape, or not responding to care, see a doctor. We will tell you when we think that is the right call rather than sell you a routine.",
     ],
   },

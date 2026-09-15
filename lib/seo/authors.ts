@@ -130,14 +130,32 @@ export const AUTHORS: Record<string, Author> = {
             membershipNo: IDS.reference,
           }
         : undefined,
-    // Named specifically rather than the old vague "continuing education in
-    // telehealth practice (Coursera)". A named Duke University specialization
-    // with a public verification link is evidence; a category is not.
+    /*
+     * Named specifically rather than the old vague "continuing education in
+     * telehealth practice (Coursera)". A named Duke University
+     * specialization with a public verification link is evidence; a category
+     * is not.
+     *
+     * HOTFIX-25 §2.2 — `platform` is deliberately NOT appended. This is
+     * HANDOVER-11 §2 Rule 2, which /about's CredentialsCard has followed
+     * since it was built and this record never did: the course title above
+     * the awarding university already says what it is, and "via Coursera"
+     * next to "Duke University" invites the reader to weigh the delivery
+     * platform against the issuer. The platform and the full
+     * "coursework, not a licence" note are on /credentials, where there is
+     * room to explain them. `platform` stays in CREDENTIALS because
+     * /credentials still renders it.
+     *
+     * ⚠️ §2.2 also asked for "Telehealth: Essentials, Teamwork &
+     * Dermatology". Not applied, and it should not be: that is not what
+     * Duke calls it. An ampersand in place of the issuer's own ", and" is a
+     * misquoted credential title, which costs more on a YMYL page than the
+     * punctuation inconsistency it tidies. The name here is whatever
+     * CREDENTIALS says — see the accuracy note on `duke-telehealth` in
+     * lib/seo/site.ts before editing either.
+     */
     continuingEducation: TELEHEALTH
-      ? [
-          `${TELEHEALTH.name} — ${TELEHEALTH.issuer}` +
-            (TELEHEALTH.platform ? ` via ${TELEHEALTH.platform}` : ""),
-        ]
+      ? [`${TELEHEALTH.name} — ${TELEHEALTH.issuer}`]
       : [],
     scopeDisclaimer:
       "Ayma is not a physician or dermatologist. Glam Repairs provides " +
@@ -155,6 +173,19 @@ export const AUTHORS: Record<string, Author> = {
 };
 
 export const DEFAULT_AUTHOR_SLUG = "ayma-arif";
+
+/**
+ * The practitioner behind the service — HOTFIX-25 §2.2 asked for prose to
+ * read her title from here rather than retyping it.
+ *
+ * Defined AS `AUTHORS[DEFAULT_AUTHOR_SLUG]`, not as a second record, so the
+ * two cannot diverge: this is the same object, under the name that reads
+ * correctly in body copy. Use it wherever prose needs her name or title —
+ * `${PRACTITIONER.title.toLowerCase()}` beats a hand-typed
+ * "certified aesthetician", which is what /editorial-policy had and which
+ * is exactly the drift the `title` doc comment above forbids.
+ */
+export const PRACTITIONER: Author = AUTHORS[DEFAULT_AUTHOR_SLUG];
 
 export function getAuthor(slug: string): Author | undefined {
   return AUTHORS[slug];
