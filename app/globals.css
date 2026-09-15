@@ -14,6 +14,12 @@
   --brand-accent: #a88ec3;
   --brand-light: #bda8d4;
   --brand-lavender: #d6cdea;
+  /* The two companion tints of the illustration set — see
+     components/illustration/BrandIllustration.tsx. `-light` is the left half
+     of every two-tone silhouette; `-deep` is the one darker accent each icon
+     is allowed. Tokens rather than hexes so the next icon cannot drift. */
+  --brand-lavender-light: #e9e3f4;
+  --brand-lavender-deep: #c4b6de;
   --brand-cream: #fff3da;
   --brand-cream-light: #fff9e5;
   --brand-cream-card: #fff7e5;
@@ -72,6 +78,8 @@
   --color-brand-accent: var(--brand-accent);
   --color-brand-light: var(--brand-light);
   --color-brand-lavender: var(--brand-lavender);
+  --color-brand-lavender-light: var(--brand-lavender-light);
+  --color-brand-lavender-deep: var(--brand-lavender-deep);
   --color-brand-cream: var(--brand-cream);
   --color-brand-cream-light: var(--brand-cream-light);
   --color-brand-cream-card: var(--brand-cream-card);
