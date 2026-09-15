@@ -7,6 +7,7 @@ import {
   normaliseGiftCode,
 } from "@/lib/gifts/giftCodes";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { PAID_PLAN_KEY } from "@/lib/plans/plansPublic";
 
 /**
  * HANDOVER-20 Part 2 — the page the recipient lands on.
@@ -111,7 +112,11 @@ export default async function GiftPage({ params }: GiftPageProps) {
   }
 
   const giver = await getGiverFirstName(code);
-  const planLabel = PLAN_LABEL[result.grantsPlan ?? "clarity"] ?? "assessment";
+  // HANDOVER-27 §1.1 — default to the plan on sale. Codes issued before the
+  // migration still carry "clarity" and still resolve, because PLAN_LABEL
+  // keeps the retired entry; only the DEFAULT changed.
+  const planLabel =
+    PLAN_LABEL[result.grantsPlan ?? PAID_PLAN_KEY] ?? "assessment";
   const isFull = (result.discountPct ?? 0) >= 100;
 
   return (

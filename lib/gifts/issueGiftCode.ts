@@ -1,3 +1,4 @@
+import { PAID_PLAN_KEY } from "@/lib/plans/plansPublic";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
@@ -178,7 +179,11 @@ export async function issueGiftCodeForLead(options: {
       kind: "gift",
       issued_to_lead: options.leadId,
       issued_to_person: lead.person_key,
-      grants_plan: "clarity",
+      // HANDOVER-27 §1.1 — grant the plan that exists. This granted
+      // "clarity", which is retired: every code issued after the migration
+      // would have entitled someone to a plan they cannot select, and the
+      // funnel would have had nothing to apply it to.
+      grants_plan: PAID_PLAN_KEY,
       discount_pct: 100,
       max_uses: 1,
       uses_count: 0,

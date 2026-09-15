@@ -45,26 +45,24 @@ export default function PricingRegionsForm({
               {region.code} · {region.currency}
             </p>
           </div>
+          {/*
+            HANDOVER-27 §1.1 — one paid plan, so one field. The Clarity
+            input is gone: the plan is retired, and a price box for a plan
+            nobody can buy invites someone to "fix" a number that does
+            nothing.
+
+            The free tier has no field either, for the same reason it has
+            no price: it is zero by definition. Retiring or extending that
+            offer is `plan_settings.available_until`, not a price.
+          */}
           <label className="text-sm text-brand-gray">
-            Clarity ({region.symbol})
-            <input
-              type="number"
-              name="clarity"
-              min={0}
-              step="0.01"
-              defaultValue={region.priceClarity}
-              required
-              className={`${formInputClassName} mt-1 w-32`}
-            />
-          </label>
-          <label className="text-sm text-brand-gray">
-            Transform ({region.symbol})
+            Skin Transform ({region.symbol})
             <input
               type="number"
               name="transform"
               min={0}
               step="0.01"
-              defaultValue={region.priceTransform}
+              defaultValue={region.prices.transform}
               required
               className={`${formInputClassName} mt-1 w-32`}
             />

@@ -3,9 +3,9 @@ import Link from "next/link";
 import CompareStrip from "@/components/compare/CompareStrip";
 import CurrencySwitcher from "@/components/pricing/CurrencySwitcher";
 import PricingCard from "@/components/pricing/PricingCard";
-import { pricingPlans } from "@/components/pricing/pricingPlans";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
-import { formatRegionPrice, listActivePricingRegions } from "@/lib/pricing/regions";
+import { listActivePricingRegions } from "@/lib/pricing/regions";
+import { listOfferedPlans, PAID_PLAN_KEY } from "@/lib/plans/plansPublic";
 
 type PricingSectionProps = {
   title?: string;
@@ -55,6 +55,10 @@ export default async function PricingSection({
     getServerPricingRegion(),
     listActivePricingRegions(),
   ]);
+  // Only plans a visitor can actually buy today. Once the free tier's
+  // `available_until` passes, `currently_offered` goes false and the card
+  // stops rendering with no deploy — see HANDOVER-27 §1.3.
+  const plans = await listOfferedPlans(region.code);
 
   return (
     <section
@@ -74,12 +78,32 @@ export default async function PricingSection({
           </div>
         </header>
 
-        <div className="mt-10 grid gap-6 sm:mt-12 lg:mt-14 lg:grid-cols-3 lg:items-stretch lg:gap-5 xl:gap-6">
-          {pricingPlans.map((plan) => (
+        {/*
+          HANDOVER-27 §1.4 — two cards, not three, and the paid one dominates.
+
+          The grid was `lg:grid-cols-3`. Dropping a plan and leaving that in
+          place would have stretched two cards across three columns, which
+          reads as a page missing something rather than as a page offering a
+          choice. `[0.85fr_1.15fr]` gives the paid card the extra width, so
+          the free tier reads as the sample it is and the paid plan reads as
+          the product.
+
+          It degrades correctly if the free tier expires: one plan in a
+          two-column grid would look stranded, so a single card centres at
+          its natural width instead.
+        */}
+        <div
+          className={`mt-10 grid gap-6 sm:mt-12 lg:mt-14 lg:items-stretch lg:gap-5 xl:gap-6 ${
+            plans.length > 1
+              ? "mx-auto max-w-[68rem] lg:grid-cols-[0.85fr_1.15fr]"
+              : "mx-auto max-w-[34rem]"
+          }`}
+        >
+          {plans.map((plan) => (
             <PricingCard
-              key={plan.name}
-              {...plan}
-              price={formatRegionPrice(region, plan.planId)}
+              key={plan.planKey}
+              plan={plan}
+              featured={plan.planKey === PAID_PLAN_KEY && plans.length > 1}
             />
           ))}
         </div>

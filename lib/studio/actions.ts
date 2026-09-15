@@ -9,7 +9,7 @@ import { sendStudioReportEmail } from "@/lib/email/sendStudioReportEmail";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { resolvePricingRegion, priceForPlan } from "@/lib/pricing/regions";
-import { updatePricingRegionPrices } from "@/lib/studio/pricingAdmin";
+import { updatePlanPrices } from "@/lib/studio/pricingAdmin";
 import { PLAN_OPTIONS, REVIEW_DECISIONS } from "@/lib/studio/constants";
 import {
   getStudioCustomer,
@@ -978,21 +978,17 @@ export async function updatePricingRegionAction(formData: FormData) {
   }
 
   const code = asString(formData, "code");
-  const clarity = Number(formData.get("clarity"));
+  // HANDOVER-27 §1.1 — one paid plan. The form used to carry a Clarity
+  // field as well; Clarity is retired, so editing its price would have been
+  // editing a number nobody can be charged.
   const transform = Number(formData.get("transform"));
 
-  if (
-    !code ||
-    !Number.isFinite(clarity) ||
-    !Number.isFinite(transform) ||
-    clarity < 0 ||
-    transform < 0
-  ) {
+  if (!code || !Number.isFinite(transform) || transform < 0) {
     redirect("/studio/settings?error=pricing_invalid");
   }
 
   try {
-    await updatePricingRegionPrices(code, { clarity, transform });
+    await updatePlanPrices(code, { transform });
   } catch (error) {
     console.error("[updatePricingRegionAction]", error);
     redirect("/studio/settings?error=pricing_save");

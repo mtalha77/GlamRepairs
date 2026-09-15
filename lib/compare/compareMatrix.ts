@@ -54,7 +54,6 @@ export type CompareCell = {
 export type CompareColumnId =
   | "clinic"
   | "onlineDoctor"
-  | "clarity"
   | "transform"
   | "products"
   | "freeAdvice";
@@ -63,7 +62,7 @@ export type CompareColumn = {
   id: CompareColumnId;
   label: string;
   sublabel: string;
-  /** Our own two columns, styled as the subject of the comparison. */
+  /** Our own column, styled as the subject of the comparison. */
   ours?: boolean;
 };
 
@@ -121,7 +120,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
   const region =
     pkRegion ?? allRegions.find((r) => r.isDefault) ?? allRegions[0];
 
-  const clarity = plans.clarity;
   const transform = plans.transform;
 
   const columns: CompareColumn[] = [
@@ -135,16 +133,21 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       label: "Online doctor consult",
       sublabel: "A dermatologist, over video",
     },
-    {
-      id: "clarity",
-      label: `Glam Repairs · ${clarity.label}`,
-      sublabel: "Written assessment",
-      ours: true,
-    },
+    /*
+     * HANDOVER-27 §1.4 — one Glam Repairs column, not two.
+     *
+     * Clarity is retired, so a column for it compared the reader against a
+     * plan they cannot buy. The sublabel now states the video call outright
+     * rather than using it to distinguish two tiers: at Rs. 3,000 as the
+     * only paid option it is the reason to choose this over the clinic
+     * column sitting next to it at the same price.
+     */
     {
       id: "transform",
       label: `Glam Repairs · ${transform.label}`,
-      sublabel: "Written assessment + call",
+      sublabel: transform.includesVideoCall && transform.videoMinutes
+        ? `Written assessment + ${transform.videoMinutes} min video call`
+        : "Written assessment",
       ours: true,
     },
     {
@@ -180,7 +183,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
           value: "Rs. 1,000–3,500",
           sourceId: cite("oladocVideo"),
         },
-        clarity: { value: formatRegionPrice(region, "clarity"), tone: "neutral" },
         transform: {
           value: formatRegionPrice(region, "transform"),
           tone: "neutral",
@@ -195,10 +197,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       cells: {
         clinic: { value: "A qualified doctor", tone: "win" },
         onlineDoctor: { value: "A qualified doctor", tone: "win" },
-        clarity: {
-          value: "A named practitioner with an HEC-attested degree",
-          tone: "win",
-        },
         transform: {
           value: "A named practitioner with an HEC-attested degree",
           tone: "win",
@@ -213,7 +211,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       cells: {
         clinic: { value: "Yes, in person", tone: "win" },
         onlineDoctor: { value: "Sometimes, on video", tone: "neutral" },
-        clarity: { value: describePhotoCount(clarity), tone: "neutral" },
         transform: { value: describePhotoCount(transform), tone: "neutral" },
         products: { value: "No", tone: "lose" },
         freeAdvice: { value: "No", tone: "lose" },
@@ -225,7 +222,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       cells: {
         clinic: { value: "Usually a prescription only", tone: "neutral" },
         onlineDoctor: { value: "Usually a prescription only", tone: "neutral" },
-        clarity: { value: "Full written assessment, as a PDF", tone: "win" },
         transform: { value: "Full written assessment, as a PDF", tone: "win" },
         products: { value: "None", tone: "lose" },
         freeAdvice: { value: "A product list", tone: "lose" },
@@ -237,7 +233,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       cells: {
         clinic: { value: "Same day to several days, plus travel" },
         onlineDoctor: { value: "Same day to a few days" },
-        clarity: { value: "Within 24 hours", tone: "win" },
         transform: { value: "Within 24 hours", tone: "win" },
         products: { value: "Immediate, and usually wrong" },
         freeAdvice: { value: "Immediate", tone: "win" },
@@ -249,7 +244,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       cells: {
         clinic: { value: "In person", tone: "win" },
         onlineDoctor: { value: "Video call", tone: "win" },
-        clarity: { value: conversationLabel(clarity), tone: "neutral" },
         transform: { value: conversationLabel(transform), tone: "neutral" },
         products: { value: "None", tone: "lose" },
         freeAdvice: { value: "None", tone: "lose" },
@@ -261,7 +255,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       cells: {
         clinic: { value: "No — a second visit is a second fee", tone: "lose" },
         onlineDoctor: { value: "No — usually a second fee", tone: "lose" },
-        clarity: { value: supportLabel(clarity), tone: "win" },
         transform: { value: supportLabel(transform), tone: "win" },
         products: { value: "None", tone: "lose" },
         freeAdvice: { value: "None", tone: "lose" },
@@ -275,7 +268,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       cells: {
         clinic: { value: "Yes", tone: "win" },
         onlineDoctor: { value: "Yes", tone: "win" },
-        clarity: { value: "No", tone: "lose" },
         transform: { value: "No", tone: "lose" },
         products: { value: "No", tone: "lose" },
         freeAdvice: { value: "No", tone: "lose" },
@@ -289,7 +281,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       cells: {
         clinic: { value: "Yes", tone: "win" },
         onlineDoctor: { value: "Yes", tone: "win" },
-        clarity: { value: "No", tone: "lose" },
         transform: { value: "No", tone: "lose" },
         products: { value: "No", tone: "lose" },
         freeAdvice: { value: "No", tone: "lose" },
@@ -307,7 +298,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
           value: "The platform takes a fee per consultation",
           tone: "neutral",
         },
-        clarity: { value: "None — no brand commission", tone: "win" },
         transform: { value: "None — no brand commission", tone: "win" },
         products: { value: "Whatever the shelf pushes", tone: "lose" },
         freeAdvice: {
@@ -323,7 +313,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       cells: {
         clinic: { value: "Yes", tone: "lose" },
         onlineDoctor: { value: "No", tone: "win" },
-        clarity: { value: "No", tone: "win" },
         transform: { value: "No", tone: "win" },
         products: { value: "To the shop", tone: "neutral" },
         freeAdvice: { value: "No", tone: "win" },
@@ -339,10 +328,6 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
         },
         onlineDoctor: {
           value: "A prescription you already know you need, without the travel.",
-        },
-        clarity: {
-          value:
-            "Working out what your skin is actually doing, and a routine you can follow.",
         },
         transform: {
           value:

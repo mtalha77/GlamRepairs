@@ -14,47 +14,50 @@ import { StepHeader, StepRequiredError } from "@/components/steps";
 import { resolveUnlockTarget } from "@/lib/funnel/funnelProgress";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
 import { useStepRequiredError } from "@/lib/funnel/useStepAnswer";
-import { formatRegionPrice, type PricingRegion } from "@/lib/pricing/regions";
+import { type PricingRegion } from "@/lib/pricing/regions";
+import {
+  formatOfferEndDate,
+  formatPlanPrice,
+  PAID_PLAN_KEY,
+  type PlanKey,
+  type PublicPlan,
+} from "@/lib/plans/plansPublic";
 
-type PlanId = "free" | "clarity" | "transform";
+/*
+ * HANDOVER-27 §1.4 — plans come from `plans_public`, not from a literal.
+ *
+ * PLAN_META used to live here: three hardcoded names and highlight strings,
+ * with only the price read from the database. That split is what broke —
+ * retiring Clarity left this array offering it, and the highlights still
+ * described a tier structure that no longer exists.
+ *
+ * The step is now closer to a confirmation than a choice: with one paid
+ * option and a free tier, "Choose your plan" is really "the free sample or
+ * the assessment". It still renders as a list rather than being removed,
+ * because the free tier is a genuine second option while the offer is open
+ * and because the step also runs as the pre-payment confirmation. When the
+ * free offer closes, `listOfferedPlans` returns one plan and this collapses
+ * to a single card the reader confirms.
+ */
 
-// HOTFIX-7 §1: names/highlights only — price comes from the region prop
-// (public.pricing_regions), resolved server-side per request. Never
-// hardcode a price back into this array.
-const PLAN_META: {
-  id: PlanId;
-  name: string;
-  highlights: string;
-}[] = [
-  {
-    id: "free",
-    name: "Free",
-    highlights:
-      "Skin concern quiz · Instant skin type result · Generic routine guide · Skin tips access",
-  },
-  {
-    id: "clarity",
-    name: "Clarity",
-    highlights: "Manual expert review · Delivered in 24 hours · 1 follow-up at 2 weeks",
-  },
-  {
-    id: "transform",
-    name: "Transform",
-    highlights:
-      "Priority review in 24 hours · Week-by-week plan · 2 follow-ups · WhatsApp access",
-  },
-];
+/** First few feature bullets, as the one-line highlight under a plan name. */
+function highlightFor(plan: PublicPlan): string {
+  return plan.features.slice(0, 3).join(" · ");
+}
 
 function PlanCard({
   name,
   price,
   highlights,
+  note,
   selected,
   onSelect,
 }: {
   name: string;
   price: string;
   highlights: string;
+  /** e.g. the free tier's end date — HANDOVER-27 §1.3. */
+  note?: string;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -89,6 +92,15 @@ function PlanCard({
           {price}
         </span>
       </div>
+      {note ? (
+        <p
+          className={`mt-1.5 text-xs font-medium sm:text-[0.8125rem] ${
+            selected ? "text-white/90" : "text-[#8a6d1f]"
+          }`}
+        >
+          {note}
+        </p>
+      ) : null}
       <p
         className={`mt-3 text-sm leading-relaxed sm:text-[0.9375rem] ${
           selected ? "text-white/90" : "text-brand-gray"
@@ -172,6 +184,12 @@ type PlanSelectionStepProps = {
   region: PricingRegion;
   regions: PricingRegion[];
   /**
+   * Plans currently on offer, resolved on the server from `plans_public`.
+   * Already filtered by `currently_offered`, so an expired free tier never
+   * reaches this list — HANDOVER-27 §1.3.
+   */
+  plans: PublicPlan[];
+  /**
    * HANDOVER-22 §4 — this component now renders at two points in the funnel:
    * step 2 (the first real choice) and step 22 (the confirmation before
    * payment). The step number drives the progress bar and the wording, so
@@ -185,17 +203,15 @@ export default function PlanSelectionStep({
   nextHref = `/onboarding/step/${ONBOARDING_FORM.planSelection + 1}`,
   region,
   regions,
+  plans,
   step = ONBOARDING_PROGRESS.planSelection,
 }: PlanSelectionStepProps) {
   const isEarly = step === ONBOARDING_FORM.earlyPlanSelection;
-  const plans = PLAN_META.map((plan) => ({
-    ...plan,
-    price: formatRegionPrice(region, plan.id),
-  }));
+  const paidPlan = plans.find((p) => p.planKey === PAID_PLAN_KEY);
   const router = useRouter();
   const selectedPlan = useFunnelStore(
     (state) => state.selectedPlan,
-  ) as PlanId | null;
+  ) as PlanKey | null;
   const planPreselected = useFunnelStore((state) => state.planPreselected);
   const giftCode = useFunnelStore((state) => state.giftCode);
   const setSelectedPlan = useFunnelStore((state) => state.setSelectedPlan);
@@ -262,15 +278,15 @@ export default function PlanSelectionStep({
           reads a price list assumes the gift did not apply, and the most
           likely next action is to close the tab.
 
-          The prices stay visible rather than being hidden: the gift covers
-          Skin Clarity, so a recipient choosing Transform is topping up and
-          needs to see what that costs.
+          HANDOVER-27 §1.4 — this named Skin Clarity, which is retired. With
+          one paid plan a gift covers it outright, so there is no topping up
+          to explain any more and the copy gets simpler rather than needing
+          a second sentence.
         */}
-        {giftCode ? (
+        {giftCode && paidPlan ? (
           <p className="mt-4 rounded-2xl border border-brand-primary/30 bg-brand-lavender/20 px-4 py-3 text-sm leading-relaxed text-brand-ink">
             <strong className="font-medium">Your gift covers this.</strong>{" "}
-            Skin Clarity is already paid for — pick it and there is nothing to
-            pay.
+            {paidPlan.label} is already paid for, so there is nothing to pay.
           </p>
         ) : null}
 
@@ -290,13 +306,18 @@ export default function PlanSelectionStep({
         <div className="mt-6 space-y-3 sm:mt-7 sm:space-y-4">
           {plans.map((plan) => (
             <PlanCard
-              key={plan.id}
-              name={plan.name}
-              price={plan.price}
-              highlights={plan.highlights}
-              selected={selectedPlan === plan.id}
+              key={plan.planKey}
+              name={plan.label}
+              price={plan.price === 0 ? "Free" : formatPlanPrice(plan)}
+              highlights={highlightFor(plan)}
+              note={
+                plan.availableUntil
+                  ? `Free until ${formatOfferEndDate(plan.availableUntil)}.`
+                  : undefined
+              }
+              selected={selectedPlan === plan.planKey}
               onSelect={() => {
-                setSelectedPlan(plan.id);
+                setSelectedPlan(plan.planKey);
                 clearStepValidationAttempt();
               }}
             />
