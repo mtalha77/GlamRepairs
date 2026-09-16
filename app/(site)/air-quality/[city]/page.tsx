@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
-import Footer from "@/components/home/Footer";
 import { onboardingHref } from "@/components/home/Navbar";
+import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
 import { AIR_QUALITY_BANDS } from "@/lib/airQuality/bands";
 import { AIR_QUALITY_CITIES, getAirQualityCity } from "@/lib/airQuality/cities";
@@ -82,30 +82,19 @@ export default async function AirQualityCityPage({ params }: PageProps) {
   const reading = await fetchAirQuality(city.lat, city.lon);
   const band = reading ? AIR_QUALITY_BANDS[reading.band] : null;
 
+  /* Declared once, consumed twice — see components/seo/Breadcrumbs. */
+  const trail: Crumb[] = [
+    { name: "Home", path: "/" },
+    { name: "Air quality", path: "/air-quality" },
+    { name: city.name, path: `/air-quality/${city.slug}` },
+  ];
+
   return (
     <>
-      <JsonLd
-        data={graph(
-          breadcrumbSchema([
-            { name: "Home", path: "/" },
-            { name: "Air quality", path: "/air-quality" },
-            { name: city.name, path: `/air-quality/${city.slug}` },
-          ]),
-        )}
-      />
+      <JsonLd data={graph(breadcrumbSchema(trail))} />
 
       <main className="mx-auto max-w-3xl px-5 py-14 sm:px-6 sm:py-16">
-        <nav className="mb-8 text-sm text-brand-gray">
-          <Link href="/" className="underline underline-offset-2">
-            Home
-          </Link>
-          <span aria-hidden> / </span>
-          <Link href="/air-quality" className="underline underline-offset-2">
-            Air quality
-          </Link>
-          <span aria-hidden> / </span>
-          <span>{city.name}</span>
-        </nav>
+        <Breadcrumbs trail={trail} className="mb-8 text-brand-gray" />
 
         <header>
           <h1 className="font-serif text-3xl leading-tight text-brand-primary sm:text-4xl">
@@ -250,7 +239,6 @@ export default async function AirQualityCityPage({ params }: PageProps) {
           , licensed under the Open Database License.
         </p>
       </main>
-      <Footer />
     </>
   );
 }

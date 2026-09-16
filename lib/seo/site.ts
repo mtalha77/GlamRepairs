@@ -263,3 +263,43 @@ export function getCredential(id: string): Credential | undefined {
 export function abs(path = "/"): string {
   return `${SITE.url}${path.startsWith("/") ? path : `/${path}`}`;
 }
+
+/**
+ * The site-wide social card, as an explicit `images` entry — HOTFIX-25 §2.4.
+ *
+ * ── The bug this exists to close ─────────────────────────────────────────
+ * `app/opengraph-image.tsx` is a file convention: Next injects it as
+ * `og:image` into every route under `app/`. That works right up until a
+ * page declares its own `openGraph` object. Metadata merges per key, so a
+ * page-level `openGraph` REPLACES the inherited one — and if it has no
+ * `images`, the generated card does not come back.
+ *
+ * Measured on production before this was added: /compare and
+ * /sample-assessment were the only two public pages with no `og:image` at
+ * all, and they are the only two that declare `openGraph` without
+ * `images`. Both were also emitting `twitter:card=summary_large_image`
+ * with no image to put in it.
+ *
+ * Those are the site's two highest-intent commercial pages — the "what do
+ * I actually get" page and the "why you and not a clinic" page, both built
+ * in HANDOVER-22 to close the sale. They were producing a bare, thumbnailless
+ * link preview on WhatsApp, which is how things actually get shared in
+ * Pakistan, and on X and Facebook. That is a conversion cost, not a
+ * cosmetic one.
+ *
+ * ── Use it whenever you declare `openGraph` or `twitter` on a page ───────
+ *     openGraph: { title, description, url: "/x", type: "article",
+ *                  images: [SOCIAL_CARD] },
+ *     twitter:   { card: "summary_large_image", title, description,
+ *                  images: [SOCIAL_CARD.url] },
+ *
+ * A page with a genuinely page-specific card should point at that instead
+ * — /blog/[slug] does, via its own `opengraph-image.tsx` in-segment, which
+ * is why posts are not affected by any of this.
+ */
+export const SOCIAL_CARD = {
+  url: abs("/opengraph-image"),
+  width: 1200,
+  height: 630,
+  alt: `${SITE.name} — ${SITE.tagline}`,
+} as const;

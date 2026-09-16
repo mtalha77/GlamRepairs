@@ -13,7 +13,6 @@ import type { Metadata } from "next";
 import ContactHeroSection from "@/components/contact/ContactHeroSection";
 import ContactSection from "@/components/contact/ContactSection";
 import FaqSection from "@/components/faq/FaqSection";
-import Footer from "@/components/home/Footer";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
 import { faqSchema, graph } from "@/lib/seo/schema";
@@ -43,7 +42,6 @@ export default function ContactPage() {
         <ContactSection />
         <FaqSection faqs={faqs} />
       </main>
-      <Footer />
     </>
   );
 }

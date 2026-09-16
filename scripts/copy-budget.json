@@ -1,0 +1,15 @@
+{
+  "_readme": "Per-route em dash budget for scripts/check-copy.mjs. The check FAILS if a route exceeds its number, so this can only ratchet down. Lower it with `node scripts/check-copy.mjs --update-budget` after each pass of copy edits. PARTIAL: baselined against a local build, which cannot reach Supabase or OpenWeather, so the four blog posts and the two air-quality routes are ABSENT and unguarded. Re-baseline against a real deployment (`--base https://www.glamrepairs.com`) to cover them — they hold most of the remaining em dashes.",
+  "/": 4,
+  "/about": 9,
+  "/authors/ayma-arif": 3,
+  "/blog": 1,
+  "/compare": 29,
+  "/contact": 1,
+  "/credentials": 3,
+  "/editorial-policy": 6,
+  "/pricing": 4,
+  "/privacy": 10,
+  "/sample-assessment": 3,
+  "/terms": 5
+}

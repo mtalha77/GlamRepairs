@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
 import CredentialsBlock from "@/components/seo/CredentialsBlock";
 import JsonLd from "@/components/seo/JsonLd";
 import { getAuthor, listAuthors } from "@/lib/seo/authors";
@@ -52,25 +53,28 @@ export default async function AuthorPage({
   const author = getAuthor(slug);
   if (!author) notFound();
 
+  /*
+   * HOTFIX-25 §1.2 — this page already had a visible trail AND a separate
+   * BreadcrumbList saying the same thing, hand-written twice. Now one array
+   * feeds both. See components/seo/Breadcrumbs.
+   *
+   * Home / Name, with no "Skin, explained" in between, even though readers
+   * arrive here from posts: /authors/[slug] is not under /blog, and a
+   * breadcrumb asserting a parent the URL does not have is the kind of
+   * mismatch Google discards the whole trail over.
+   */
+  const trail: Crumb[] = [
+    { name: "Home", path: "/" },
+    { name: author.name, path: `/authors/${author.slug}` },
+  ];
+
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
       <JsonLd
-        data={graph(
-          personSchema(author),
-          breadcrumbSchema([
-            { name: "Home", path: "/" },
-            { name: author.name, path: `/authors/${author.slug}` },
-          ]),
-        )}
+        data={graph(personSchema(author), breadcrumbSchema(trail))}
       />
 
-      <nav className="mb-10 text-sm text-black/50">
-        <Link href="/" className="underline underline-offset-2">
-          Home
-        </Link>
-        <span aria-hidden> / </span>
-        <span>{author.name}</span>
-      </nav>
+      <Breadcrumbs trail={trail} className="mb-10" />
 
       <header className="flex flex-col gap-5 sm:flex-row sm:items-center">
         {author.photo ? (
