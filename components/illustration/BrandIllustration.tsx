@@ -52,14 +52,24 @@ const LAV_DEEP = "var(--brand-lavender-deep)";
 export default function BrandIllustration({
   name,
   /*
-   * Larger than the 9/12rem the two file icons use, and deliberately so.
-   * Those are portrait artwork (132x153 and 104x123) that fills its box;
-   * this is a landscape composition — frame and padlock side by side — in a
-   * square 96 box, so at the same height it renders about a third shorter
-   * and reads as the small one of the three. The extra height buys back the
-   * mass. See the note on matched mass above.
+   * The SAME height as the two file icons in TrustPrivacyCard, and that is
+   * the point.
+   *
+   * This used to be h-[10rem]/h-[13.5rem] — deliberately larger, to buy back
+   * mass the drawing was losing. It was losing it because the artwork filled
+   * only about 64% of a square 96 box while guard_icon (132x153) and
+   * bin_icon (104x122.9) fill roughly 90% of theirs, so at equal height this
+   * one rendered visibly smaller and lighter than its neighbours. Scaling
+   * the box up was treating the symptom: it made the SVG bigger without
+   * making the drawing any denser, and the icon still read as the odd one
+   * out.
+   *
+   * The viewBox is now 88x96 with the artwork spanning x 3-84 and y 6-90 —
+   * about 92% by 88% — so matched height gives matched ink, and this can
+   * use its neighbours' height verbatim. If you change the artwork, keep it
+   * filling the box rather than reaching for a bigger class here.
    */
-  className = "h-[10rem] w-auto sm:h-[13.5rem]",
+  className = "h-[9rem] w-auto sm:h-[12rem]",
   /** Must match the surface the icon sits on. See the halo rule above. */
   haloColor = "var(--brand-cream-card)",
 }: {
@@ -69,84 +79,78 @@ export default function BrandIllustration({
 }) {
   if (name === "notShared") {
     return (
-      <svg viewBox="0 0 96 96" className={className} aria-hidden>
+      <svg viewBox="0 0 88 96" className={className} aria-hidden>
         <defs>
+          {/* Each element is split at ITS OWN centre, not the icon's, so the
+              frame and the padlock each read as one lit object. A single
+              split at the icon's centre would leave the padlock entirely on
+              the dark side with no light face at all. */}
           <clipPath id="gr-illus-frame-half">
-            <rect x="0" y="0" width="37" height="96" />
+            <rect x="0" y="0" width="34" height="96" />
+          </clipPath>
+          <clipPath id="gr-illus-lock-half">
+            <rect x="0" y="0" width="65" height="96" />
           </clipPath>
           {/*
             The halo is clipped to the frame it separates the padlock from.
-            Without this it also traces the padlock's lower edge, which hangs
-            below the card onto the page — and a cream stroke on white is a
-            visible ring around nothing. A halo only has a job where two
-            shapes overlap.
+            Without this it also traces the padlock's free edges, which sit
+            over the page rather than over the frame — and a cream stroke on
+            white is a visible ring around nothing. A halo only has a job
+            where two shapes actually overlap.
           */}
           <clipPath id="gr-illus-frame-bounds">
-            <rect x="8" y="17" width="58" height="44" rx="8" />
+            <rect x="3" y="6" width="62" height="46" rx="8" />
           </clipPath>
         </defs>
-        <g transform="translate(0,7)">
-          <rect x="8" y="17" width="58" height="44" rx="8" fill={LAV} />
-          <g clipPath="url(#gr-illus-frame-half)">
-            <rect
-              x="8"
-              y="17"
-              width="58"
-              height="44"
-              rx="8"
-              fill={LAV_LIGHT}
-            />
-          </g>
-          <rect
-            x="15"
-            y="24"
-            width="44"
-            height="30"
-            rx="4"
-            fill="#fff"
-            opacity=".5"
-          />
-          {/* The photograph inside the frame: hills and a sun, knocked out. */}
-          <path d="M15 54V48L25 38l8 8 8.5-9.5L59 54z" fill="#fff" />
-          <circle cx="50" cy="31" r="4.5" fill="#fff" />
 
-          {/* The halo: the padlock's own silhouette traced in the card
-              colour, so the gap between it and the frame follows the shape
-              rather than sitting behind a disc. */}
-          <g
-            clipPath="url(#gr-illus-frame-bounds)"
-            fill="none"
-            stroke={haloColor}
-            strokeWidth="9"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          >
-            <path d="M61 57V51a7 7 0 0 1 14 0v6" />
-            <rect
-              x="55"
-              y="56"
-              width="26"
-              height="22"
-              rx="6"
-              fill={haloColor}
-            />
-          </g>
-
-          {/* The shackle is this icon's single darker accent. */}
-          <path
-            d="M61 57V51a7 7 0 0 1 14 0v6"
-            fill="none"
-            stroke={LAV_DEEP}
-            strokeWidth="5"
-            strokeLinecap="round"
-          />
-          <rect x="55" y="56" width="26" height="22" rx="6" fill={LAV} />
-          <path
-            d="M61 56h-1a5 5 0 0 0-5 5v12a5 5 0 0 0 5 5h1z"
-            fill={LAV_LIGHT}
-          />
-          <rect x="61.5" y="62" width="13" height="10" rx="3" fill="#fff" />
+        {/* ── The photo frame ───────────────────────────────────────── */}
+        <rect x="3" y="6" width="62" height="46" rx="8" fill={LAV} />
+        <g clipPath="url(#gr-illus-frame-half)">
+          <rect x="3" y="6" width="62" height="46" rx="8" fill={LAV_LIGHT} />
         </g>
+
+        {/*
+          The photograph, knocked straight out in white.
+
+          There used to be a 50%-white rect across the whole frame interior
+          before these shapes. It was meant to read as a recessed picture
+          area; what it actually did was wash the frame to a pale grey while
+          the shield and the bin either side stayed fully saturated, and it
+          left the hills and sun barely legible because they were white on
+          near-white. The set's rule is crisp white knock-outs on solid
+          fill — the shield's keyhole and the bin's slots — so this is that,
+          with no overlay.
+        */}
+        <path d="M10 45V38l10-10 8 8 8.5-9.5L58 45z" fill="#fff" />
+        <circle cx="49" cy="20" r="4.5" fill="#fff" />
+
+        {/* ── The halo, between frame and padlock ───────────────────── */}
+        <g
+          clipPath="url(#gr-illus-frame-bounds)"
+          fill="none"
+          stroke={haloColor}
+          strokeWidth="9"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        >
+          <path d="M53 56v-6a12 12 0 0 1 24 0v6" />
+          <rect x="46" y="56" width="38" height="34" rx="8" fill={haloColor} />
+        </g>
+
+        {/* ── The padlock ───────────────────────────────────────────── */}
+        {/* The shackle is this icon's single darker accent. */}
+        <path
+          d="M53 56v-6a12 12 0 0 1 24 0v6"
+          fill="none"
+          stroke={LAV_DEEP}
+          strokeWidth="6"
+          strokeLinecap="round"
+        />
+        <rect x="46" y="56" width="38" height="34" rx="8" fill={LAV} />
+        <g clipPath="url(#gr-illus-lock-half)">
+          <rect x="46" y="56" width="38" height="34" rx="8" fill={LAV_LIGHT} />
+        </g>
+        <rect x="59.5" y="66" width="11" height="13" rx="3.5" fill="#fff" />
       </svg>
     );
   }
