@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BOOKING_START_HREF } from "@/components/booking/bookingConfig";
-import Navbar from "@/components/home/Navbar";
 
 const heroBackground = "/images,svgs/hero_skin.webp";
 
@@ -20,8 +19,6 @@ export default function Hero() {
       />
 
       <div className="absolute inset-0 bg-[#1b1b1b]/30" />
-
-      <Navbar />
 
       <div className="relative z-10 flex min-h-[60svh] flex-col items-center justify-center px-5 pb-12 pt-[92px] text-center sm:px-6 lg:min-h-[100svh] lg:pb-16 lg:pt-[72px]">
         <h1 className="font-serif text-[40px] italic leading-[1.05] tracking-[-0.32px] text-white sm:text-[56px] lg:text-[72px]">

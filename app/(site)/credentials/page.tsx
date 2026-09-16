@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Footer from "@/components/home/Footer";
 import JsonLd from "@/components/seo/JsonLd";
 import { AUTHORS } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph } from "@/lib/seo/schema";
@@ -232,7 +231,6 @@ export default function CredentialsPage() {
           </Link>
         </p>
       </main>
-      <Footer />
     </>
   );
 }

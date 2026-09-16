@@ -10,6 +10,16 @@ import { getAuthor } from "@/lib/seo/authors";
  * source of truth; extend the author record there, never hardcode a
  * credential string in a page.
  *
+ * ── The copy rules are HANDOVER-11 §2's, applied here at last ────────────
+ * /about's CredentialsCard has carried three copy rules since it was built.
+ * Two of them were never applied to THIS component, which is the one that
+ * renders on every blog byline, /authors/[slug] and the checkout step — so
+ * the site followed its own rules on one surface and broke them on five.
+ * HOTFIX-25 §2.2 fixed that. Rule 1 (the degree stands alone) is at the
+ * degree line below; Rule 2 (no platform next to the issuer) is in
+ * lib/seo/authors.ts where `continuingEducation` is built. Rule 3
+ * ("Membership No.", never "Certificate No.") was already correct here.
+ *
  * ── Why every line is here, including the disclaimer ─────────────────────
  * An AI search engine flagged this site for unclear credentials. The HEC
  * attestation line is the load-bearing one — an official Government of
@@ -46,10 +56,23 @@ export default function CredentialsBlock({
       <p className={`${headingText} font-semibold text-brand-primary`}>
         {author.name} — {author.title}
       </p>
-      <p className="text-brand-ink">
-        {author.credentials}
-        {author.institution ? `, ${author.institution}` : ""}
-      </p>
+      {/*
+        HOTFIX-25 §2.2 — the degree stands alone. No institution appended.
+
+        This is HANDOVER-11 §2 Rule 1, which /about's CredentialsCard has
+        followed since it was built while this component — the one every
+        blog byline, /authors/[slug] and the checkout step render through —
+        kept appending ", King Faisal University". So the site stated the
+        rule and then broke it on more surfaces than it kept it.
+
+        The reason is worth keeping: crammed onto one line, the awarding
+        university and the HEC that attested the degree read as two
+        competing issuers, which weakens the attestation — the one
+        independently checkable claim here. `institution` is unchanged in
+        the data and still feeds `recognizedBy` on the Person node and
+        /credentials, where there is room to explain the difference.
+      */}
+      <p className="text-brand-ink">{author.credentials}</p>
       {author.hecReference ? (
         <p className="font-medium text-brand-ink">
           Degree attested by the Higher Education Commission of Pakistan —

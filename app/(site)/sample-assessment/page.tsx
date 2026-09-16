@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import Footer from "@/components/home/Footer";
 import { onboardingHref } from "@/components/home/Navbar";
 import SampleAssessmentDocument from "@/components/sample/SampleAssessmentDocument";
 import SampleIcon from "@/components/sample/SampleIcons";
@@ -20,6 +19,7 @@ import {
   medicalArticleSchema,
   personSchema,
 } from "@/lib/seo/schema";
+import { SOCIAL_CARD } from "@/lib/seo/site";
 
 /**
  * /sample-assessment — HANDOVER-22 §3, rebuilt to HANDOVER-23's design.
@@ -72,11 +72,40 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: "/sample-assessment" },
+  /*
+   * HOTFIX-25 §2.4 — `images` and the whole `twitter` block are new here.
+   *
+   * §2.4 asked for the Twitter tags, and they were genuinely missing: with
+   * no page-level `twitter`, this page inherited the root layout's, so
+   * anyone sharing it on X got a card titled "GlamRepairs — Online skin
+   * assessment, read by a certified practitioner" rather than "See a real
+   * assessment". The page that exists to answer "what do I actually get"
+   * was advertising itself as the homepage.
+   *
+   * The worse half was not in §2.4. Declaring `openGraph` below without
+   * `images` REPLACED the inherited object, and with it the `og:image` that
+   * `app/opengraph-image.tsx` injects everywhere else — so this page had no
+   * social image at all, while still claiming
+   * `twitter:card=summary_large_image`. Measured on production: this and
+   * /compare were the only two public pages with no `og:image`, and the only
+   * two declaring `openGraph` without `images`. See SOCIAL_CARD in
+   * lib/seo/site.ts.
+   *
+   * ⚠️ If you add a key to `openGraph` here, keep `images`. Dropping it does
+   * not fall back to the generated card — that is the whole bug.
+   */
   openGraph: {
     title: `${TITLE} | GlamRepairs`,
     description: DESCRIPTION,
     url: "/sample-assessment",
     type: "article",
+    images: [SOCIAL_CARD],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${TITLE} | GlamRepairs`,
+    description: DESCRIPTION,
+    images: [SOCIAL_CARD.url],
   },
 };
 
@@ -123,7 +152,16 @@ export default async function SampleAssessmentPage() {
       />
 
       <main>
-        <header className="gr-section-glow px-6 pb-[34px] pt-14 text-center">
+        {/*
+          HOTFIX-25 §1.1 — a <section>, not a <header>.
+
+          This is the page's hero, not site navigation. As a <header> it was
+          the only <header> on the page, contained zero links and zero
+          images, and an SEO crawl read that as "the site header is empty"
+          rather than "this page has no site header". The real site header
+          now comes from app/(site)/layout.tsx and sits above this.
+        */}
+        <section className="gr-section-glow px-6 pb-[34px] pt-14 text-center">
           <div className="mx-auto max-w-[1180px]">
             <p className="gr-eyebrow gr-eyebrow--center">{TITLE}</p>
             <h1 className="mx-auto mt-3.5 font-serif text-[2rem] font-semibold leading-[1.14] tracking-[-0.02em] text-brand-ink sm:text-[2.5rem]">
@@ -147,7 +185,7 @@ export default async function SampleAssessmentPage() {
               client&apos;s report is published.
             </p>
           </div>
-        </header>
+        </section>
 
         <div className="mx-auto max-w-[1180px] px-6">
           <div className="grid items-start gap-9 pb-[70px] pt-3.5 lg:grid-cols-[1.15fr_0.85fr]">
@@ -228,7 +266,6 @@ export default async function SampleAssessmentPage() {
           </div>
         </section>
       </main>
-      <Footer />
     </>
   );
 }

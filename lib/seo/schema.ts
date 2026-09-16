@@ -3,7 +3,8 @@
  *
  * ── A deliberate restraint ───────────────────────────────────────────────────
  * It is tempting to reach for `Physician` and `MedicalClinic` because they
- * carry more weight. Do not. A certified aesthetician is not a physician, and
+ * carry more weight. Do not. A certified aesthetics practitioner is not a
+ * physician, and
  * GlamRepairs is not a clinic. Claiming either in structured data is a false
  * credential claim — the fastest way to lose trust in a YMYL niche, and a
  * genuine liability if a client ever relies on it.
@@ -15,8 +16,15 @@
  * Everything here is typed loosely as `object` on purpose. schema.org is not a
  * closed vocabulary and over-typing it produces friction with no payoff.
  */
-import { CREDENTIALS, SITE, abs } from "./site";
+import { CREDENTIALS, SITE, abs, getCredential } from "./site";
 import type { Author } from "./authors";
+
+/**
+ * The attesting body for the degree node below — see the comment there.
+ * Read from CREDENTIALS rather than typed, so the name in the graph and the
+ * name on /credentials are the same string.
+ */
+const HEC_DEGREE = getCredential("hec-degree");
 
 /** Wraps several nodes into one @graph. One script tag beats five. */
 export function graph(...nodes: object[]) {
@@ -97,18 +105,46 @@ export function personSchema(author: Author) {
     url: abs(`/authors/${author.slug}`),
     ...(author.photo ? { image: abs(author.photo) } : {}),
     worksFor: { "@id": abs("/#organization") },
-    // Array, not a single object — HOTFIX-6 §4. The HEC attestation reference
-    // is the identifier here (falling back to regNo for any future author who
-    // has one but no HEC attestation) precisely because it's independently
-    // checkable; recognizedBy names the awarding institution so the credential
-    // isn't just a floating string.
+    /*
+     * Array, not a single object — HOTFIX-6 §4. The HEC attestation reference
+     * is the identifier here (falling back to regNo for any future author who
+     * has one but no HEC attestation) precisely because it's independently
+     * checkable.
+     *
+     * ── `recognizedBy` names the ATTESTING body, not the awarding one ──────
+     * HOTFIX-26 §1. This used to emit the awarding university, and that was
+     * wrong on its own terms: the node's `identifier` is an HEC attestation
+     * reference, so the object said "recognized by King Faisal University"
+     * directly above a number that only HEC can confirm. Two different
+     * organisations in one credential, one of which did not issue the thing
+     * being identified.
+     *
+     * It also made this the single largest source of the problem. The
+     * site-wide entity graph in app/layout.tsx emits `personSchema` on EVERY
+     * route, so the university name was in the JSON-LD of all 16 public
+     * pages — including /terms and /privacy, where nothing about a
+     * credential is visible on screen. HOTFIX-25 §2.2 removed it from the
+     * visible byline and left this, which is why a reader saw it gone and a
+     * crawler did not. One object, 16 pages.
+     *
+     * The awarding university is not lost: it stays on /credentials, inside
+     * the `hec-degree` note, which is the one surface with room to explain
+     * that HEC attested a degree King Faisal University awarded. That
+     * distinction is the whole value of the attestation, and it needs a
+     * sentence — it cannot survive being an `Organization` name in a graph.
+     */
     hasCredential: [
       {
         "@type": "EducationalOccupationalCredential",
         credentialCategory: "degree",
         name: author.credentials,
-        ...(author.institution
-          ? { recognizedBy: { "@type": "Organization", name: author.institution } }
+        ...(HEC_DEGREE
+          ? {
+              recognizedBy: {
+                "@type": "Organization",
+                name: HEC_DEGREE.issuer,
+              },
+            }
           : {}),
         ...(author.hecReference
           ? { identifier: author.hecReference }

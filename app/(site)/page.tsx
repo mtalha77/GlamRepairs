@@ -12,7 +12,6 @@
  */
 import type { Metadata } from "next";
 import FaqSection from "@/components/faq/FaqSection";
-import Footer from "@/components/home/Footer";
 import Hero from "@/components/home/Hero";
 import LatestPostsSection from "@/components/home/LatestPostsSection";
 import ProblemSection from "@/components/home/ProblemSection";
@@ -93,7 +92,6 @@ export default async function Home() {
       {/* HOTFIX-10 §1a — sits above the footer CTA so the blog finally has
           an internal route in from the highest-authority page on the site. */}
       <LatestPostsSection />
-      <Footer />
     </>
   );
 }

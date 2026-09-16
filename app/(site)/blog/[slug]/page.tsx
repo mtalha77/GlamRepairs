@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import RelatedReading from "@/components/blog/RelatedReading";
+import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
 import AuthorByline from "@/components/seo/AuthorByline";
 import JsonLd from "@/components/seo/JsonLd";
 import { getAuthor } from "@/lib/seo/authors";
@@ -89,6 +90,22 @@ export default async function BlogPostPage({
       `<h2 id="${slugifyHeading(inner.replace(/<[^>]+>/g, ""))}">${inner}</h2>`,
   );
 
+  /*
+   * HOTFIX-25 §1.2 — declared once, consumed twice: by `breadcrumbSchema`
+   * below and by <Breadcrumbs> just under it. See components/seo/Breadcrumbs.
+   *
+   * "Skin, explained" rather than "Blog": that is the <h1> of the page this
+   * crumb links to, and a breadcrumb label that disagrees with the page it
+   * points at is the exact drift this single array exists to prevent. The
+   * old markup said "Blog" while every visible surface said "Skin,
+   * explained".
+   */
+  const trail: Crumb[] = [
+    { name: "Home", path: "/" },
+    { name: "Skin, explained", path: "/blog" },
+    { name: post.title, path: `/blog/${post.slug}` },
+  ];
+
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
       <JsonLd
@@ -103,19 +120,14 @@ export default async function BlogPostPage({
             dateModified: post.updatedAt,
             image: post.heroImageUrl ?? undefined,
           }),
-          breadcrumbSchema([
-            { name: "Home", path: "/" },
-            { name: "Blog", path: "/blog" },
-            { name: post.title, path: `/blog/${post.slug}` },
-          ]),
+          breadcrumbSchema(trail),
         )}
       />
 
-      <nav className="mb-8 text-sm text-black/50">
-        <Link href="/blog" className="underline underline-offset-2">
-          Skin, explained
-        </Link>
-      </nav>
+      {/* Replaces a lone "Skin, explained" back-link, which was the only
+          visible navigation on a post and gave a reader no sense of where
+          the post sat. */}
+      <Breadcrumbs trail={trail} className="mb-8" />
 
       {post.cluster ? (
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8a63b5]">

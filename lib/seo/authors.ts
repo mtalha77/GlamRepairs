@@ -44,7 +44,19 @@ export type Author = {
   profiles?: { label: string; url: string }[];
   /** A professional body membership worth carrying in structured data. */
   memberOf?: { name: string; url: string; membershipNo?: string };
-  /** Institution that awarded the primary credential, e.g. "King Faisal University". */
+  /**
+   * @deprecated HOTFIX-26 §1 — nothing renders this, and nothing should.
+   *
+   * It fed two things and broke both: the visible degree line (dropped in
+   * HOTFIX-25 §2.2) and `recognizedBy` on the degree node in the Person
+   * schema, which is emitted site-wide and so put the university on all 16
+   * public pages. `recognizedBy` now names the attesting body, which is what
+   * the node's `identifier` actually refers to.
+   *
+   * The awarding university belongs on /credentials, in the `hec-degree`
+   * note, where there is room for the sentence that makes it meaningful.
+   * Do not reintroduce a field that renders it anywhere else.
+   */
   institution?: string;
   /**
    * HEC (Higher Education Commission of Pakistan) e-Attestation reference for
@@ -114,7 +126,6 @@ export const AUTHORS: Record<string, Author> = {
         url: "https://www.linkedin.com/in/aymaarif1/",
       },
     ],
-    institution: "King Faisal University",
     hecReference: HEC?.reference,
     // IMPORTANT: IDS membership is free and open (16,000+ members, 160+
     // countries) — a professional interest society, not a credentialing body.
@@ -130,14 +141,40 @@ export const AUTHORS: Record<string, Author> = {
             membershipNo: IDS.reference,
           }
         : undefined,
-    // Named specifically rather than the old vague "continuing education in
-    // telehealth practice (Coursera)". A named Duke University specialization
-    // with a public verification link is evidence; a category is not.
+    /*
+     * Named specifically rather than the old vague "continuing education in
+     * telehealth practice (Coursera)". A named Duke University
+     * specialization with a public verification link is evidence; a category
+     * is not.
+     *
+     * HOTFIX-25 §2.2 — `platform` is deliberately NOT appended. This is
+     * HANDOVER-11 §2 Rule 2, which /about's CredentialsCard has followed
+     * since it was built and this record never did: the course title above
+     * the awarding university already says what it is, and "via Coursera"
+     * next to "Duke University" invites the reader to weigh the delivery
+     * platform against the issuer. The platform and the full
+     * "coursework, not a licence" note are on /credentials, where there is
+     * room to explain them. `platform` stays in CREDENTIALS because
+     * /credentials still renders it.
+     *
+     * HOTFIX-26 §1.3 — the separator is a comma, not an em dash. That is
+     * both the requested format and one less em dash in shared output: this
+     * string renders on six pages, so the single character was counted six
+     * times in the 376-em-dash audit.
+     *
+     * ⚠️ BOTH hotfixes also asked for "Telehealth: Essentials, Teamwork &
+     * Dermatology". Not applied, and it needs a decision from Talha rather
+     * than a quiet edit: that is not what Duke calls it. Its sibling
+     * specializations are "Telehealth: Essentials, Teamwork, and HEENT Exam"
+     * and "...and Neurologic Exam", and Duke's own write-up of this one uses
+     * ", and" (and may include a trailing "Exam" this record omits).
+     * Replacing an issuer's punctuation inside their own credential title is
+     * a misquote, which on a YMYL credentials page costs more than the
+     * inconsistency it tidies. One click on `verifyUrl` settles it — see the
+     * `duke-telehealth` entry in lib/seo/site.ts.
+     */
     continuingEducation: TELEHEALTH
-      ? [
-          `${TELEHEALTH.name} — ${TELEHEALTH.issuer}` +
-            (TELEHEALTH.platform ? ` via ${TELEHEALTH.platform}` : ""),
-        ]
+      ? [`${TELEHEALTH.name}, ${TELEHEALTH.issuer}`]
       : [],
     scopeDisclaimer:
       "Ayma is not a physician or dermatologist. Glam Repairs provides " +
@@ -155,6 +192,19 @@ export const AUTHORS: Record<string, Author> = {
 };
 
 export const DEFAULT_AUTHOR_SLUG = "ayma-arif";
+
+/**
+ * The practitioner behind the service — HOTFIX-25 §2.2 asked for prose to
+ * read her title from here rather than retyping it.
+ *
+ * Defined AS `AUTHORS[DEFAULT_AUTHOR_SLUG]`, not as a second record, so the
+ * two cannot diverge: this is the same object, under the name that reads
+ * correctly in body copy. Use it wherever prose needs her name or title —
+ * `${PRACTITIONER.title.toLowerCase()}` beats a hand-typed
+ * "certified aesthetician", which is what /editorial-policy had and which
+ * is exactly the drift the `title` doc comment above forbids.
+ */
+export const PRACTITIONER: Author = AUTHORS[DEFAULT_AUTHOR_SLUG];
 
 export function getAuthor(slug: string): Author | undefined {
   return AUTHORS[slug];

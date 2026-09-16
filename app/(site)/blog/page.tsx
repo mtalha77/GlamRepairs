@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import BlogIndex, { type BlogIndexPost } from "@/components/blog/BlogIndex";
+import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
 import { listPublishedPosts } from "@/lib/studio/blog";
 import { AUTHORS } from "@/lib/seo/authors";
@@ -48,16 +49,20 @@ export default async function BlogIndexPage() {
     readingMinutes: post.readingMinutes,
   }));
 
+  /* Declared once, consumed twice — see components/seo/Breadcrumbs. */
+  const trail: Crumb[] = [
+    { name: "Home", path: "/" },
+    { name: "Skin, explained", path: "/blog" },
+  ];
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
-      <JsonLd
-        data={graph(
-          breadcrumbSchema([
-            { name: "Home", path: "/" },
-            { name: "Blog", path: "/blog" },
-          ]),
-        )}
-      />
+      <JsonLd data={graph(breadcrumbSchema(trail))} />
+
+      {/* HOTFIX-25 §1.2 — one hop, but it is the hop back to the homepage
+          from the section root, and it is the crumb Google reads for every
+          post underneath. */}
+      <Breadcrumbs trail={trail} className="mb-7" />
 
       <header>
         <h1 className="font-[family-name:var(--font-playfair)] text-5xl">

@@ -34,7 +34,6 @@ import HowItWorksSection from "@/components/about/HowItWorksSection";
 import WhyPakistanSection from "@/components/about/WhyPakistanSection";
 import WhatWeWontDoSection from "@/components/about/WhatWeWontDoSection";
 import FaqSection from "@/components/faq/FaqSection";
-import Footer from "@/components/home/Footer";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
 import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
@@ -76,7 +75,6 @@ export default function AboutPage() {
         <WhatWeWontDoSection />
         <FaqSection faqs={faqs} />
       </main>
-      <Footer />
     </>
   );
 }

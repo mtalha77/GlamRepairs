@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
-import Footer from "@/components/home/Footer";
+import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
 import { AIR_QUALITY_CITIES } from "@/lib/airQuality/cities";
 import { isAirQualityConfigured } from "@/lib/airQuality/provider";
@@ -35,25 +35,22 @@ export const metadata: Metadata = {
 export default function AirQualityIndexPage() {
   if (!isAirQualityConfigured()) notFound();
 
+  /*
+   * HOTFIX-25 §1.2 — the visible trail and the BreadcrumbList were two
+   * hand-written copies of the same hierarchy; they now share one array.
+   * See components/seo/Breadcrumbs.
+   */
+  const trail: Crumb[] = [
+    { name: "Home", path: "/" },
+    { name: "Air quality", path: "/air-quality" },
+  ];
+
   return (
     <>
-      <JsonLd
-        data={graph(
-          breadcrumbSchema([
-            { name: "Home", path: "/" },
-            { name: "Air quality", path: "/air-quality" },
-          ]),
-        )}
-      />
+      <JsonLd data={graph(breadcrumbSchema(trail))} />
 
       <main className="mx-auto max-w-3xl px-5 py-14 sm:px-6 sm:py-16">
-        <nav className="mb-8 text-sm text-brand-gray">
-          <Link href="/" className="underline underline-offset-2">
-            Home
-          </Link>
-          <span aria-hidden> / </span>
-          <span>Air quality</span>
-        </nav>
+        <Breadcrumbs trail={trail} className="mb-8 text-brand-gray" />
 
         <header>
           <p className="gr-eyebrow mb-3">Live readings</p>
@@ -92,7 +89,6 @@ export default function AirQualityIndexPage() {
           changed helps nobody.
         </p>
       </main>
-      <Footer />
     </>
   );
 }

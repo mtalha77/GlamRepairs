@@ -17,9 +17,7 @@
  *    give the homepage two competing H1s.
  */
 import type { Metadata } from "next";
-import Footer from "@/components/home/Footer";
 import FaqSection from "@/components/faq/FaqSection";
-import Navbar from "@/components/home/Navbar";
 import PricingSection from "@/components/pricing/PricingSection";
 import TestimonialsSection from "@/components/reviews/TestimonialsSection";
 import JsonLd from "@/components/seo/JsonLd";
@@ -56,10 +54,6 @@ export default async function PricingPage() {
         faqs.map((faq) => ({ question: faq.q, answer: faq.a })),
         "/pricing",
       ))} />
-      <section className="relative bg-white">
-        <Navbar theme="light" />
-        <div className="h-[4.5rem] md:h-20 xl:h-24" aria-hidden />
-      </section>
       <main>
         {/* Page H1. Sits above PricingSection, whose own heading is an h2. */}
         <header className="mx-auto max-w-3xl px-6 pt-10 text-center">
@@ -67,8 +61,9 @@ export default async function PricingPage() {
             Skin assessment plans
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-black/65">
-            Every paid plan is read by a certified practitioner and comes back as
-            a written report you keep. One payment, no subscription.
+            Skin Transform is read by a certified practitioner and comes back
+            as a written report you keep, with a 15 minute video consultation
+            included. One payment, no subscription.
           </p>
         </header>
         {/* HANDOVER-22 §5a/§3 — the comparison strip and the sample link
@@ -94,7 +89,6 @@ export default async function PricingPage() {
         <TestimonialsSection />
         <FaqSection faqs={faqs} />
       </main>
-      <Footer />
     </>
   );
 }
