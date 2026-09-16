@@ -139,6 +139,9 @@ export default function CustomerSearch({
         <option value="">All payments</option>
         <option value="pending">{PAYMENT_STATUS_LABELS.pending}</option>
         <option value="verified">{PAYMENT_STATUS_LABELS.verified}</option>
+        {/* HANDOVER-28 §1.1 — without this a gifted lead matches no filter
+            and is invisible to anyone narrowing by payment state. */}
+        <option value="waived">{PAYMENT_STATUS_LABELS.waived}</option>
       </select>
       {showAssignmentFilter ? (
         <select

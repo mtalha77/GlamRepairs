@@ -38,6 +38,22 @@ export default function VerifyPaymentButton({
     );
   }
 
+  /*
+   * HANDOVER-28 §1.1 — a gifted lead is terminal, so no verify control.
+   *
+   * Without this it fell through to the form below and offered "Click when
+   * the client has paid" on an assessment nobody was ever going to pay for.
+   * Pressing it would have written `verified`, which would then have counted
+   * a gift as revenue — the exact thing §1.1 says the metrics must not do.
+   */
+  if (paymentStatus === "waived") {
+    return (
+      <p className="rounded-full bg-brand-lavender/30 px-3 py-2 text-center text-sm font-medium text-brand-primary">
+        {PAYMENT_STATUS_LABELS.waived}
+      </p>
+    );
+  }
+
   if (!canVerify) {
     return (
       <p className="text-sm text-brand-gray">

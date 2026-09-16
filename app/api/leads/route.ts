@@ -9,6 +9,10 @@ import {
 } from "@/lib/leads/photoShortLink";
 import { uploadAssessmentPhotos } from "@/lib/leads/uploadAssessmentPhotos";
 import type { LeadSubmitPayload, LeadSubmitResult } from "@/types/lead";
+import {
+  isGiftedLead,
+  showBankDetails as computeShowBankDetails,
+} from "@/lib/leads/paymentVisibility";
 
 function isConfigured() {
   return Boolean(
@@ -143,6 +147,11 @@ export async function POST(request: Request) {
       leadId: `local_${body.sessionId.slice(0, 8)}`,
       imageUrl: null,
       imageUrls: [],
+      // No lead row exists on this path, so there are no trigger results to
+      // read. Treated as an ordinary paid lead: showing payment
+      // instructions to a developer is harmless, hiding them would mask a
+      // regression in the real path.
+      payment: { showBankDetails: true, isGifted: false },
     });
   }
 
@@ -163,6 +172,12 @@ export async function POST(request: Request) {
     photoPaths,
   });
 
+  const paymentFacts = {
+    paymentStatus: lead?.paymentStatus,
+    finalPrice: lead?.finalPrice,
+  };
+  const includeBankDetails = computeShowBankDetails(paymentFacts);
+
   if (isResendConfigured()) {
     const emailResult = await sendPlanThankYouEmail({
       fullName: body.fullName,
@@ -171,6 +186,7 @@ export async function POST(request: Request) {
       planPrice: body.planPrice,
       selectedPlan: body.selectedPlan,
       sessionId: body.sessionId,
+      showBankDetails: includeBankDetails,
     });
     if (!emailResult.ok) {
       console.error(
@@ -185,5 +201,9 @@ export async function POST(request: Request) {
     leadId: lead?.leadId ?? body.sessionId,
     imageUrl: imageUrls[0] ?? null,
     imageUrls,
+    payment: {
+      showBankDetails: includeBankDetails,
+      isGifted: isGiftedLead(paymentFacts),
+    },
   });
 }

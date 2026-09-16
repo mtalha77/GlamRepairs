@@ -276,7 +276,7 @@ export default function ConsentStep({
     // Storage upload happens regardless — the funnel needs the photos on the
     // lead row. The result's image URLs are never fed into the WhatsApp
     // message below (see formatBookingSummary.ts for why).
-    await submitLead({
+    const submitResult = await submitLead({
       sessionId: store.sessionId,
       fullName: store.fullName || String(store.answers["onboarding.firstName"] ?? ""),
       email: store.email || String(store.answers["onboarding.email"] ?? ""),
@@ -294,13 +294,31 @@ export default function ConsentStep({
       giftCode: store.giftCode,
     });
 
-    // HANDOVER-9 §1 — the bank details travel with the summary so the client
-    // has them in their own chat history, not just on a screen they are about
-    // to navigate away from. The free plan is never paid for, so it gets no
-    // payment block.
+    /*
+     * HANDOVER-9 §1 — the bank details travel with the summary so the client
+     * has them in their own chat history, not just on a screen they are
+     * about to navigate away from.
+     *
+     * HANDOVER-28 §1.1 — this is one of the four places the block must not
+     * reach a gifted client, and it is the worst of them to get wrong: a
+     * WhatsApp message cannot be unsent, so an account number and an IBAN
+     * sent to someone who owes nothing sits in their chat permanently.
+     *
+     * Gated on what the SERVER returned, not on `store.giftCode`. A typed
+     * code that turned out invalid leaves the lead at full price, and that
+     * client does need the transfer details.
+     */
+    const showBank =
+      submitResult?.ok === true
+        ? submitResult.payment.showBankDetails
+        : planId !== "free";
+    if (submitResult?.ok === true) {
+      store.setPaymentOutcome(submitResult.payment);
+    }
+
     const reference = leadDisplayRef(store.sessionId);
     const paymentLines =
-      planId && planId !== "free"
+      planId && planId !== "free" && showBank
         ? buildPaymentLines({ amount: planPrice, reference })
         : null;
 

@@ -36,6 +36,22 @@ export type LeadSubmitSuccess = {
   imageUrl: string | null;
   /** All uploaded photo public URLs for WhatsApp. */
   imageUrls: string[];
+  /**
+   * HANDOVER-28 §1.1/§2.3 — decided on the SERVER, from the row the
+   * triggers produced, and sent as booleans rather than as raw fields.
+   *
+   * The completion screen cannot work this out for itself. The funnel store
+   * knows a gift code was typed; only `lead_zz_gift_redeem` knows whether it
+   * was valid, unused, not self-redeemed and for a plan still on sale. And
+   * shipping `payment_status` and `final_price` to the browser to re-derive
+   * the rule there would be a fifth copy of it.
+   */
+  payment: {
+    /** Gate the bank block, IBAN, copy buttons and screenshot request. */
+    showBankDetails: boolean;
+    /** A gift covered the whole assessment. */
+    isGifted: boolean;
+  };
 };
 
 export type LeadSubmitFailure = {
