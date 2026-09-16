@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 
 import { checkGiftCode } from "@/lib/gifts/issueGiftCode";
@@ -72,9 +73,24 @@ export default async function GiftPage({ params }: GiftPageProps) {
   const { code: rawCode } = await params;
   const code = normaliseGiftCode(decodeURIComponent(rawCode));
 
-  // No person key yet — nobody has identified themselves at this point. The
-  // self-redemption check runs again at insert, where identity is known.
-  const result = await checkGiftCode(code, null);
+  /*
+   * No person key yet — nobody has identified themselves at this point. The
+   * self-redemption and one-gift-per-person checks run again at insert,
+   * where identity is known.
+   *
+   * The IP is passed as the caller key for the database's rate limit.
+   * Without it every anonymous visitor shares one "anonymous" bucket, and
+   * eight bad guesses from anywhere would start refusing valid gift links
+   * for everyone — a shared limiter on a public page is a denial of service
+   * against your own recipients.
+   */
+  const headerList = await headers();
+  const attemptKey =
+    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerList.get("x-real-ip") ||
+    `unidentified-${crypto.randomUUID()}`;
+
+  const result = await checkGiftCode(code, null, attemptKey);
 
   if (!result.valid) {
     const copy =

@@ -51,17 +51,34 @@ async function getGiftSettings() {
   };
 }
 
-/** Codes created since the start of the current calendar month. */
+/**
+ * Free assessments committed this calendar month.
+ *
+ * ── Counts assessments, not rows, and that is the whole point ────────────
+ * This used to be `count(*) where kind = 'gift'`, which stopped being the
+ * right number the moment a code could have `max_uses > 1`. One influencer
+ * code with 50 uses is fifty free assessments and fifty slots of Ayma's
+ * time; as a row count it read as 1.
+ *
+ * The database enforces the cap with exactly this maths — `sum(max_uses)`
+ * over active codes at 100% — so this has to match it or the studio shows a
+ * headline the insert then contradicts. A number that disagrees with the
+ * rule it describes is worse than no number.
+ *
+ * `kind` is deliberately not filtered. A 100% `promo` costs the same
+ * capacity as a 100% `gift`; what the code is called does not change what
+ * it spends.
+ */
 export async function countGiftCodesThisMonth(): Promise<number> {
   const supabase = createAdminSupabaseClient();
   const start = new Date();
   start.setUTCDate(1);
   start.setUTCHours(0, 0, 0, 0);
 
-  const { count, error } = await supabase
+  const { data, error } = await supabase
     .from("gift_codes")
-    .select("code", { count: "exact", head: true })
-    .eq("kind", "gift")
+    .select("discount_pct, max_uses")
+    .eq("active", true)
     .gte("created_at", start.toISOString());
 
   if (error) {
@@ -70,7 +87,13 @@ export async function countGiftCodesThisMonth(): Promise<number> {
     // gift code; failing open costs practitioner capacity.
     return Number.MAX_SAFE_INTEGER;
   }
-  return count ?? 0;
+
+  return (data ?? []).reduce(
+    (sum, row) =>
+      // numeric arrives as a string over PostgREST.
+      Number(row.discount_pct) >= 100 ? sum + Number(row.max_uses) : sum,
+    0,
+  );
 }
 
 export async function getGiftCapacity() {
@@ -226,6 +249,14 @@ export async function issueGiftCodeForLead(options: {
 export async function checkGiftCode(
   rawCode: string,
   personKey: string | null,
+  /**
+   * Who is asking, for the database's own rate limit. An IP is the usual
+   * value from the funnel. Falls back to `personKey`, then to a shared
+   * "anonymous" bucket inside the function — which is why passing something
+   * here matters: without it every anonymous visitor shares one counter and
+   * eight failures anywhere lock out everyone.
+   */
+  attemptKey?: string | null,
 ): Promise<GiftCheckResult> {
   const code = normaliseGiftCode(rawCode);
   if (!code) {
@@ -233,8 +264,26 @@ export async function checkGiftCode(
   }
 
   const supabase = await createServerSupabaseClient();
+  /*
+   * The THREE-argument overload, deliberately.
+   *
+   * `check_gift_code` exists twice in the database. The two-argument version
+   * is the original and is strictly weaker: no rate limiting, no attempt
+   * log, and it cannot return `already_gifted` or `plan_unavailable`. This
+   * code called it, so the one-gift-per-person rule and the retired-plan
+   * check were enforced only at insert time — a person could be told their
+   * code was fine and refused at the end.
+   *
+   * PostgREST selects the overload by the argument NAMES supplied, so
+   * passing `p_attempt_key` is what picks this one. Dropping that key
+   * silently falls back to the weak version.
+   */
   const { data, error } = await supabase
-    .rpc("check_gift_code", { p_code: code, p_person_key: personKey ?? "" })
+    .rpc("check_gift_code", {
+      p_code: code,
+      p_person_key: personKey ?? "",
+      p_attempt_key: attemptKey ?? personKey ?? "",
+    })
     .maybeSingle();
 
   if (error) {
@@ -274,6 +323,9 @@ export type GiftCodeRow = {
   createdAt: string;
   issuedToLead: string | null;
   issuedToPerson: string | null;
+  /** Why it was issued. Only staff see this. */
+  note: string | null;
+  issuedBy: string | null;
 };
 
 export type GiftCodeState = "redeemed" | "expired" | "inactive" | "outstanding";
@@ -291,7 +343,7 @@ export async function listGiftCodes(): Promise<GiftCodeRow[]> {
   const { data, error } = await supabase
     .from("gift_codes")
     .select(
-      "code, kind, grants_plan, discount_pct, uses_count, max_uses, expires_at, active, created_at, issued_to_lead, issued_to_person",
+      "code, kind, grants_plan, discount_pct, uses_count, max_uses, expires_at, active, created_at, issued_to_lead, issued_to_person, note, issued_by",
     )
     .order("created_at", { ascending: false });
 
@@ -312,6 +364,8 @@ export async function listGiftCodes(): Promise<GiftCodeRow[]> {
     createdAt: row.created_at,
     issuedToLead: row.issued_to_lead,
     issuedToPerson: row.issued_to_person,
+    note: row.note,
+    issuedBy: row.issued_by,
   }));
 }
 

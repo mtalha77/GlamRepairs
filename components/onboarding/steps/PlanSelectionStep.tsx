@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import GiftCodeField from "@/components/onboarding/GiftCodeField";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
 import {
   ONBOARDING_FORM,
@@ -323,6 +324,18 @@ export default function PlanSelectionStep({
             />
           ))}
         </div>
+        {/*
+          HANDOVER-28 §2.1 — somewhere to type a code, collapsed.
+
+          Rendered on both passes of this step, not just the confirmation
+          one. Someone holding a published code (AYESHA20 from an
+          influencer's post) meets the price here first, and a price with no
+          visible way to apply their code is a reason to close the tab. It
+          collapses to a single link, and hides itself entirely once a code
+          is applied or the reader arrived through a gift link.
+        */}
+        <GiftCodeField />
+
         <StepRequiredError message={planError} />
       </div>
     </OnboardingShell>

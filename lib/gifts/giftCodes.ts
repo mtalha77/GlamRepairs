@@ -81,14 +81,31 @@ export function giftCodeUrl(code: string, appUrl?: string) {
   return `${base}/gift/${encodeURIComponent(code)}`;
 }
 
-/** Rejection reasons, exactly as `check_gift_code` returns them. */
+/**
+ * Rejection reasons, exactly as `check_gift_code` returns them.
+ *
+ * ── Nine, not six ────────────────────────────────────────────────────────
+ * Three of these come from the three-argument overload of the database
+ * function, which is the one the app now calls. The two-argument version
+ * cannot return them at all, which is why this list was short: the reasons
+ * existed in the database and nothing in the application could receive them.
+ *
+ * `already_gifted` and `plan_unavailable` are real refusals a person will
+ * hit. `rate_limited` is the database's own brute-force guard answering.
+ * Left off this union they were coerced to `not_found` by
+ * `isGiftCheckReason`, so someone who had already used a gift was told their
+ * code did not exist — which is both untrue and unactionable.
+ */
 export type GiftCheckReason =
   | "ok"
   | "not_found"
   | "inactive"
   | "expired"
   | "already_used"
-  | "self_redemption";
+  | "self_redemption"
+  | "already_gifted"
+  | "plan_unavailable"
+  | "rate_limited";
 
 export type GiftCheckResult = {
   valid: boolean;
@@ -129,15 +146,37 @@ export const GIFT_REJECTION_COPY: Record<
     title: "This is your own gift code",
     body: "It's meant for someone else — send them the link and their assessment is on us.",
   },
+  already_gifted: {
+    title: "You've already had a gifted assessment",
+    body: "Gifts are one per person. You're very welcome to book at the usual price.",
+  },
+  plan_unavailable: {
+    title: "This gift covers a plan we no longer offer",
+    body: "Nothing has gone wrong on your end. Message us and we'll sort out an equivalent.",
+  },
+  rate_limited: {
+    title: "Too many attempts",
+    body: "Wait a few minutes and try again. If you're sure the code is right, send it to us on WhatsApp instead.",
+  },
 };
 
+const GIFT_CHECK_REASONS = new Set<string>([
+  "ok",
+  "not_found",
+  "inactive",
+  "expired",
+  "already_used",
+  "self_redemption",
+  "already_gifted",
+  "plan_unavailable",
+  "rate_limited",
+]);
+
+/**
+ * A membership test rather than a chain of comparisons, so adding a reason
+ * to the union above and forgetting to add it here is one edit, not two.
+ * Anything unrecognised still falls back to `not_found` at the call site.
+ */
 export function isGiftCheckReason(value: string): value is GiftCheckReason {
-  return (
-    value === "ok" ||
-    value === "not_found" ||
-    value === "inactive" ||
-    value === "expired" ||
-    value === "already_used" ||
-    value === "self_redemption"
-  );
+  return GIFT_CHECK_REASONS.has(value);
 }

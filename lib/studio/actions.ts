@@ -36,6 +36,13 @@ import {
 import { visiblePhotoCount } from "@/lib/studio/customerTypes";
 import { issueGiftCodeForLead } from "@/lib/gifts/issueGiftCode";
 import {
+  issueCode,
+  setCodeActive,
+  updateGiftSettings,
+  type GiftCodeKind,
+} from "@/lib/gifts/adminCodes";
+import { PAID_PLAN_KEY } from "@/lib/plans/plansPublic";
+import {
   describeFailures,
   evaluateReport,
   failedChecks,
@@ -1489,4 +1496,140 @@ export async function issueGiftCodeAction(formData: FormData) {
   revalidatePath(back);
   revalidatePath("/studio/admin/gifts");
   redirect(`${back}?gift=issued&code=${encodeURIComponent(result.code)}`);
+}
+
+/* ── Gift and redeem codes from the studio ───────────────────────────────
+ *
+ * HANDOVER-28 §2.4 asks for issuing, listing and deactivating. It also says
+ * "never let a human type one", which is right for a personal gift and wrong
+ * for a campaign code — see the header of lib/gifts/adminCodes.ts for why
+ * both are supported and where the limits actually live.
+ *
+ * Every action below re-checks `isSuperAdmin` itself. The page already hides
+ * these controls, but a server action is a public POST endpoint: hiding a
+ * form is a UI decision, not a permission.
+ */
+
+const GIFTS_PATH = "/studio/admin/gifts";
+
+async function requireGiftAdmin(back: string) {
+  const { user, member } = await requireStudioMember();
+  if (!user || !member) {
+    redirect("/studio/login");
+  }
+  if (!member.isSuperAdmin) {
+    redirect(
+      `${back}?error=${encodeURIComponent("Only a super admin can manage codes.")}`,
+    );
+  }
+  return { user, member };
+}
+
+export async function issueStudioGiftCodeAction(formData: FormData) {
+  const { user } = await requireGiftAdmin(GIFTS_PATH);
+
+  const mode = asString(formData, "mode");
+  const typed = asString(formData, "code");
+  const kindRaw = asString(formData, "kind");
+  const kind: GiftCodeKind =
+    kindRaw === "referral" || kindRaw === "promo" ? kindRaw : "gift";
+
+  const discountPct = Number(formData.get("discountPct"));
+  const maxUses = Number(formData.get("maxUses"));
+  const expiryDaysRaw = asString(formData, "expiryDays");
+  const expiryDays = expiryDaysRaw ? Number(expiryDaysRaw) : null;
+
+  if (mode === "manual" && !typed) {
+    redirect(
+      `${GIFTS_PATH}?error=${encodeURIComponent("Type the code you want to publish, or switch to a generated one.")}`,
+    );
+  }
+
+  const result = await issueCode(
+    {
+      // "generated" must send nothing, not an empty string — an empty string
+      // is still a typed code as far as issueCode is concerned.
+      code: mode === "manual" ? typed : null,
+      kind,
+      // HANDOVER-27 §1.1 — grant the plan that exists. There is one paid
+      // plan, so there is nothing to choose: a dropdown here could only ever
+      // offer the free tier (pointless) or retired Clarity (broken).
+      grantsPlan: PAID_PLAN_KEY,
+      discountPct,
+      maxUses,
+      expiryDays,
+      note: asString(formData, "note") || null,
+      issuedBy: user.id,
+    },
+    { confirmPublicFreeCode: formData.get("confirm100") === "on" },
+  );
+
+  if (!result.ok) {
+    redirect(`${GIFTS_PATH}?error=${encodeURIComponent(result.error)}`);
+  }
+
+  revalidatePath(GIFTS_PATH);
+  redirect(`${GIFTS_PATH}?issued=${encodeURIComponent(result.code)}`);
+}
+
+export async function setGiftCodeActiveAction(formData: FormData) {
+  await requireGiftAdmin(GIFTS_PATH);
+
+  const code = asString(formData, "code");
+  // The checkbox idiom would make "off" mean "field absent", which is the
+  // same thing a stripped form field looks like. An explicit value can't be
+  // confused with a missing one.
+  const active = asString(formData, "active") === "true";
+
+  if (!code) {
+    redirect(`${GIFTS_PATH}?error=${encodeURIComponent("No code given.")}`);
+  }
+
+  const result = await setCodeActive(code, active);
+  if (!result.ok) {
+    redirect(
+      `${GIFTS_PATH}?error=${encodeURIComponent(result.error ?? "Could not update the code.")}`,
+    );
+  }
+
+  revalidatePath(GIFTS_PATH);
+  redirect(
+    `${GIFTS_PATH}?${active ? "reactivated" : "deactivated"}=${encodeURIComponent(code)}`,
+  );
+}
+
+/**
+ * The three numbers Talha changes without a deploy — HANDOVER-28 §2.4 plus
+ * the standing ask to raise or lower the limits from the studio.
+ *
+ * A blank field means "leave this one alone" rather than zero. Saving one
+ * number should not silently reset the two beside it, and a form that does
+ * is how a monthly cap becomes 0 because someone cleared a box to retype it.
+ */
+export async function updateGiftSettingsAction(formData: FormData) {
+  const { user } = await requireGiftAdmin(GIFTS_PATH);
+
+  const read = (key: string) => {
+    const raw = asString(formData, key);
+    return raw === "" ? undefined : Number(raw);
+  };
+
+  const result = await updateGiftSettings(
+    {
+      giftCodesPerMonth: read("giftCodesPerMonth"),
+      giftExpiryDays: read("giftExpiryDays"),
+      memberDiscountPct: read("memberDiscountPct"),
+    },
+    user.id,
+  );
+
+  if (!result.ok) {
+    redirect(
+      `${GIFTS_PATH}?error=${encodeURIComponent(result.error ?? "Could not save the settings.")}`,
+    );
+  }
+
+  revalidatePath(GIFTS_PATH);
+  revalidatePath("/studio/settings");
+  redirect(`${GIFTS_PATH}?saved=settings`);
 }
