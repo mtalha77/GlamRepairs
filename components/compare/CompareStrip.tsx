@@ -2,7 +2,12 @@ import Link from "next/link";
 
 import { ILLUSTRATIVE_PRODUCT_SPEND } from "@/lib/compare/compareMatrix";
 import { getPlanSettings } from "@/lib/plans/planSettings";
-import { formatRegionPrice, type PricingRegion } from "@/lib/pricing/regions";
+import { type PricingRegion } from "@/lib/pricing/regions";
+import {
+  formatPlanPrice,
+  getPaidPlan,
+  PAID_PLAN_KEY,
+} from "@/lib/plans/plansPublic";
 
 /**
  * The compact comparison, directly under the pricing cards.
@@ -113,7 +118,10 @@ export default async function CompareStrip({
 }: {
   region: PricingRegion;
 }) {
-  const clarityHref = "/onboarding/step/1?plan=clarity";
+  // HANDOVER-27 §1.4 — the paid plan, not the retired one. A `?plan=clarity`
+  // link still resolves (the funnel redirects it), but the site should not
+  // be minting new ones.
+  const paidHref = `/onboarding/step/1?plan=${PAID_PLAN_KEY}`;
 
   if (region.code !== "PK") {
     return (
@@ -132,7 +140,10 @@ export default async function CompareStrip({
   // table that disagrees with plan_settings is how "30 days" outlives the
   // decision to change it.
   const plans = await getPlanSettings();
-  const supportDays = plans.clarity.supportDays;
+  const paidPlan = await getPaidPlan(region.code);
+  const supportDays = paidPlan?.supportDays ?? plans.transform.supportDays;
+  const paidPrice = paidPlan ? formatPlanPrice(paidPlan) : "";
+  const videoMinutes = paidPlan?.videoMinutes ?? 15;
   const followUpNote = supportDays
     ? `${supportDays} days on WhatsApp`
     : "Included";
@@ -161,6 +172,20 @@ export default async function CompareStrip({
       products: { kind: "no" },
       clinic: { kind: "no" },
       us: { kind: "yes", note: "So you can repeat it" },
+    },
+    /*
+     * HANDOVER-27 §1.4 — the video consultation gets its own row.
+     *
+     * It is the reason to choose this over a clinic at the same price, and
+     * the clinic column is an honest "yes": a clinic visit obviously
+     * includes seeing someone. What differs is the travel, which is why the
+     * note says so rather than claiming an advantage that is not there.
+     */
+    {
+      label: `Talk to your practitioner face to face`,
+      products: { kind: "no" },
+      clinic: { kind: "yes", note: "In person, if you travel" },
+      us: { kind: "yes", note: `${videoMinutes} minutes on video, included` },
     },
     {
       label: "Follow-up when you have questions",
@@ -255,7 +280,7 @@ export default async function CompareStrip({
                 >
                   Glam Repairs
                   <span className="mt-1.5 block font-serif text-[1.75rem] font-semibold normal-case tracking-[-0.01em] text-white">
-                    {formatRegionPrice(region, "clarity")}
+                    {paidPrice}
                   </span>
                   <span className="mt-[3px] block text-[0.6875rem] font-normal normal-case tracking-normal text-[#e3d4f2]">
                     one payment
@@ -295,14 +320,13 @@ export default async function CompareStrip({
 
         <div className="border-t border-brand-lavender/45 bg-brand-cream-light px-6 py-6 text-center">
           <Link
-            href={clarityHref}
+            href={paidHref}
             className="gr-btn inline-block rounded-full bg-brand-primary px-8 py-3.5 text-[0.9375rem] font-medium text-white shadow-[0_10px_24px_-10px_rgba(102,45,145,0.55)] hover:bg-brand-primary-dark"
           >
             Get my assessment &rarr;
           </Link>
           <span className="mt-3 block text-[0.8125rem] text-brand-gray">
-            {formatRegionPrice(region, "clarity")}, one payment. Your plan
-            arrives within 24 hours.
+            {paidPrice}, one payment. Your plan arrives within 24 hours.
           </span>
         </div>
       </div>

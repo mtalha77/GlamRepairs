@@ -7,7 +7,7 @@ import SampleIcon from "@/components/sample/SampleIcons";
 import JsonLd from "@/components/seo/JsonLd";
 import { getPlanSettings } from "@/lib/plans/planSettings";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
-import { formatRegionPrice } from "@/lib/pricing/regions";
+import { formatPlanPrice, getPaidPlan } from "@/lib/plans/plansPublic";
 import {
   SAMPLE_ANNOTATIONS,
   sampleValueCards,
@@ -115,8 +115,20 @@ export default async function SampleAssessmentPage() {
     getPlanSettings(),
     getServerPricingRegion(),
   ]);
-  const cards = sampleValueCards({ supportDays: plans.clarity.supportDays });
-  const clarityPrice = formatRegionPrice(region, "clarity");
+  /*
+   * HANDOVER-27 §1.4 — the single plan, read from `plans_public`.
+   *
+   * Both of these used to name Clarity: the value cards took its support
+   * window and the closing CTA quoted its price. Clarity is retired, so
+   * that CTA was advertising a plan nobody can buy, at a price that is not
+   * for sale.
+   */
+  const paidPlan = await getPaidPlan(region.code);
+  const cards = sampleValueCards({
+    supportDays: paidPlan?.supportDays ?? plans.transform.supportDays,
+  });
+  const paidPrice = paidPlan ? formatPlanPrice(paidPlan) : "";
+  const videoMinutes = paidPlan?.videoMinutes ?? 15;
 
   return (
     <>
@@ -247,7 +259,8 @@ export default async function SampleAssessmentPage() {
                 Get my assessment &rarr;
               </Link>
               <span className="mt-3.5 block text-[0.8125rem] text-brand-gray">
-                {clarityPrice}. One payment. Delivered within 24 hours.
+                {paidPrice}. One payment, including a {videoMinutes} minute
+                video consultation. Delivered within 24 hours.
               </span>
             </div>
           </div>

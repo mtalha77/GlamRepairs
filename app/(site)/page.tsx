@@ -24,7 +24,7 @@ import TestimonialsSection from "@/components/reviews/TestimonialsSection";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
-import { formatRegionPrice } from "@/lib/pricing/regions";
+import { formatPlanPrice, getPaidPlan } from "@/lib/plans/plansPublic";
 import { faqSchema, graph } from "@/lib/seo/schema";
 
 export const metadata: Metadata = {
@@ -43,9 +43,12 @@ export default async function Home() {
   // rather than hardcoded: HOTFIX-7 made changing a price a database update,
   // and an FAQ quoting a stale number would quietly undo that.
   const region = await getServerPricingRegion();
+  // HANDOVER-27 §1.2 — the paid price comes from `plans_public`, never from
+  // pricing_regions.price_*, which are stale and still hold the old numbers.
+  const paidPlan = await getPaidPlan(region.code);
   const faqs = resolveFaqs("home", {
-    clarity: formatRegionPrice(region, "clarity"),
-    transform: formatRegionPrice(region, "transform"),
+    paid: paidPlan ? formatPlanPrice(paidPlan) : "",
+    videoMinutes: paidPlan?.videoMinutes ?? 15,
   });
 
   return (

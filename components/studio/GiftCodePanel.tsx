@@ -59,8 +59,9 @@ export default function GiftCodePanel({
       </h2>
       <p className="mb-4 text-sm leading-relaxed text-brand-gray">
         A single-use code this client can give away. The recipient gets a free
-        Skin Clarity assessment — roughly Rs. 2,000 of practitioner time, so
-        it counts against the monthly limit.
+        Skin Transform assessment, which is the full paid plan and roughly
+        Rs. 3,000 of practitioner time, so it counts against the monthly
+        limit.
       </p>
 
       {existingCode ? (

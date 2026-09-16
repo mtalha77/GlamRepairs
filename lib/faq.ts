@@ -33,8 +33,17 @@
 export type FaqGroup = "money" | "trust" | "practical";
 export type FaqTag = "home" | "about" | "contact" | "pricing";
 
-/** Live prices, so the cost answer can never go stale against the database. */
-export type FaqPricing = { clarity: string; transform: string };
+/**
+ * Live prices, so the cost answer can never go stale against the database.
+ *
+ * HANDOVER-27 §1.4 — one paid price, not two. This was
+ * `{ clarity, transform }` and the answer named both tiers; Clarity is
+ * retired, so an answer mentioning it described a plan nobody can buy.
+ * `paid` rather than `transform` on purpose: the internal plan key is not
+ * the point here, and naming it invites the next rename to reach into the
+ * FAQ copy again.
+ */
+export type FaqPricing = { paid: string; videoMinutes: number };
 
 export type Faq = {
   /** Stable slug. Used as the DOM id, the deep-link hash, and in schema. Renaming one breaks shared links. */
@@ -82,10 +91,15 @@ export const FAQS: Faq[] = [
     // rendering for one sentence.
     tags: ["home", "pricing"],
     a: "",
-    fromPricing: ({ clarity, transform }) =>
-      `Skin Clarity is ${clarity} and Skin Transform is ${transform}. Skin ` +
-      "Starter is free. Prices are shown in your local currency if you are " +
-      "outside Pakistan.",
+    // HANDOVER-27 §1.4 — the video consultation is stated here, not just on
+    // the card. At Rs. 3,000 as the only paid option it is the main reason
+    // to choose this over a clinic visit at the same price, and the cost
+    // question is exactly where someone is making that comparison.
+    fromPricing: ({ paid, videoMinutes }) =>
+      `Skin Transform is ${paid}, one payment, and includes a ${videoMinutes} ` +
+      "minute video consultation with your practitioner. Skin Starter is " +
+      "free while the offer lasts. Prices are shown in your local currency " +
+      "if you are outside Pakistan.",
   },
   {
     id: "how-to-pay",
@@ -199,10 +213,13 @@ export const FAQS: Faq[] = [
     q: "Can I ask questions after I get my report?",
     group: "practical",
     tags: ["home", "pricing", "about"],
+    // HANDOVER-27 §1.4 — one paid plan, so one answer. This described the
+    // two-tier split ("Clarity includes one, Transform includes two"), which
+    // is a distinction that no longer exists.
     a:
-      "Yes. Clarity includes one follow-up check in after two weeks. " +
-      "Transform includes two follow-ups across a month, plus direct " +
-      "WhatsApp access during your plan.",
+      "Yes. Skin Transform includes two follow-up check-ins across a month, " +
+      "direct WhatsApp access to your practitioner for 30 days, and a 15 " +
+      "minute video consultation.",
   },
   {
     id: "outside-pakistan",

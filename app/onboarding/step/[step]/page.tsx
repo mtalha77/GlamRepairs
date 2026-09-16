@@ -16,6 +16,7 @@ import {
 } from "@/components/onboarding/onboardingConfig";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 import { listActivePricingRegions } from "@/lib/pricing/regions";
+import { listOfferedPlans } from "@/lib/plans/plansPublic";
 
 const TOTAL_STEPS = ONBOARDING_TOTAL_STEPS;
 
@@ -117,7 +118,7 @@ const STEP_METADATA: Record<number, Metadata> = {
   },
   22: {
     title: "Plan Selection",
-    description: "Choose your Clarity or Transform plan to continue.",
+    description: "Confirm your plan to continue.",
   },
   23: {
     title: "Photo Guide",
@@ -203,12 +204,17 @@ export default async function OnboardingStepPage({ params }: StepPageProps) {
       getServerPricingRegion(),
       listActivePricingRegions(),
     ]);
+    // HANDOVER-27 §1.4 — the plan list comes from `plans_public`, filtered
+    // to what is currently offered, so a retired or expired plan is never
+    // rendered as a choice.
+    const plans = await listOfferedPlans(region.code);
     return (
       <PlanSelectionStep
         backHref={backHref}
         nextHref={nextHref}
         region={region}
         regions={regions}
+        plans={plans}
         step={progressStep}
       />
     );

@@ -1,3 +1,4 @@
+import { PAID_PLAN_KEY } from "@/lib/plans/plansPublic";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
@@ -12,7 +13,9 @@ import {
  * HANDOVER-20 Part 2 — issuing and validating gift codes.
  *
  * ── Capacity is the constraint, not fraud ────────────────────────────────
- * A free Clarity assessment is Rs. 2,000 of Ayma's time and she is the only
+ * A free Skin Transform assessment is Rs. 3,000 of Ayma's time — HANDOVER-27
+ * retired Clarity, so a gift now covers the full paid plan — and she is the
+ * only
  * practitioner. If every paid client gifts one, paid capacity halves. That
  * is why the three gates below exist, and why they are enforced here rather
  * than in the UI: the cost of a wrongly issued code is not a lost sale, it
@@ -178,7 +181,11 @@ export async function issueGiftCodeForLead(options: {
       kind: "gift",
       issued_to_lead: options.leadId,
       issued_to_person: lead.person_key,
-      grants_plan: "clarity",
+      // HANDOVER-27 §1.1 — grant the plan that exists. This granted
+      // "clarity", which is retired: every code issued after the migration
+      // would have entitled someone to a plan they cannot select, and the
+      // funnel would have had nothing to apply it to.
+      grants_plan: PAID_PLAN_KEY,
       discount_pct: 100,
       max_uses: 1,
       uses_count: 0,

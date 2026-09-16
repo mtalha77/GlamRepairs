@@ -442,11 +442,19 @@ export type Database = {
        * is supposed to come from here rather than being typed into a
        * component. The comparison matrix is the first consumer; the photo
        * step is the next.
+       *
+       * HANDOVER-27 §1.1 widened this: `tagline`, `sort_order`,
+       * `available_until` and `active` are new. `active = false` RETIRES a
+       * plan without deleting it — `clarity` is retired that way because
+       * historical leads carry `selected_plan = 'clarity'` and must still
+       * resolve to a label. Never delete a row here.
        */
       plan_settings: {
         Row: {
           plan_key: string;
           label: string;
+          tagline: string | null;
+          sort_order: number;
           photos_required: number;
           photos_max: number;
           includes_video_call: boolean;
@@ -454,10 +462,20 @@ export type Database = {
           includes_whatsapp: boolean;
           support_days: number | null;
           expert_review: boolean;
+          /**
+           * When a limited-time plan stops being offered. Null means no end
+           * date. Set to 2026-09-30T18:59:59Z (23:59:59 PKT) for `free`.
+           * Editing this one value opens or closes the offer with no deploy.
+           */
+          available_until: string | null;
+          active: boolean;
+          updated_at: string;
         };
         Insert: {
           plan_key: string;
           label: string;
+          tagline?: string | null;
+          sort_order?: number;
           photos_required?: number;
           photos_max?: number;
           includes_video_call?: boolean;
@@ -465,10 +483,15 @@ export type Database = {
           includes_whatsapp?: boolean;
           support_days?: number | null;
           expert_review?: boolean;
+          available_until?: string | null;
+          active?: boolean;
+          updated_at?: string;
         };
         Update: {
           plan_key?: string;
           label?: string;
+          tagline?: string | null;
+          sort_order?: number;
           photos_required?: number;
           photos_max?: number;
           includes_video_call?: boolean;
@@ -476,6 +499,9 @@ export type Database = {
           includes_whatsapp?: boolean;
           support_days?: number | null;
           expert_review?: boolean;
+          available_until?: string | null;
+          active?: boolean;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -485,6 +511,18 @@ export type Database = {
           label: string;
           currency: string;
           symbol: string;
+          /**
+           * @deprecated HANDOVER-27 §1.2 — STALE. Do not read these.
+           *
+           * Prices moved to `plan_prices`, one row per region per plan,
+           * because a column per plan meant retiring or adding a plan
+           * needed a schema migration. These three columns still exist and
+           * still hold the OLD numbers (2,000 / 3,500), so anything reading
+           * them now renders a price that is not for sale. Read
+           * `plans_public` via lib/plans/plansPublic.ts instead.
+           *
+           * A follow-up migration drops them once nothing references them.
+           */
           price_free: number;
           price_clarity: number;
           price_transform: number;
@@ -515,6 +553,50 @@ export type Database = {
           is_default?: boolean;
           active?: boolean;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      /** One price per region per plan. Replaces pricing_regions.price_*. */
+      plan_prices: {
+        Row: {
+          region_code: string;
+          plan_key: string;
+          price: number;
+          updated_at: string;
+        };
+        Insert: {
+          region_code: string;
+          plan_key: string;
+          price: number;
+          updated_at?: string;
+        };
+        Update: {
+          region_code?: string;
+          plan_key?: string;
+          price?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      /** Ordered feature bullets. The marketing copy lives here, not in TSX. */
+      plan_features: {
+        Row: {
+          id: string;
+          plan_key: string;
+          label: string;
+          sort_order: number;
+        };
+        Insert: {
+          id?: string;
+          plan_key: string;
+          label: string;
+          sort_order?: number;
+        };
+        Update: {
+          id?: string;
+          plan_key?: string;
+          label?: string;
+          sort_order?: number;
         };
         Relationships: [];
       };
@@ -677,6 +759,43 @@ export type Database = {
       };
     };
     Views: {
+      /**
+       * HANDOVER-27 §1.2 — everything a pricing surface needs, per region.
+       *
+       * Joins `plan_settings`, `plan_prices` and `plan_features` and filters
+       * to `active` plans, so a retired plan never reaches a visitor. Read
+       * it through lib/plans/plansPublic.ts rather than querying directly.
+       *
+       * ⚠️ Because it filters to active plans, this view CANNOT resolve a
+       * historical lead carrying `selected_plan = 'clarity'`. That path
+       * reads `plan_settings` and `plan_prices` directly — see
+       * `getPlanByKey`.
+       */
+      plans_public: {
+        Row: {
+          region_code: string;
+          plan_key: string;
+          label: string;
+          tagline: string | null;
+          sort_order: number;
+          photos_required: number;
+          photos_max: number;
+          includes_video_call: boolean;
+          video_minutes: number | null;
+          includes_whatsapp: boolean;
+          support_days: number | null;
+          expert_review: boolean;
+          available_until: string | null;
+          /** Computed: false once `available_until` has passed. */
+          currently_offered: boolean;
+          currency: string;
+          symbol: string;
+          price: number;
+          /** JSON array of bullet strings, already ordered. */
+          features: string[];
+        };
+        Relationships: [];
+      };
       /**
        * HANDOVER-18 §2 — the practitioner-safe projection of `leads`.
        *

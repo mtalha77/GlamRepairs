@@ -14,7 +14,7 @@ import { requireStudioMember } from "@/lib/studio/member";
  *
  * The number that matters here is the monthly count against the cap, because
  * the constraint is not fraud, it is that a free Clarity assessment is
- * Rs. 2,000 of the only practitioner's time. So the cap is the headline and
+ * Rs. 3,000 of the only practitioner's time. So the cap is the headline and
  * the code list is the detail.
  */
 
@@ -57,8 +57,9 @@ export default async function GiftsPage() {
         <h1 className="font-serif text-2xl text-brand-primary">Gift codes</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-brand-gray">
           A gifted assessment is a free assessment, not a discount — and it is
-          roughly Rs. 2,000 of practitioner time. The monthly cap is what
-          protects paying clients from waiting longer.
+          roughly Rs. 3,000 of practitioner time, now that Skin Transform is
+          the only paid plan and a gift covers all of it. The monthly cap is
+          what protects paying clients from waiting longer.
         </p>
       </div>
 
