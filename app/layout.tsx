@@ -16,7 +16,7 @@
  *   • site-wide JSON-LD graph   → E-E-A-T entities, invisible to Ahrefs but the
  *                                 single biggest lever for a YMYL site
  */
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
@@ -133,13 +133,36 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-  // Unchanged from the dev's version. See README for the 1 MB icon problem —
-  // it is a real conversion issue, but it needs the replacement files present
-  // before this config changes.
-  icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml", sizes: "96x96" }],
-    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml", sizes: "256x256" }],
-  },
+  /*
+   * HOTFIX-26 Part 2 — `icons` is deliberately ABSENT now.
+   *
+   * That is the fix, not an omission. Declaring `icons` here OVERRIDES
+   * Next's file conventions, which is exactly why /favicon.ico returned 404
+   * even once a favicon existed: this block named only /icon.svg and
+   * /apple-icon.svg, so app/favicon.ico was never emitted as a tag. With it
+   * gone, app/favicon.ico, app/icon.svg and app/apple-icon.png are picked up
+   * automatically and all three get correct tags.
+   *
+   * /favicon.ico matters beyond tidiness: Google's crawler looks for one at
+   * the site root and uses it beside the search result. A 404 there means no
+   * icon on the one surface this site is trying to win.
+   *
+   * The old declaration also pointed `apple` at an SVG. iOS does not
+   * reliably accept SVG for a home-screen icon, so that is a PNG now.
+   */
+  manifest: "/site.webmanifest",
+};
+
+/**
+ * HOTFIX-26 Part 2 — the brand colours the browser chrome uses.
+ *
+ * `themeColor` belongs on the viewport export, not on `metadata`; putting it
+ * in metadata is silently ignored in this version of Next. It pairs with
+ * `background_color` in site.webmanifest so an installed PWA's splash screen
+ * is brand cream rather than defaulting to white.
+ */
+export const viewport: Viewport = {
+  themeColor: "#662d91",
 };
 
 export default function RootLayout({
