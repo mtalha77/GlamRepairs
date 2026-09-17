@@ -134,7 +134,10 @@ export const GIFT_REJECTION_COPY: Record<
   },
   expired: {
     title: "This gift has expired",
-    body: "Gift codes are valid for 90 days. This one is past its date.",
+    // Deliberately does NOT name the number of days. The validity period is
+    // an editable setting now, so a hardcoded "90 days" here would go stale
+    // silently the first time it is changed — and it did.
+    body: "This code has passed its date. You can still book at the usual price.",
   },
   already_used: {
     title: "This gift has already been used",

@@ -7,6 +7,7 @@ import GiftBatchDeactivateButton from "@/components/studio/GiftBatchDeactivateBu
 import GiftBatchGenerator from "@/components/studio/GiftBatchGenerator";
 import GiftCodeActiveToggle from "@/components/studio/GiftCodeActiveToggle";
 import GiftCodeFilters from "@/components/studio/GiftCodeFilters";
+import GiftCodeIssueForm from "@/components/studio/GiftCodeIssueForm";
 import GiftSettingsStrip from "@/components/studio/GiftSettingsStrip";
 import {
   listActivePlanKeys,
@@ -169,6 +170,24 @@ export default async function GiftCodesPage({ searchParams }: PageProps) {
         defaultPlan={settings.defaultPlan}
         defaultExpiryDays={settings.expiryDays}
         remaining={capacity.remaining}
+      />
+
+      {/*
+        HOTFIX-29 §2.2 says codes are never typed by a human, and for a code
+        handed to one named person that is right — it is a bearer token and
+        has to be unguessable.
+
+        A published campaign code is a different object. Talha asked for
+        these specifically, to share with influencers, and there being
+        guessable is the point: the limit is how many times it can be used,
+        not whether anyone can remember it. So it stays, below generation
+        rather than beside it, because generation is what should happen by
+        default.
+      */}
+      <GiftCodeIssueForm
+        enabled={settings.enabled && settings.ok}
+        defaultExpiryDays={settings.expiryDays}
+        remainingThisMonth={capacity.remaining}
       />
 
       <section className="space-y-3">

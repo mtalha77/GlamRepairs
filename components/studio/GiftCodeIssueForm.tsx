@@ -25,12 +25,12 @@ import { issueStudioGiftCodeAction } from "@/lib/studio/actions";
  * it is the shape of the thing being made.
  */
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={disabled || pending}
       className="rounded-xl bg-brand-primary px-4 py-2.5 text-sm text-white transition-opacity disabled:opacity-50"
     >
       {pending ? "Creating…" : "Create code"}
@@ -41,9 +41,12 @@ function SubmitButton() {
 export default function GiftCodeIssueForm({
   defaultExpiryDays,
   remainingThisMonth,
+  enabled,
 }: {
   defaultExpiryDays: number;
-  remainingThisMonth: number;
+  /** Null when the monthly cap is unlimited, or could not be read. */
+  remainingThisMonth: number | null;
+  enabled: boolean;
 }) {
   const [mode, setMode] = useState<"generated" | "manual">("generated");
   const [discountPct, setDiscountPct] = useState(100);
@@ -55,7 +58,9 @@ export default function GiftCodeIssueForm({
   // The one combination worth a second look: memorable, public, and free.
   const needsConfirmation = isManual && isFree;
   const freeAssessments = isFree ? maxUses : 0;
-  const overCap = freeAssessments > remainingThisMonth;
+  // A null cap is unlimited, so nothing can be over it.
+  const overCap =
+    remainingThisMonth != null && freeAssessments > remainingThisMonth;
 
   function switchMode(next: "generated" | "manual") {
     setMode(next);
@@ -78,13 +83,23 @@ export default function GiftCodeIssueForm({
       className="space-y-4 rounded-2xl border border-brand-lavender/70 bg-white p-5"
     >
       <div>
-        <h2 className="font-serif text-xl text-brand-primary">Create a code</h2>
+        <h2 className="font-serif text-xl text-brand-primary">
+          Or type a code yourself
+        </h2>
         <p className="mt-1 text-sm leading-relaxed text-brand-gray">
-          A generated code is for one person and cannot be guessed. A code you
-          type is for publishing — to an influencer&apos;s audience, a
-          newsletter, a poster.
+          Generated codes above are for handing to one person each. This is
+          for a code you want to <em>publish</em> — AYESHA20 on an
+          influencer&apos;s post, where being memorable is the point and
+          being guessable is not a risk, because the number of uses is what
+          limits it.
         </p>
       </div>
+
+      {!enabled ? (
+        <p className="rounded-xl border border-brand-accent/40 bg-brand-accent/5 px-4 py-3 text-sm leading-relaxed text-brand-ink">
+          The gift programme is switched off, so no new codes can be issued.
+        </p>
+      ) : null}
 
       <input type="hidden" name="mode" value={mode} />
 
@@ -256,8 +271,10 @@ export default function GiftCodeIssueForm({
           This code is {freeAssessments} free{" "}
           {freeAssessments === 1 ? "assessment" : "assessments"}.{" "}
           {overCap
-            ? `Only ${remainingThisMonth} left in this month's limit, so the database will refuse this. Lower the uses, or raise the monthly limit below.`
-            : `${remainingThisMonth} left in this month's limit.`}
+            ? `Only ${remainingThisMonth} left in this month's limit, so the database will refuse this. Lower the uses, or raise the monthly limit above.`
+            : remainingThisMonth == null
+              ? "The monthly limit is unlimited."
+              : `${remainingThisMonth} left in this month's limit.`}
         </p>
       ) : null}
 
@@ -279,7 +296,7 @@ export default function GiftCodeIssueForm({
       ) : null}
 
       <div className="flex items-center gap-3">
-        <SubmitButton />
+        <SubmitButton disabled={!enabled} />
         {needsConfirmation && !confirmed ? (
           <span className="text-xs text-brand-gray">
             Tick the box above first.

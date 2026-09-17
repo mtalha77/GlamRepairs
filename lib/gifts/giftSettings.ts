@@ -42,11 +42,19 @@ export type GiftSettings = {
   ok: boolean;
 };
 
+/**
+ * Used only when `pricing_settings.gift_expiry_days` cannot be read. The
+ * real value lives in the database and is editable at Studio → Gift codes;
+ * this exists so a failed read does not produce a code with no expiry at
+ * all.
+ */
+const DEFAULT_EXPIRY_DAYS = 30;
+
 const FALLBACK: GiftSettings = {
   enabled: false,
   monthlyCap: null,
   defaultPlan: "transform",
-  expiryDays: 90,
+  expiryDays: DEFAULT_EXPIRY_DAYS,
   memberDiscountPct: 0,
   ok: false,
 };
@@ -80,7 +88,7 @@ export async function getGiftSettings(): Promise<GiftSettings> {
     // (unlimited), so a default would quietly impose a cap nobody set.
     monthlyCap: row.gift_codes_per_month ?? null,
     defaultPlan: row.gift_default_plan || "transform",
-    expiryDays: row.gift_expiry_days ?? 90,
+    expiryDays: row.gift_expiry_days ?? DEFAULT_EXPIRY_DAYS,
     memberDiscountPct: Number(row.member_discount_pct ?? 0),
     ok: true,
   };
