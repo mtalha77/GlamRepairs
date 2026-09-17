@@ -15,12 +15,22 @@ export const CUSTOMER_STATUS_LABELS: Record<
   done: "Done",
 };
 
+/*
+ * HANDOVER-28 §1.1 — three states, not two.
+ *
+ * Without the `waived` entry this Record renders `undefined` on every
+ * gifted lead's detail page, because the lookup is unchecked at the call
+ * site. "Gifted" rather than "Waived": the studio reads this beside a
+ * client's name, and "waived" sounds like something was forgiven rather
+ * than given.
+ */
 export const PAYMENT_STATUS_LABELS: Record<
-  "pending" | "verified",
+  "pending" | "verified" | "waived",
   string
 > = {
   pending: "Payment pending",
   verified: "Payment verified",
+  waived: "Gifted, nothing to pay",
 };
 
 export const REVIEW_DECISIONS = [

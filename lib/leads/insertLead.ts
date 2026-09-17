@@ -12,6 +12,27 @@ export type InsertLeadInput = LeadSubmitPayload & {
 export type InsertLeadResult = {
   leadId: string;
   photosExpireAt: string | null;
+  /*
+   * HANDOVER-28 §1.1 — read back from the row the TRIGGERS produced, not
+   * from anything the browser sent.
+   *
+   * The completion screen has to know whether a gift code actually applied,
+   * and it cannot work that out for itself: the funnel store knows a code
+   * was typed, but only `lead_zz_gift_redeem` knows whether it was valid,
+   * unused, not self-redeemed and for a live plan. Both writes already use
+   * `return=representation`, so this costs nothing beyond two more columns
+   * in the select.
+   */
+  paymentStatus: string | null;
+  finalPrice: number | string | null;
+};
+
+/** What both write paths read back, after the triggers have run. */
+type LeadWriteRow = {
+  id: string;
+  photos_expire_at: string | null;
+  payment_status: string | null;
+  final_price: number | string | null;
 };
 
 export type FunnelProgressInput = {
@@ -82,6 +103,34 @@ export async function saveFunnelProgress(input: FunnelProgressInput) {
     return existing.id;
   }
 
+  /*
+   * HANDOVER-28 §2.2 — "Never send a price, a discount percentage or a
+   * payment status from the browser."
+   *
+   * `payment_status: "pending"` used to be on this object, and this object is
+   * reused for BOTH the insert and the PATCH below. That combination
+   * destroyed redeemed gifts, which I reproduced against the real database
+   * before removing it:
+   *
+   *   after insert            payment_status=waived   final_price=0.00
+   *   after one funnel step   payment_status=pending  final_price=3000.00
+   *
+   * Two things did it together. Resending `payment_status` overwrote the
+   * `waived` that `lead_zz_gift_redeem` had just set. And resending
+   * `plan_price` re-fired `lead_price_compute`, which is
+   * BEFORE INSERT OR UPDATE OF plan_price, list_price, is_member_booking and
+   * recomputes `final_price` unconditionally — while `lead_zz_gift_redeem`
+   * is BEFORE INSERT ONLY, so nothing re-applied the gift afterwards.
+   *
+   * The §1.1 showBankDetails rule cannot catch this: after the second write
+   * the row genuinely IS pending with a non-zero price, so the client is
+   * shown the bank block and charged in full for an assessment they were
+   * gifted.
+   *
+   * The column defaults to 'pending', so dropping it here loses nothing on
+   * insert and stops the clobber on update. Price fields are omitted from
+   * the update for the same reason — see `updatableRow` below.
+   */
   const row = {
     session_id: input.sessionId,
     full_name: input.fullName?.trim() || null,
@@ -102,7 +151,6 @@ export async function saveFunnelProgress(input: FunnelProgressInput) {
     gift_code_used: input.giftCode?.trim() || null,
     status: "new",
     source: "funnel",
-    payment_status: "pending",
     funnel_complete: false,
     funnel_step: input.funnelStep ?? null,
     /**
@@ -123,13 +171,35 @@ export async function saveFunnelProgress(input: FunnelProgressInput) {
     updated_at: new Date().toISOString(),
   };
 
+  /**
+   * The insert row minus the fields the DATABASE owns once the row exists.
+   *
+   * `plan_price` is the only one today, and it is here because
+   * `lead_price_compute` watches it (see the PATCH below). Anything else
+   * that a trigger derives should be added here rather than being resent on
+   * every funnel step — a progressive save is meant to record what the
+   * client typed, not to restate what the database computed.
+   */
+  const updatableRow: Partial<typeof row> = { ...row };
+  delete updatableRow.plan_price;
+
   if (existing) {
     const response = await fetch(
       `${config.base}/rest/v1/leads?id=eq.${existing.id}`,
       {
         method: "PATCH",
         headers: restHeaders(config.key),
-        body: JSON.stringify(row),
+        /*
+         * `plan_price` is deliberately NOT resent on update.
+         *
+         * `lead_price_compute` fires on UPDATE OF plan_price, so including
+         * it makes every funnel step recompute `final_price` from
+         * `list_price` — wiping any gift or promo the row already carries,
+         * with no trigger left to re-apply it. The price the client sees is
+         * resolved server-side per request anyway; the row does not need it
+         * restated on every step.
+         */
+        body: JSON.stringify(updatableRow),
       },
     );
     if (!response.ok) {
@@ -206,7 +276,7 @@ export async function insertLead(
   const existing = await findLeadBySession(input.sessionId);
   if (existing) {
     const response = await fetch(
-      `${config.base}/rest/v1/leads?id=eq.${existing.id}&select=id,photos_expire_at`,
+      `${config.base}/rest/v1/leads?id=eq.${existing.id}&select=id,photos_expire_at,payment_status,final_price`,
       {
         method: "PATCH",
         headers: restHeaders(config.key, "return=representation"),
@@ -218,17 +288,26 @@ export async function insertLead(
       console.error("[insertLead] update", response.status, detail);
       return null;
     }
-    const rows = (await response.json()) as Array<{
-      id: string;
-      photos_expire_at: string | null;
-    }>;
+    const rows = (await response.json()) as Array<LeadWriteRow>;
     const lead = rows[0];
-    if (!lead) return { leadId: existing.id, photosExpireAt };
-    return { leadId: lead.id, photosExpireAt: lead.photos_expire_at };
+    if (!lead) {
+      return {
+        leadId: existing.id,
+        photosExpireAt,
+        paymentStatus: null,
+        finalPrice: null,
+      };
+    }
+    return {
+      leadId: lead.id,
+      photosExpireAt: lead.photos_expire_at,
+      paymentStatus: lead.payment_status,
+      finalPrice: lead.final_price,
+    };
   }
 
   const response = await fetch(
-    `${config.base}/rest/v1/leads?select=id,photos_expire_at`,
+    `${config.base}/rest/v1/leads?select=id,photos_expire_at,payment_status,final_price`,
     {
       method: "POST",
       headers: restHeaders(config.key, "return=representation"),
@@ -242,10 +321,7 @@ export async function insertLead(
     return null;
   }
 
-  const rows = (await response.json()) as Array<{
-    id: string;
-    photos_expire_at: string | null;
-  }>;
+  const rows = (await response.json()) as Array<LeadWriteRow>;
 
   const lead = rows[0];
   if (!lead) return null;
@@ -253,5 +329,7 @@ export async function insertLead(
   return {
     leadId: lead.id,
     photosExpireAt: lead.photos_expire_at,
+    paymentStatus: lead.payment_status,
+    finalPrice: lead.final_price,
   };
 }

@@ -22,6 +22,16 @@ export type PlanThankYouPayload = {
    * still be sent, it just carries no reference.
    */
   sessionId?: string | null;
+  /**
+   * HANDOVER-28 §1.1 — the confirmation email is one of the four places the
+   * bank block must not reach a gifted client.
+   *
+   * Defaults to true so a caller that has no lead row (the local/dev path)
+   * behaves exactly as before. The real caller computes it with
+   * `showBankDetails()` from the row the triggers produced, never from
+   * anything the browser sent.
+   */
+  showBankDetails?: boolean;
 };
 
 /** Bank block for the HTML part. The text part uses buildPaymentLines(). */
@@ -99,21 +109,31 @@ export async function sendPlanThankYouEmail(
     ? `${planName} (${planPrice})`
     : planName;
 
-  // HANDOVER-9 §1 — the free plan is never paid for, so it gets no bank
-  // block and the WhatsApp link stays a plain "message us" link.
+  /*
+   * Two independent reasons there may be nothing to pay, and both must
+   * suppress the bank block.
+   *
+   * HANDOVER-9 §1 — the free plan is never paid for.
+   * HANDOVER-28 §1.1 — a gift code covered it, so `payment_status` is
+   * 'waived' and `final_price` is 0. That one is decided by the caller from
+   * the lead row, because only the triggers know whether the code applied.
+   */
   const isPaidPlan = Boolean(
     payload.selectedPlan && payload.selectedPlan !== "free",
   );
+  const includePayment = isPaidPlan && payload.showBankDetails !== false;
   const reference = leadDisplayRef(payload.sessionId);
-  const paymentBlockHtml = isPaidPlan
+  const paymentBlockHtml = includePayment
     ? paymentHtml(planPrice ?? null, reference)
     : "";
-  const paymentBlockText = isPaidPlan
+  const paymentBlockText = includePayment
     ? buildPaymentLines({ amount: planPrice, reference })
     : "";
 
   const whatsappDisplay = getWhatsAppDisplayNumber();
-  const whatsappLink = isPaidPlan
+  // The screenshot prefill asks for proof of a transfer. A gifted client has
+  // nothing to send, so they get the plain "message us" link.
+  const whatsappLink = includePayment
     ? getWhatsAppChatLink(
         buildScreenshotPrefill({
           amount: planPrice,

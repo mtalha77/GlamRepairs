@@ -33,6 +33,16 @@ type FunnelState = {
    */
   giftCode: string | null;
   /**
+   * HANDOVER-28 §1.1/§2.3 — what the SERVER decided after the triggers ran.
+   *
+   * Null until the lead is submitted. `giftCode` above is a claim the client
+   * typed; this is the answer, and only it may gate the bank block. A code
+   * that turns out invalid leaves the lead at full price, and the completion
+   * screen must then show payment instructions — keying on `giftCode` would
+   * hide them and leave that client with no idea how to pay.
+   */
+  paymentOutcome: { showBankDetails: boolean; isGifted: boolean } | null;
+  /**
    * True when the plan was chosen on pricing before the funnel.
    * Skips the in-funnel plan selection step.
    */
@@ -64,6 +74,9 @@ type FunnelState = {
   setContact: (contact: { email?: string; fullName?: string; phone?: string }) => void;
   setSelectedPlan: (plan: string | null) => void;
   setGiftCode: (code: string | null) => void;
+  setPaymentOutcome: (
+    outcome: { showBankDetails: boolean; isGifted: boolean } | null,
+  ) => void;
   setPlanPreselected: (preselected: boolean) => void;
   setSelfieUrl: (url: string | null) => void;
   unlockFlowStep: (flow: FunnelFlow, step: number) => void;
@@ -90,6 +103,7 @@ export const useFunnelStore = create<FunnelState>()(
       phone: "",
       selectedPlan: null,
       giftCode: null,
+      paymentOutcome: null,
       planPreselected: false,
       selfieUrl: null,
       bookingUnlockedStep: 1,
@@ -112,6 +126,7 @@ export const useFunnelStore = create<FunnelState>()(
         })),
       setSelectedPlan: (plan) => set({ selectedPlan: plan }),
       setGiftCode: (code) => set({ giftCode: code }),
+      setPaymentOutcome: (outcome) => set({ paymentOutcome: outcome }),
       setPlanPreselected: (preselected) => set({ planPreselected: preselected }),
       setSelfieUrl: (url) => set({ selfieUrl: url }),
       unlockFlowStep: (flow, step) =>
@@ -161,6 +176,7 @@ export const useFunnelStore = create<FunnelState>()(
         phone: state.phone,
         selectedPlan: state.selectedPlan,
         giftCode: state.giftCode,
+        paymentOutcome: state.paymentOutcome,
         planPreselected: state.planPreselected,
         selfieUrl: state.selfieUrl,
         bookingUnlockedStep: state.bookingUnlockedStep,

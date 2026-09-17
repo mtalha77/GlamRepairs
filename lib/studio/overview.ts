@@ -10,8 +10,19 @@ export type TeamWorkRow = {
 };
 
 export type PaymentSplit = {
+  /** Revenue. `verified` only — see countsAsRevenue in paymentVisibility. */
   paid: number;
+  /** Genuinely awaiting a transfer, and therefore worth chasing. */
   pending: number;
+  /**
+   * HANDOVER-28 §1.1 — gifted assessments, which are neither.
+   *
+   * These used to fall into `pending` via an `else`, which put every gifted
+   * client on the awaiting-payment figure the studio chases. They are real
+   * work and real practitioner time, so they are counted — they are simply
+   * not money owed and not money received.
+   */
+  waived: number;
 };
 
 export type CustomerTrendPoint = {
@@ -165,6 +176,7 @@ export async function getStudioOverviewCharts(
   }));
 
   let paid = 0;
+  let waived = 0;
   let pending = 0;
   let earliest = new Date();
   const customerTrend = buildMonthDays(selected.year, selected.month);
@@ -180,6 +192,7 @@ export async function getStudioOverviewCharts(
 
   for (const lead of leads) {
     if (lead.payment_status === "verified") paid += 1;
+    else if (lead.payment_status === "waived") waived += 1;
     else pending += 1;
     const created = noteDate(lead.created_at);
     if (Number.isNaN(created.getTime())) continue;
@@ -214,6 +227,6 @@ export async function getStudioOverviewCharts(
     months,
     customerTrend,
     teamWork,
-    payment: { paid, pending },
+    payment: { paid, pending, waived },
   };
 }

@@ -1,7 +1,13 @@
 export type StudioRole = "owner" | "staff";
 export type CustomerStatus = "new" | "reviewing" | "contacted" | "done";
 export type CustomerSource = "funnel" | "manual";
-export type PaymentStatus = "pending" | "verified";
+/**
+ * HANDOVER-28 §1.1 — `waived` means a gift code covered the assessment.
+ * The column's CHECK constraint allows all three; this type was missing the
+ * third, so every `waived` row was a type error waiting to be an undefined
+ * label.
+ */
+export type PaymentStatus = "pending" | "verified" | "waived";
 export type ReviewDecision =
   | "ready_for_report"
   | "need_more_photos"
