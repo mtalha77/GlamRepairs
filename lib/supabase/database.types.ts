@@ -228,6 +228,8 @@ export type Database = {
           issued_by: string | null;
           created_at: string;
           note: string | null;
+          batch_label: string | null;
+          recipient: string | null;
         };
         Insert: {
           code: string;
@@ -243,6 +245,8 @@ export type Database = {
           issued_by?: string | null;
           created_at?: string;
           note?: string | null;
+          batch_label?: string | null;
+          recipient?: string | null;
         };
         Update: {
           kind?: string;
@@ -252,6 +256,8 @@ export type Database = {
           expires_at?: string;
           active?: boolean;
           note?: string | null;
+          batch_label?: string | null;
+          recipient?: string | null;
         };
         Relationships: [];
       };
@@ -261,23 +267,29 @@ export type Database = {
           member_discount_pct: number;
           updated_by: string | null;
           updated_at: string;
-          gift_codes_per_month: number;
+          gift_codes_per_month: number | null;
           gift_expiry_days: number;
+          gift_programme_enabled: boolean | null;
+          gift_default_plan: string | null;
         };
         Insert: {
           id?: string;
           member_discount_pct?: number;
           updated_by?: string | null;
           updated_at?: string;
-          gift_codes_per_month?: number;
+          gift_codes_per_month?: number | null;
           gift_expiry_days?: number;
+          gift_programme_enabled?: boolean | null;
+          gift_default_plan?: string | null;
         };
         Update: {
           member_discount_pct?: number;
           updated_by?: string | null;
           updated_at?: string;
-          gift_codes_per_month?: number;
+          gift_codes_per_month?: number | null;
           gift_expiry_days?: number;
+          gift_programme_enabled?: boolean | null;
+          gift_default_plan?: string | null;
         };
         Relationships: [];
       };
@@ -766,6 +778,55 @@ export type Database = {
     };
     Views: {
       /**
+       * HOTFIX-29 §2.3 — one row per code with a computed `state`.
+       *
+       * `state` is `available` | `redeemed` | `expired` | `deactivated`,
+       * derived in the view rather than in the app, so the studio list and
+       * any future report cannot disagree about what a code's state is.
+       */
+      gift_codes_admin: {
+        Row: {
+          code: string;
+          kind: string;
+          batch_label: string | null;
+          recipient: string | null;
+          grants_plan: string;
+          discount_pct: number;
+          uses_count: number;
+          max_uses: number;
+          expires_at: string;
+          created_at: string;
+          note: string | null;
+          issued_by: string | null;
+          state: string;
+          redeemed_by_lead: string | null;
+          redeemed_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /**
+       * HOTFIX-29 §2.3 — one row per batch, with `redemption_pct`.
+       *
+       * This is the number that answers the only question worth tracking
+       * codes for: did that collaboration actually bring anyone in.
+       */
+      gift_batches_admin: {
+        Row: {
+          batch_label: string | null;
+          issued_on: string | null;
+          codes: number;
+          redeemed: number;
+          available: number;
+          recipient: string | null;
+          redemption_pct: number | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /**
        * HANDOVER-27 §1.2 — everything a pricing surface needs, per region.
        *
        * Joins `plan_settings`, `plan_prices` and `plan_features` and filters
@@ -899,13 +960,61 @@ export type Database = {
        * case and surrounding whitespace itself.
        */
       check_gift_code: {
-        Args: { p_code: string; p_person_key: string };
+        /**
+         * `p_attempt_key` selects the THREE-argument overload, which is the
+         * one to use: it rate-limits (8 failures per caller per 15 minutes,
+         * logged to `gift_code_attempts`) and can return `already_gifted`
+         * and `plan_unavailable`. PostgREST picks the overload by argument
+         * NAMES, so omitting this key silently falls back to the weaker
+         * two-argument version.
+         */
+        Args: {
+          p_code: string;
+          p_person_key: string;
+          p_attempt_key?: string;
+        };
         Returns: {
           valid: boolean;
           reason: string;
           grants_plan: string | null;
           discount_pct: number | null;
         }[];
+      };
+      /**
+       * HOTFIX-29 §2.2 — generates a batch of codes in one call.
+       *
+       * Generating one code and generating fifty are the same call. Null
+       * `p_grants_plan` / `p_expires_days` fall back to
+       * `pricing_settings.gift_default_plan` / `gift_expiry_days`.
+       *
+       * The function itself validates only `p_count` (1–500). The gift
+       * toggle, the monthly cap and the retired-plan check are TRIGGERS on
+       * `gift_codes`, so they raise during the insert rather than being
+       * returned — catch them by message, see lib/gifts/issueBatch.ts.
+       */
+      issue_gift_codes: {
+        Args: {
+          p_count: number;
+          p_batch_label: string;
+          p_kind?: string;
+          p_discount_pct?: number;
+          p_grants_plan?: string | null;
+          p_expires_days?: number | null;
+          p_recipient?: string | null;
+          p_note?: string | null;
+          p_issued_by?: string | null;
+        };
+        Returns: { code: string; expires_at: string }[];
+      };
+      /** Deactivates a whole batch. Leaves already-redeemed codes alone. */
+      deactivate_gift_batch: {
+        Args: { p_batch_label: string };
+        Returns: number;
+      };
+      /** `GR-XXXXX-XXXXX`, from a 32-character alphabet with no O/0/I/1. */
+      generate_gift_code: {
+        Args: Record<string, never>;
+        Returns: string;
       };
       resolve_pricing_region: {
         Args: { p_country: string | null };

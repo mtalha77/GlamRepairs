@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 
 import { checkGiftCode } from "@/lib/gifts/issueGiftCode";
@@ -22,7 +23,7 @@ import { PAID_PLAN_KEY } from "@/lib/plans/plansPublic";
  *    skin assessment" is the whole reason this converts better than a
  *    discount code — it arrives as a gesture from a person, not a promotion.
  *
- * Not gated on GIFT_PROGRAMME_ENABLED, deliberately: if a code exists,
+ * Not gated on the gift programme switch, deliberately: if a code exists,
  * whoever is holding it must be able to redeem it even if issuing is later
  * switched off. Turning the flag off should stop new gifts, not void ones
  * real people are already carrying.
@@ -72,9 +73,24 @@ export default async function GiftPage({ params }: GiftPageProps) {
   const { code: rawCode } = await params;
   const code = normaliseGiftCode(decodeURIComponent(rawCode));
 
-  // No person key yet — nobody has identified themselves at this point. The
-  // self-redemption check runs again at insert, where identity is known.
-  const result = await checkGiftCode(code, null);
+  /*
+   * No person key yet — nobody has identified themselves at this point. The
+   * self-redemption and one-gift-per-person checks run again at insert,
+   * where identity is known.
+   *
+   * The IP is passed as the caller key for the database's rate limit.
+   * Without it every anonymous visitor shares one "anonymous" bucket, and
+   * eight bad guesses from anywhere would start refusing valid gift links
+   * for everyone — a shared limiter on a public page is a denial of service
+   * against your own recipients.
+   */
+  const headerList = await headers();
+  const attemptKey =
+    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerList.get("x-real-ip") ||
+    `unidentified-${crypto.randomUUID()}`;
+
+  const result = await checkGiftCode(code, null, attemptKey);
 
   if (!result.valid) {
     const copy =

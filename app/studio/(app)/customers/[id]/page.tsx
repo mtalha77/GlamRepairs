@@ -20,9 +20,8 @@ import ReviewList from "@/components/studio/ReviewList";
 import VerifyPaymentButton from "@/components/studio/VerifyPaymentButton";
 import { formatBookingWhatsAppMessage } from "@/lib/funnel/formatBookingSummary";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
-import { isGiftProgrammeEnabled } from "@/lib/gifts/giftCodes";
+import { getGiftCapacity } from "@/lib/gifts/giftSettings";
 import {
-  getGiftCapacity,
   getOutstandingGiftCode,
 } from "@/lib/gifts/issueGiftCode";
 import { formatCustomerAnswers } from "@/lib/studio/answers";
@@ -417,7 +416,7 @@ export default async function CustomerDetailPage({
       {member.isSuperAdmin ? (
         <GiftCodePanel
           leadId={customer.id}
-          enabled={isGiftProgrammeEnabled()}
+          enabled={giftCapacity.enabled}
           paymentVerified={customer.paymentStatus === "verified"}
           existingCode={outstandingGiftCode}
           remainingThisMonth={giftCapacity.remaining}

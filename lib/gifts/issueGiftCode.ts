@@ -2,12 +2,11 @@ import { PAID_PLAN_KEY } from "@/lib/plans/plansPublic";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
-  generateGiftCode,
   isGiftCheckReason,
-  isGiftProgrammeEnabled,
   normaliseGiftCode,
   type GiftCheckResult,
 } from "@/lib/gifts/giftCodes";
+import { getGiftCapacity, getGiftSettings } from "@/lib/gifts/giftSettings";
 
 /**
  * HANDOVER-20 Part 2 — issuing and validating gift codes.
@@ -34,53 +33,14 @@ export type IssueResult =
   | { ok: true; code: string; expiresAt: string }
   | { ok: false; refusal: IssueRefusal; message: string };
 
-const DEFAULT_EXPIRY_DAYS = 90;
-const DEFAULT_MONTHLY_CAP = 20;
-
-async function getGiftSettings() {
-  const supabase = createAdminSupabaseClient();
-  const { data } = await supabase
-    .from("pricing_settings")
-    .select("gift_codes_per_month, gift_expiry_days")
-    .limit(1)
-    .maybeSingle();
-
-  return {
-    cap: data?.gift_codes_per_month ?? DEFAULT_MONTHLY_CAP,
-    expiryDays: data?.gift_expiry_days ?? DEFAULT_EXPIRY_DAYS,
-  };
-}
-
-/** Codes created since the start of the current calendar month. */
-export async function countGiftCodesThisMonth(): Promise<number> {
-  const supabase = createAdminSupabaseClient();
-  const start = new Date();
-  start.setUTCDate(1);
-  start.setUTCHours(0, 0, 0, 0);
-
-  const { count, error } = await supabase
-    .from("gift_codes")
-    .select("code", { count: "exact", head: true })
-    .eq("kind", "gift")
-    .gte("created_at", start.toISOString());
-
-  if (error) {
-    console.error("[countGiftCodesThisMonth]", error.message);
-    // Report the cap as reached rather than 0. Failing closed here costs a
-    // gift code; failing open costs practitioner capacity.
-    return Number.MAX_SAFE_INTEGER;
-  }
-  return count ?? 0;
-}
-
-export async function getGiftCapacity() {
-  const [{ cap }, used] = await Promise.all([
-    getGiftSettings(),
-    countGiftCodesThisMonth(),
-  ]);
-  const safeUsed = used === Number.MAX_SAFE_INTEGER ? cap : used;
-  return { cap, used: safeUsed, remaining: Math.max(cap - safeUsed, 0) };
-}
+/*
+ * Settings and capacity are NOT defined here any more.
+ *
+ * There were two copies: a private `getGiftSettings` in this file and a
+ * public one in adminCodes.ts, plus two different ways of counting the
+ * month. `lib/gifts/giftSettings.ts` is the single source, and it mirrors
+ * the database's own cap trigger. Import from there.
+ */
 
 /**
  * Issue one gift code for a lead.
@@ -93,13 +53,22 @@ export async function issueGiftCodeForLead(options: {
   leadId: string;
   issuedByUserId: string;
 }): Promise<IssueResult> {
-  // Gate 0: the programme itself. Off until practitioners exist.
-  if (!isGiftProgrammeEnabled()) {
+  // Gate 0: the programme itself, read from the database — HOTFIX-29 Part 1.
+  const settings = await getGiftSettings();
+  if (!settings.ok) {
+    return {
+      ok: false,
+      refusal: "error",
+      message:
+        "Could not read the gift settings, so no code was issued. This is a fault, not a setting — try again.",
+    };
+  }
+  if (!settings.enabled) {
     return {
       ok: false,
       refusal: "programme_disabled",
       message:
-        "The gift programme is switched off. Turn it on by setting GIFT_PROGRAMME_ENABLED=true once there is more than one practitioner.",
+        "The gift programme is switched off. Turn it on at Studio → Gift codes.",
     };
   }
 
@@ -158,24 +127,43 @@ export async function issueGiftCodeForLead(options: {
     };
   }
 
-  // Gate 3: the monthly cap. Stop rather than queue.
-  const { cap, expiryDays } = await getGiftSettings();
-  const used = await countGiftCodesThisMonth();
-  if (used >= cap) {
+  /*
+   * Gate 3: the monthly cap — advisory here, enforced by the database.
+   *
+   * A null cap means unlimited, so there is nothing to compare against.
+   * This check exists to give a useful message before the insert; the
+   * trigger is what actually stops it, and it counts for itself, so a race
+   * between two issuers cannot slip past.
+   */
+  const capacity = await getGiftCapacity();
+  if (
+    capacity.cap != null &&
+    capacity.used != null &&
+    capacity.used >= capacity.cap
+  ) {
     return {
       ok: false,
       refusal: "monthly_cap_reached",
-      message: `The monthly limit of ${cap} gift codes has been reached. It resets at the start of next month.`,
+      message: `The monthly limit of ${capacity.cap} gift codes has been reached. Raise or clear it at Studio → Gift codes.`,
     };
   }
+  const expiryDays = settings.expiryDays;
 
   const expiresAt = new Date(
     Date.now() + expiryDays * 24 * 60 * 60 * 1000,
   ).toISOString();
 
-  // Retry on the unique constraint rather than trusting 31^6 blindly.
+  // Retry on the unique constraint rather than trusting 10^15 blindly.
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const code = generateGiftCode();
+    // One generator, and it lives in the database — see giftCodes.ts.
+    const { data: generated, error: genError } = await supabase.rpc(
+      "generate_gift_code",
+    );
+    if (genError || typeof generated !== "string") {
+      console.error("[issueGiftCodeForLead] generate", genError?.message);
+      return { ok: false, refusal: "error", message: "Could not create a code." };
+    }
+    const code = generated;
     const { error } = await supabase.from("gift_codes").insert({
       code,
       kind: "gift",
@@ -226,6 +214,14 @@ export async function issueGiftCodeForLead(options: {
 export async function checkGiftCode(
   rawCode: string,
   personKey: string | null,
+  /**
+   * Who is asking, for the database's own rate limit. An IP is the usual
+   * value from the funnel. Falls back to `personKey`, then to a shared
+   * "anonymous" bucket inside the function — which is why passing something
+   * here matters: without it every anonymous visitor shares one counter and
+   * eight failures anywhere lock out everyone.
+   */
+  attemptKey?: string | null,
 ): Promise<GiftCheckResult> {
   const code = normaliseGiftCode(rawCode);
   if (!code) {
@@ -233,8 +229,26 @@ export async function checkGiftCode(
   }
 
   const supabase = await createServerSupabaseClient();
+  /*
+   * The THREE-argument overload, deliberately.
+   *
+   * `check_gift_code` exists twice in the database. The two-argument version
+   * is the original and is strictly weaker: no rate limiting, no attempt
+   * log, and it cannot return `already_gifted` or `plan_unavailable`. This
+   * code called it, so the one-gift-per-person rule and the retired-plan
+   * check were enforced only at insert time — a person could be told their
+   * code was fine and refused at the end.
+   *
+   * PostgREST selects the overload by the argument NAMES supplied, so
+   * passing `p_attempt_key` is what picks this one. Dropping that key
+   * silently falls back to the weak version.
+   */
   const { data, error } = await supabase
-    .rpc("check_gift_code", { p_code: code, p_person_key: personKey ?? "" })
+    .rpc("check_gift_code", {
+      p_code: code,
+      p_person_key: personKey ?? "",
+      p_attempt_key: attemptKey ?? personKey ?? "",
+    })
     .maybeSingle();
 
   if (error) {
@@ -274,6 +288,9 @@ export type GiftCodeRow = {
   createdAt: string;
   issuedToLead: string | null;
   issuedToPerson: string | null;
+  /** Why it was issued. Only staff see this. */
+  note: string | null;
+  issuedBy: string | null;
 };
 
 export type GiftCodeState = "redeemed" | "expired" | "inactive" | "outstanding";
@@ -291,7 +308,7 @@ export async function listGiftCodes(): Promise<GiftCodeRow[]> {
   const { data, error } = await supabase
     .from("gift_codes")
     .select(
-      "code, kind, grants_plan, discount_pct, uses_count, max_uses, expires_at, active, created_at, issued_to_lead, issued_to_person",
+      "code, kind, grants_plan, discount_pct, uses_count, max_uses, expires_at, active, created_at, issued_to_lead, issued_to_person, note, issued_by",
     )
     .order("created_at", { ascending: false });
 
@@ -312,6 +329,8 @@ export async function listGiftCodes(): Promise<GiftCodeRow[]> {
     createdAt: row.created_at,
     issuedToLead: row.issued_to_lead,
     issuedToPerson: row.issued_to_person,
+    note: row.note,
+    issuedBy: row.issued_by,
   }));
 }
 
