@@ -38,9 +38,10 @@ import { issueGiftCodeForLead } from "@/lib/gifts/issueGiftCode";
 import {
   issueCode,
   setCodeActive,
-  updateGiftSettings,
   type GiftCodeKind,
 } from "@/lib/gifts/adminCodes";
+import { updateGiftSettings } from "@/lib/gifts/giftSettings";
+import { deactivateBatch, issueBatch } from "@/lib/gifts/issueBatch";
 import { PAID_PLAN_KEY } from "@/lib/plans/plansPublic";
 import {
   describeFailures,
@@ -1510,7 +1511,7 @@ export async function issueGiftCodeAction(formData: FormData) {
  * form is a UI decision, not a permission.
  */
 
-const GIFTS_PATH = "/studio/admin/gifts";
+const GIFTS_PATH = "/studio/gift-codes";
 
 async function requireGiftAdmin(back: string) {
   const { user, member } = await requireStudioMember();
@@ -1599,26 +1600,34 @@ export async function setGiftCodeActiveAction(formData: FormData) {
 }
 
 /**
- * The three numbers Talha changes without a deploy — HANDOVER-28 §2.4 plus
- * the standing ask to raise or lower the limits from the studio.
+ * The settings strip — HOTFIX-29 §3.1.
  *
- * A blank field means "leave this one alone" rather than zero. Saving one
- * number should not silently reset the two beside it, and a form that does
- * is how a monthly cap becomes 0 because someone cleared a box to retype it.
+ * A blank number means "leave this one alone" rather than zero. Saving one
+ * field should not silently reset the two beside it, and a form that does is
+ * how a monthly cap becomes 0 because someone cleared a box to retype it.
+ *
+ * "Unlimited" is a real value (NULL), distinct from both blank and zero, so
+ * it has its own checkbox and is passed through as an explicit null.
  */
 export async function updateGiftSettingsAction(formData: FormData) {
   const { user } = await requireGiftAdmin(GIFTS_PATH);
 
-  const read = (key: string) => {
+  const num = (key: string) => {
     const raw = asString(formData, key);
     return raw === "" ? undefined : Number(raw);
   };
 
+  const unlimited = formData.get("unlimited") === "on";
+  const capRaw = num("monthlyCap");
+
   const result = await updateGiftSettings(
     {
-      giftCodesPerMonth: read("giftCodesPerMonth"),
-      giftExpiryDays: read("giftExpiryDays"),
-      memberDiscountPct: read("memberDiscountPct"),
+      // A checkbox absent from the POST means unchecked, which for this one
+      // field is the whole point of the control, so it is always sent.
+      enabled: formData.get("enabled") === "on",
+      monthlyCap: unlimited ? null : capRaw,
+      defaultPlan: asString(formData, "defaultPlan") || undefined,
+      expiryDays: num("expiryDays"),
     },
     user.id,
   );
@@ -1632,4 +1641,66 @@ export async function updateGiftSettingsAction(formData: FormData) {
   revalidatePath(GIFTS_PATH);
   revalidatePath("/studio/settings");
   redirect(`${GIFTS_PATH}?saved=settings`);
+}
+
+/**
+ * Generate a batch — HOTFIX-29 §3.2.
+ *
+ * The generated codes are handed back through the URL so the screen can show
+ * them with copy and CSV buttons. They are not secret in the sense a
+ * password is — they are about to be pasted into WhatsApp — but they are
+ * bearer tokens, so they go back as a batch label to re-read rather than as
+ * the codes themselves in a query string that lands in browser history and
+ * server logs.
+ */
+export async function issueGiftBatchAction(formData: FormData) {
+  const { user } = await requireGiftAdmin(GIFTS_PATH);
+
+  const kindRaw = asString(formData, "kind");
+  const kind: GiftCodeKind =
+    kindRaw === "referral" || kindRaw === "promo" ? kindRaw : "gift";
+
+  const expiresRaw = asString(formData, "expiresDays");
+
+  const result = await issueBatch({
+    count: Number(formData.get("count")),
+    batchLabel: asString(formData, "batchLabel"),
+    kind,
+    discountPct: Number(formData.get("discountPct")),
+    grantsPlan: asString(formData, "grantsPlan") || null,
+    expiresDays: expiresRaw === "" ? null : Number(expiresRaw),
+    recipient: asString(formData, "recipient") || null,
+    note: asString(formData, "note") || null,
+    issuedBy: user.id,
+  });
+
+  if (!result.ok) {
+    redirect(`${GIFTS_PATH}?error=${encodeURIComponent(result.error)}`);
+  }
+
+  revalidatePath(GIFTS_PATH);
+  redirect(
+    `${GIFTS_PATH}?batch=${encodeURIComponent(asString(formData, "batchLabel"))}&created=${result.codes.length}`,
+  );
+}
+
+export async function deactivateGiftBatchAction(formData: FormData) {
+  await requireGiftAdmin(GIFTS_PATH);
+
+  const label = asString(formData, "batchLabel");
+  if (!label) {
+    redirect(`${GIFTS_PATH}?error=${encodeURIComponent("No batch given.")}`);
+  }
+
+  const result = await deactivateBatch(label);
+  if (!result.ok) {
+    redirect(
+      `${GIFTS_PATH}?error=${encodeURIComponent(result.error ?? "Could not deactivate that batch.")}`,
+    );
+  }
+
+  revalidatePath(GIFTS_PATH);
+  redirect(
+    `${GIFTS_PATH}?deactivatedBatch=${encodeURIComponent(label)}&count=${result.count ?? 0}`,
+  );
 }

@@ -21,7 +21,12 @@ type GiftCodePanelProps = {
   paymentVerified: boolean;
   /** Existing outstanding code for this person, if any. */
   existingCode: string | null;
-  remainingThisMonth: number;
+  /**
+   * Null means the monthly cap is unlimited, or could not be read. Either
+   * way there is no number to count down, so the panel says nothing about
+   * one rather than printing "null left this month".
+   */
+  remainingThisMonth: number | null;
 };
 
 function IssueButton({ disabled }: { disabled: boolean }) {
@@ -45,11 +50,11 @@ export default function GiftCodePanel({
   remainingThisMonth,
 }: GiftCodePanelProps) {
   const blockedReason = !enabled
-    ? "The gift programme is switched off until there is more than one practitioner."
+    ? "The gift programme is switched off. Turn it on at Studio → Gift codes."
     : !paymentVerified
       ? "Only clients with a verified payment can gift an assessment."
-      : remainingThisMonth <= 0
-        ? "This month's gift limit has been reached."
+      : remainingThisMonth != null && remainingThisMonth <= 0
+        ? "This month's gift limit has been reached. Raise or clear it at Studio → Gift codes."
         : null;
 
   return (
@@ -103,9 +108,11 @@ export default function GiftCodePanel({
         <form action={issueGiftCodeAction}>
           <input type="hidden" name="leadId" value={leadId} />
           <IssueButton disabled={false} />
-          <p className="mt-2 text-xs text-brand-gray">
-            {remainingThisMonth} left this month.
-          </p>
+          {remainingThisMonth != null ? (
+            <p className="mt-2 text-xs text-brand-gray">
+              {remainingThisMonth} left this month.
+            </p>
+          ) : null}
         </form>
       )}
     </section>

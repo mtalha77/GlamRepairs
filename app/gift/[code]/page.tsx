@@ -23,7 +23,7 @@ import { PAID_PLAN_KEY } from "@/lib/plans/plansPublic";
  *    skin assessment" is the whole reason this converts better than a
  *    discount code — it arrives as a gesture from a person, not a promotion.
  *
- * Not gated on GIFT_PROGRAMME_ENABLED, deliberately: if a code exists,
+ * Not gated on the gift programme switch, deliberately: if a code exists,
  * whoever is holding it must be able to redeem it even if issuing is later
  * switched off. Turning the flag off should stop new gifts, not void ones
  * real people are already carrying.

@@ -1,7 +1,8 @@
 import "server-only";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { GIFT_CODE_PREFIX, generateGiftCode } from "@/lib/gifts/giftCodes";
+import { GIFT_CODE_PREFIX } from "@/lib/gifts/giftCodes";
+import { getGiftSettings } from "@/lib/gifts/giftSettings";
 
 /**
  * Issuing, listing and retiring codes from the studio.
@@ -34,7 +35,7 @@ import { GIFT_CODE_PREFIX, generateGiftCode } from "@/lib/gifts/giftCodes";
 export type GiftCodeKind = "gift" | "referral" | "promo";
 
 export type IssueCodeInput = {
-  /** Omit to auto-generate an unguessable GLAM-GIFT-XXXXXX. */
+  /** Omit to auto-generate an unguessable GR-XXXXX-XXXXX. */
   code?: string | null;
   kind: GiftCodeKind;
   grantsPlan: string;
@@ -129,7 +130,7 @@ export async function issueCode(
 
   const supabase = createAdminSupabaseClient();
   const settings = await getGiftSettings();
-  const expiryDays = input.expiryDays ?? settings.giftExpiryDays;
+  const expiryDays = input.expiryDays ?? settings.expiryDays;
 
   if (!Number.isInteger(expiryDays) || expiryDays < 1) {
     return { ok: false, error: "Expiry must be a whole number of days, at least 1." };
@@ -143,7 +144,17 @@ export async function issueCode(
   const attempts = manual ? 1 : 5;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const code = manual ?? generateGiftCode();
+    let code = manual;
+    if (!code) {
+      const { data: generated, error: genError } = await supabase.rpc(
+        "generate_gift_code",
+      );
+      if (genError || typeof generated !== "string") {
+        console.error("[issueCode] generate", genError?.message);
+        return { ok: false, error: "Could not generate a code." };
+      }
+      code = generated;
+    }
 
     const { data, error } = await supabase
       .from("gift_codes")
@@ -175,8 +186,24 @@ export async function issueCode(
      * names the numbers and says where to change them, which is more useful
      * than anything this layer could paraphrase.
      */
-    if (error.message.includes("Monthly free assessment limit")) {
+    /*
+     * Both trigger messages already name the numbers and say where to change
+     * them, which beats anything this layer could paraphrase. Matched on
+     * text because the cap raises 23505 — the same errcode as a genuine
+     * unique violation — so the code alone cannot tell them apart.
+     */
+    if (
+      error.message.includes("Monthly gift code limit reached") ||
+      error.message.includes("gift programme is switched off")
+    ) {
       return { ok: false, error: error.message };
+    }
+    if (error.message.includes("which is not currently offered")) {
+      return {
+        ok: false,
+        error:
+          "That code would grant a plan that is no longer offered. Pick an active plan.",
+      };
     }
     if (error.message.includes("gift_codes_code_format_check")) {
       return { ok: false, error: "That code contains characters we cannot use." };
@@ -222,126 +249,11 @@ export async function setCodeActive(
   return { ok: true };
 }
 
-export type GiftSettings = {
-  giftCodesPerMonth: number;
-  giftExpiryDays: number;
-  memberDiscountPct: number;
-};
-
-export async function getGiftSettings(): Promise<GiftSettings> {
-  const supabase = createAdminSupabaseClient();
-  const { data } = await supabase
-    .from("pricing_settings")
-    .select("gift_codes_per_month, gift_expiry_days, member_discount_pct")
-    .maybeSingle();
-
-  const row = data as {
-    gift_codes_per_month: number;
-    gift_expiry_days: number;
-    member_discount_pct: number;
-  } | null;
-
-  return {
-    giftCodesPerMonth: row?.gift_codes_per_month ?? 20,
-    giftExpiryDays: row?.gift_expiry_days ?? 90,
-    memberDiscountPct: row?.member_discount_pct ?? 10,
-  };
-}
-
-/**
- * The three numbers Talha changes without a deploy.
- *
- * Bounded here as well as in the UI because a server action is reachable
- * directly. The upper bounds are sanity rails, not policy: a 3650-day expiry
- * or a 100% member discount is far more likely to be a typo than an
- * intention.
- */
-export async function updateGiftSettings(
-  next: Partial<GiftSettings>,
-  updatedBy?: string | null,
-): Promise<{ ok: boolean; error?: string }> {
-  const patch: {
-    gift_codes_per_month?: number;
-    gift_expiry_days?: number;
-    member_discount_pct?: number;
-    updated_at?: string;
-    updated_by?: string;
-  } = {};
-
-  if (next.giftCodesPerMonth != null) {
-    if (
-      !Number.isInteger(next.giftCodesPerMonth) ||
-      next.giftCodesPerMonth < 0 ||
-      next.giftCodesPerMonth > 10_000
-    ) {
-      return { ok: false, error: "Free assessments per month must be 0 to 10,000." };
-    }
-    patch.gift_codes_per_month = next.giftCodesPerMonth;
-  }
-  if (next.giftExpiryDays != null) {
-    if (
-      !Number.isInteger(next.giftExpiryDays) ||
-      next.giftExpiryDays < 1 ||
-      next.giftExpiryDays > 3650
-    ) {
-      return { ok: false, error: "Expiry must be between 1 and 3650 days." };
-    }
-    patch.gift_expiry_days = next.giftExpiryDays;
-  }
-  if (next.memberDiscountPct != null) {
-    if (
-      !Number.isFinite(next.memberDiscountPct) ||
-      next.memberDiscountPct < 0 ||
-      next.memberDiscountPct > 100
-    ) {
-      return { ok: false, error: "Member discount must be 0 to 100 percent." };
-    }
-    patch.member_discount_pct = next.memberDiscountPct;
-  }
-  if (!Object.keys(patch).length) return { ok: true };
-
-  patch.updated_at = new Date().toISOString();
-  if (updatedBy) patch.updated_by = updatedBy;
-
-  const supabase = createAdminSupabaseClient();
-
-  /*
-   * `pricing_settings` is a singleton table, but PostgREST refuses an
-   * unfiltered UPDATE — and rightly so. Reading the row's id first means the
-   * update names exactly one row, rather than relying on a filter like
-   * `id is not null` that would silently rewrite every row if a second one
-   * were ever added.
-   */
-  const { data: existing, error: readError } = await supabase
-    .from("pricing_settings")
-    .select("id")
-    .limit(1)
-    .maybeSingle();
-
-  if (readError || !existing) {
-    console.error("[updateGiftSettings] read", readError?.message);
-    return { ok: false, error: "Could not find the settings row." };
-  }
-
-  const { error } = await supabase
-    .from("pricing_settings")
-    .update(patch)
-    .eq("id", (existing as { id: string }).id);
-
-  if (error) {
-    console.error("[updateGiftSettings]", error.message);
-    return { ok: false, error: "Could not save the settings." };
-  }
-  return { ok: true };
-}
-
 /*
- * Free-assessment usage is NOT computed here.
+ * Settings live in lib/gifts/giftSettings.ts, not here.
  *
- * It was, briefly, and that is precisely the bug this file's header warns
- * about in another form: two functions counting the same capacity, drifting
- * apart, one of them shown as a headline while the other is enforced on
- * insert. `getGiftCapacity` in issueGiftCode.ts is the single source, and it
- * mirrors the database cap's own maths. Import that.
+ * They were briefly in both files with different shapes — one defaulting
+ * the monthly cap to 20, the other preserving NULL — which is how a screen
+ * ends up showing a cap nobody set. Reading and writing them is one
+ * module's job.
  */
-export { getGiftCapacity } from "@/lib/gifts/issueGiftCode";

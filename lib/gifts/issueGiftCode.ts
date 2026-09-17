@@ -2,12 +2,11 @@ import { PAID_PLAN_KEY } from "@/lib/plans/plansPublic";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
-  generateGiftCode,
   isGiftCheckReason,
-  isGiftProgrammeEnabled,
   normaliseGiftCode,
   type GiftCheckResult,
 } from "@/lib/gifts/giftCodes";
+import { getGiftCapacity, getGiftSettings } from "@/lib/gifts/giftSettings";
 
 /**
  * HANDOVER-20 Part 2 — issuing and validating gift codes.
@@ -34,76 +33,14 @@ export type IssueResult =
   | { ok: true; code: string; expiresAt: string }
   | { ok: false; refusal: IssueRefusal; message: string };
 
-const DEFAULT_EXPIRY_DAYS = 90;
-const DEFAULT_MONTHLY_CAP = 20;
-
-async function getGiftSettings() {
-  const supabase = createAdminSupabaseClient();
-  const { data } = await supabase
-    .from("pricing_settings")
-    .select("gift_codes_per_month, gift_expiry_days")
-    .limit(1)
-    .maybeSingle();
-
-  return {
-    cap: data?.gift_codes_per_month ?? DEFAULT_MONTHLY_CAP,
-    expiryDays: data?.gift_expiry_days ?? DEFAULT_EXPIRY_DAYS,
-  };
-}
-
-/**
- * Free assessments committed this calendar month.
+/*
+ * Settings and capacity are NOT defined here any more.
  *
- * ── Counts assessments, not rows, and that is the whole point ────────────
- * This used to be `count(*) where kind = 'gift'`, which stopped being the
- * right number the moment a code could have `max_uses > 1`. One influencer
- * code with 50 uses is fifty free assessments and fifty slots of Ayma's
- * time; as a row count it read as 1.
- *
- * The database enforces the cap with exactly this maths — `sum(max_uses)`
- * over active codes at 100% — so this has to match it or the studio shows a
- * headline the insert then contradicts. A number that disagrees with the
- * rule it describes is worse than no number.
- *
- * `kind` is deliberately not filtered. A 100% `promo` costs the same
- * capacity as a 100% `gift`; what the code is called does not change what
- * it spends.
+ * There were two copies: a private `getGiftSettings` in this file and a
+ * public one in adminCodes.ts, plus two different ways of counting the
+ * month. `lib/gifts/giftSettings.ts` is the single source, and it mirrors
+ * the database's own cap trigger. Import from there.
  */
-export async function countGiftCodesThisMonth(): Promise<number> {
-  const supabase = createAdminSupabaseClient();
-  const start = new Date();
-  start.setUTCDate(1);
-  start.setUTCHours(0, 0, 0, 0);
-
-  const { data, error } = await supabase
-    .from("gift_codes")
-    .select("discount_pct, max_uses")
-    .eq("active", true)
-    .gte("created_at", start.toISOString());
-
-  if (error) {
-    console.error("[countGiftCodesThisMonth]", error.message);
-    // Report the cap as reached rather than 0. Failing closed here costs a
-    // gift code; failing open costs practitioner capacity.
-    return Number.MAX_SAFE_INTEGER;
-  }
-
-  return (data ?? []).reduce(
-    (sum, row) =>
-      // numeric arrives as a string over PostgREST.
-      Number(row.discount_pct) >= 100 ? sum + Number(row.max_uses) : sum,
-    0,
-  );
-}
-
-export async function getGiftCapacity() {
-  const [{ cap }, used] = await Promise.all([
-    getGiftSettings(),
-    countGiftCodesThisMonth(),
-  ]);
-  const safeUsed = used === Number.MAX_SAFE_INTEGER ? cap : used;
-  return { cap, used: safeUsed, remaining: Math.max(cap - safeUsed, 0) };
-}
 
 /**
  * Issue one gift code for a lead.
@@ -116,13 +53,22 @@ export async function issueGiftCodeForLead(options: {
   leadId: string;
   issuedByUserId: string;
 }): Promise<IssueResult> {
-  // Gate 0: the programme itself. Off until practitioners exist.
-  if (!isGiftProgrammeEnabled()) {
+  // Gate 0: the programme itself, read from the database — HOTFIX-29 Part 1.
+  const settings = await getGiftSettings();
+  if (!settings.ok) {
+    return {
+      ok: false,
+      refusal: "error",
+      message:
+        "Could not read the gift settings, so no code was issued. This is a fault, not a setting — try again.",
+    };
+  }
+  if (!settings.enabled) {
     return {
       ok: false,
       refusal: "programme_disabled",
       message:
-        "The gift programme is switched off. Turn it on by setting GIFT_PROGRAMME_ENABLED=true once there is more than one practitioner.",
+        "The gift programme is switched off. Turn it on at Studio → Gift codes.",
     };
   }
 
@@ -181,24 +127,43 @@ export async function issueGiftCodeForLead(options: {
     };
   }
 
-  // Gate 3: the monthly cap. Stop rather than queue.
-  const { cap, expiryDays } = await getGiftSettings();
-  const used = await countGiftCodesThisMonth();
-  if (used >= cap) {
+  /*
+   * Gate 3: the monthly cap — advisory here, enforced by the database.
+   *
+   * A null cap means unlimited, so there is nothing to compare against.
+   * This check exists to give a useful message before the insert; the
+   * trigger is what actually stops it, and it counts for itself, so a race
+   * between two issuers cannot slip past.
+   */
+  const capacity = await getGiftCapacity();
+  if (
+    capacity.cap != null &&
+    capacity.used != null &&
+    capacity.used >= capacity.cap
+  ) {
     return {
       ok: false,
       refusal: "monthly_cap_reached",
-      message: `The monthly limit of ${cap} gift codes has been reached. It resets at the start of next month.`,
+      message: `The monthly limit of ${capacity.cap} gift codes has been reached. Raise or clear it at Studio → Gift codes.`,
     };
   }
+  const expiryDays = settings.expiryDays;
 
   const expiresAt = new Date(
     Date.now() + expiryDays * 24 * 60 * 60 * 1000,
   ).toISOString();
 
-  // Retry on the unique constraint rather than trusting 31^6 blindly.
+  // Retry on the unique constraint rather than trusting 10^15 blindly.
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const code = generateGiftCode();
+    // One generator, and it lives in the database — see giftCodes.ts.
+    const { data: generated, error: genError } = await supabase.rpc(
+      "generate_gift_code",
+    );
+    if (genError || typeof generated !== "string") {
+      console.error("[issueGiftCodeForLead] generate", genError?.message);
+      return { ok: false, refusal: "error", message: "Could not create a code." };
+    }
+    const code = generated;
     const { error } = await supabase.from("gift_codes").insert({
       code,
       kind: "gift",
