@@ -1,3 +1,5 @@
+import { PRACTITIONER } from "@/lib/seo/authors";
+
 /**
  * Copy for /about, kept as data so the section components stay pure
  * presentation. Rewritten 4 September 2026 — see app/about/page.tsx for the
@@ -52,10 +54,18 @@ export const whoReviews = {
   headingEmphasis: "your skin",
   subheadingLead: "Reviewed by a",
   subheadingEmphasis: "certified professional.",
-  expertName: "Ayma Arif, BS Cosmetology & Dermatology Science,",
+  // HOTFIX-30 §2 — from the constant. Retyped, this was a fourth copy of a
+  // string the site has already had to correct twice.
+  expertName: `${PRACTITIONER.name}, ${PRACTITIONER.credentials},`,
   paragraphs: [
-    "has spent years working across clinics in Pakistan with clients " +
-      "whose concerns ranged from acne and pigmentation to dryness and " +
+    /*
+     * HOTFIX-30 Part 3 — "across clinics in Pakistan" was two banned
+     * phrasings at once: vague geography that reads as padding, and
+     * "years working" where the approved word is practice. A named city is
+     * a fact; a country is a gesture.
+     */
+    "spent five years in practice at aesthetic clinics in Lahore, with " +
+      "clients whose concerns ranged from acne and pigmentation to dryness and " +
       "sensitivity. The pattern she kept seeing is the reason this " +
       'service exists: the same clients came back, not because the ' +
       "advice was wrong, but because there was no way to get consistent, " +

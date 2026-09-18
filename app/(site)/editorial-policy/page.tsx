@@ -134,9 +134,18 @@ export default function EditorialPolicyPage() {
                 >
                   {r.name}
                 </Link>
+                {/*
+                  HOTFIX-30 Part 1.1 — comma, not an em dash.
+
+                  This is the same "Name, Title, Credentials" stack the
+                  CredentialsBlock renders, composed by hand here because
+                  this page lists every reviewer rather than one author. The
+                  separator has to match, or the site punctuates the same
+                  fact two ways depending on which page you land on.
+                */}
                 <span className="text-black/60">
-                  {" "}
-                  — {r.title}, {r.credentials}
+                  {", "}
+                  {r.title}, {r.credentials}
                 </span>
               </li>
             ))}
