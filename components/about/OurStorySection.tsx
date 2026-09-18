@@ -1,6 +1,7 @@
 import AnimatedSlideIn from "@/components/home/AnimatedSlideIn";
 import { whoReviews } from "@/components/about/aboutContent";
 import CredentialsCard from "@/components/about/CredentialsCard";
+import { PRACTITIONER } from "@/lib/seo/authors";
 
 /**
  * "Who reviews your skin" — the named, credentialed practitioner behind every
@@ -43,6 +44,19 @@ export default function OurStorySection() {
             <p className="font-sans text-base leading-relaxed text-brand-ink sm:text-lg lg:text-xl lg:leading-[1.6]">
               {whoReviews.paragraphs[1]}
             </p>
+            {/*
+              HOTFIX-30 §1.2 — the long form, on the second page with room.
+
+              It earns its place here rather than repeating the credential
+              line: this is the paragraph that connects her background to
+              what a client is actually buying, which is whether a
+              photograph can be read at all.
+            */}
+            {PRACTITIONER.experienceLong ? (
+              <p className="font-sans text-base leading-relaxed text-brand-ink sm:text-lg lg:text-xl lg:leading-[1.6]">
+                {PRACTITIONER.experienceLong}
+              </p>
+            ) : null}
           </div>
         </AnimatedSlideIn>
 

@@ -54,7 +54,7 @@ export default function CredentialsBlock({
   return (
     <div className={`space-y-1.5 ${bodyText} leading-relaxed ${className}`}>
       <p className={`${headingText} font-semibold text-brand-primary`}>
-        {author.name} — {author.title}
+        {author.name}, {author.title}
       </p>
       {/*
         HOTFIX-25 §2.2 — the degree stands alone. No institution appended.
@@ -75,7 +75,7 @@ export default function CredentialsBlock({
       <p className="text-brand-ink">{author.credentials}</p>
       {author.hecReference ? (
         <p className="font-medium text-brand-ink">
-          Degree attested by the Higher Education Commission of Pakistan —
+          Degree attested by the Higher Education Commission of Pakistan,
           Ref. {author.hecReference}
         </p>
       ) : null}
@@ -92,6 +92,24 @@ export default function CredentialsBlock({
           {item}
         </p>
       ))}
+      {/*
+        HOTFIX-30 — last in the stack, and the order is the argument.
+
+        Everything above this line is checkable by a stranger: a degree, an
+        HEC reference number, a membership number, a named Duke course with
+        a verification URL. This one is not. Placing it after them means a
+        sceptical reader meets the evidence first and reads this as context;
+        placing it first would have an unverifiable claim borrowing the
+        credibility of the numbers below it.
+
+        Rendered from `PRACTITIONER.experience`, never retyped — this
+        component is what every blog byline, /authors/[slug], /about and the
+        checkout step render through, which is exactly why a literal here
+        would reappear on eleven surfaces at once.
+      */}
+      {author.experience ? (
+        <p className="text-brand-gray">{author.experience}</p>
+      ) : null}
       {author.scopeDisclaimer ? (
         <p className="pt-1 text-xs italic text-brand-gray">
           {author.scopeDisclaimer}

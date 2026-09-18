@@ -70,6 +70,44 @@ export type Author = {
   /** Non-degree continuing education — credited, never conflated with the degree. */
   continuingEducation?: string[];
   /**
+   * Hands-on practice, as one line for the credential stack — HOTFIX-30.
+   *
+   * ── Experience, and deliberately not a credential ────────────────────────
+   * This sits at the END of the stack, after the degree, the attestation, the
+   * membership and the coursework, because it is a different kind of claim:
+   * nothing issued it and no reference number confirms it. Putting it last
+   * keeps the checkable items at the top, where a sceptical reader looks
+   * first, and stops an unverifiable line borrowing their authority.
+   *
+   * In structured data it is `hasOccupation`, never
+   * `EducationalOccupationalCredential` — see personSchema.
+   *
+   * ⚠️ WORDING IS FIXED. HOTFIX-30 Part 3 chose each word against a specific
+   * failure:
+   *   "aesthetic clinics"  not "well-known clinics"   — unverifiable puff
+   *                                                     beside two real
+   *                                                     reference numbers
+   *   "practice"           not "clinical experience"  — "clinical" implies a
+   *                                                     clinician, which she
+   *                                                     is not
+   *   "in Lahore"          not "across Pakistan"      — a named city reads as
+   *                                                     fact, vague geography
+   *                                                     reads as padding
+   *   "Five years"         not "5 years"              — words, matching the
+   *                                                     rest of the stack
+   * Never "worked alongside doctors": it borrows authority nobody claimed.
+   */
+  experience?: string;
+  /**
+   * The same fact as an argument, for pages with room to make one.
+   *
+   * `experience` is a credential line. This is why the credential matters:
+   * it connects her background to the thing clients actually pay for, which
+   * is whether a photograph can be read. Only /about and /authors/[slug]
+   * have the space; everywhere else uses the single line.
+   */
+  experienceLong?: string;
+  /**
    * One sentence stating the limits of this person's scope. HOTFIX-6 §1:
    * this is not a hedge to soften — it is the fix. An AI crawler flagged this
    * site for being unclear whether these are medical credentials; stating the
@@ -176,6 +214,20 @@ export const AUTHORS: Record<string, Author> = {
     continuingEducation: TELEHEALTH
       ? [`${TELEHEALTH.name}, ${TELEHEALTH.issuer}`]
       : [],
+    /*
+     * HOTFIX-30 Part 1. "aesthetic clinics", not "aesthetics clinics" —
+     * Talha chose this, knowing it sits a few lines from the job title
+     * "Certified Aesthetics Practitioner". Both are correct English. If the
+     * two should ever match, it is one word in this one constant, and it is
+     * his call to make, not a tidy-up to do in passing.
+     */
+    experience: "Five years of practice in aesthetic clinics in Lahore",
+    experienceLong:
+      "Before Glam Repairs, Ayma spent five years in practice at aesthetic " +
+      "clinics in Lahore, assessing skin face to face. That is where the " +
+      "pattern recognition comes from. Several hundred faces a year, in the " +
+      "same climate and the same hard water, is what makes a photograph " +
+      "readable.",
     scopeDisclaimer:
       "Ayma is not a physician or dermatologist. Glam Repairs provides " +
       "cosmetic skincare guidance and does not diagnose, prescribe for, or " +

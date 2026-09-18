@@ -1,3 +1,5 @@
+import { PRACTITIONER } from "@/lib/seo/authors";
+
 /**
  * HANDOVER-13 — every FAQ on the site, once.
  *
@@ -148,9 +150,10 @@ export const FAQS: Faq[] = [
     group: "trust",
     tags: ["home", "about"],
     a:
-      "Ayma Arif, Certified Aesthetics Practitioner, with a BS in Cosmetology " +
+      // HOTFIX-30 §2 — name and title from PRACTITIONER, not retyped.
+      `${PRACTITIONER.name}, ${PRACTITIONER.title}, with a BS in Cosmetology ` +
       "and Dermatology Science attested by the Higher Education Commission of " +
-      "Pakistan. See her credentials.",
+      `Pakistan. ${PRACTITIONER.experience}. See her credentials.`,
     links: [
       { text: "Ayma Arif", href: "/authors/ayma-arif" },
       { text: "See her credentials", href: "/credentials" },

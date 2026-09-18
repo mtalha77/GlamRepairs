@@ -184,6 +184,19 @@ export default function CredentialsPage() {
           </table>
         </div>
 
+        {/*
+          HOTFIX-30 §2.1 — the experience line, below the table.
+
+          Outside the table on purpose. Every row above has an Issuer and a
+          Reference a stranger can check; this has neither. Given a row it
+          would need two empty cells, which reads as a missing reference
+          rather than as a different kind of claim. Below the table, in
+          prose, it is plainly context.
+        */}
+        {ayma.experience ? (
+          <p className="mt-8 text-sm text-black/65">{ayma.experience}.</p>
+        ) : null}
+
         {ayma.profiles?.length ? (
           <p className="mt-8 text-sm text-black/65">
             You can also check who {ayma.name.split(" ")[0]} is directly:{" "}

@@ -62,9 +62,21 @@ const BASE =
  */
 const BANNED = [
   {
-    re: /King Faisal/i,
+    /*
+     * Abbreviations too — HOTFIX-30.
+     *
+     * "KFU" was live on the HOMEPAGE while this rule was passing, because
+     * the rule only ever knew the full spelling. That is the fifth return of
+     * this university, and the first one a guard was supposed to catch.
+     *
+     * \b on both sides so it cannot fire on an unrelated word containing
+     * those letters. The real fix is that the string is no longer typed into
+     * a component at all; this is the net under it.
+     */
+    re: /King Faisal|\bKFU\b/i,
     why:
-      "The awarding university does not go on the degree line or in the " +
+      "The awarding university — including as 'KFU' — does not go on the " +
+      "degree line or in the " +
       "Person schema. It belongs on /credentials, in the hec-degree note, " +
       "where there is room to explain that HEC attested a degree the " +
       "university awarded. See lib/seo/schema.ts.",

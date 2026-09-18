@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import AnimatedSlideIn from "@/components/home/AnimatedSlideIn";
+import { PRACTITIONER } from "@/lib/seo/authors";
 
 export default function CeoSection() {
   return (
@@ -46,21 +47,36 @@ export default function CeoSection() {
             </h2>
           </header>
 
+          {/*
+            HOTFIX-30 §2 — read from PRACTITIONER, never retyped.
+
+            ⚠️ This block is why the rule exists. It carried "KFU" — King
+            Faisal University, abbreviated — on the HOMEPAGE, which is the
+            fifth time that university has come back after being removed.
+            The copy guard could not catch it: scripts/check-copy.mjs greps
+            /King Faisal/i, and an abbreviation matches nothing. A guard only
+            covers the spelling it was given, so the durable fix is not
+            another regex, it is this text not being typed here at all.
+            (The abbreviation is now banned too — belt and braces.)
+
+            It also carried "Clinic-trained", an unverifiable claim sitting
+            beside two checkable reference numbers, which is the exact
+            trade HOTFIX-30 Part 3 forbids.
+          */}
           <p className="mt-4 font-sans italic tracking-[-0.03em] text-brand-ink text-lg sm:text-xl lg:text-[1.375rem]">
-            Certified Aesthetics Practitioner
+            {PRACTITIONER.title}
           </p>
           <p className="mt-1 font-sans italic text-[rgba(31,31,31,0.55)] text-sm sm:text-[15px] lg:text-base">
-            (BS Cosmetology &amp; Dermatology Science &middot; KFU &middot;
-            Clinic-trained)
+            ({PRACTITIONER.credentials})
           </p>
 
           <p className="mt-6 w-full text-justify font-sans leading-relaxed text-brand-ink text-base sm:text-lg lg:text-xl">
             <span className="font-serif italic">Ayma Arif</span>{" "}is a
-            certified aesthetics practitioner with a Bachelor&apos;s degree in
-            Cosmetology and Dermatology Science. With hands-on experience across
-            multiple clinics in Pakistan, she has helped clients with skin
-            assessments, treatment planning, and evidence-based skincare
-            routines for a wide range of concerns.
+            {PRACTITIONER.title.toLowerCase()} with a Bachelor&apos;s degree
+            in Cosmetology and Dermatology Science. {PRACTITIONER.experience}.
+            She has helped clients with skin assessments, treatment planning,
+            and evidence-based skincare routines for a wide range of
+            concerns.
           </p>
           <p className="mt-5 w-full text-justify font-sans leading-relaxed text-brand-ink text-base sm:text-lg lg:text-xl">
             She co-founded Glam Repairs because she saw firsthand how many people

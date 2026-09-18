@@ -167,6 +167,31 @@ export function personSchema(author: Author) {
         ...(c.verifyUrl ? { url: c.verifyUrl } : {}),
       })),
     ],
+    /*
+     * HOTFIX-30 §2.2 — experience is an Occupation, NOT a credential.
+     *
+     * The tempting shortcut is a third `EducationalOccupationalCredential`
+     * next to the degree and the course, because the stack renders them one
+     * under the other. It would be wrong in a way that costs more than it
+     * gains: that type means a qualification some body issued, and five
+     * years of practice was issued by nobody. Overloading it invites an
+     * engine to discount the whole `hasCredential` array — including the HEC
+     * attestation, which is the one genuinely checkable claim on this site.
+     *
+     * `occupationLocation` is a City rather than a Country for the same
+     * reason the prose says Lahore and not Pakistan: a named place is a
+     * fact, and a vague one reads as padding.
+     */
+    ...(author.experience
+      ? {
+          hasOccupation: {
+            "@type": "Occupation",
+            name: author.title,
+            occupationLocation: { "@type": "City", name: "Lahore" },
+            experienceRequirements: author.experience,
+          },
+        }
+      : {}),
     ...(author.knowsAbout?.length ? { knowsAbout: author.knowsAbout } : {}),
     ...(author.memberOf
       ? {

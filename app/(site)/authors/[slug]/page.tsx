@@ -30,7 +30,11 @@ export async function generateMetadata({
   const author = getAuthor(slug);
   if (!author) return {};
 
-  const title = `${author.name} — ${author.title}`;
+  // HOTFIX-30 Part 1.1 — comma, matching the credential stack. This string
+  // is the browser tab and the search result, which is the most-seen place
+  // this person's name and title appear together; punctuating it one way
+  // there and another way on the page is the drift the stack exists to stop.
+  const title = `${author.name}, ${author.title}`;
   return {
     title,
     description: author.bio,
@@ -97,6 +101,17 @@ export default async function AuthorPage({
 
       <section className="mt-10 space-y-4 text-lg leading-relaxed text-black/80">
         <p>{author.bio}</p>
+        {/*
+          HOTFIX-30 §1.2 — the long form, on one of the two pages with room.
+
+          "Five years in clinics" is a credential and it belongs in the stack
+          below. This is the same fact doing a different job: it says why the
+          five years matter to someone deciding whether to send photographs,
+          which is the only question this page has to answer.
+        */}
+        {author.experienceLong ? (
+          <p className="mt-4">{author.experienceLong}</p>
+        ) : null}
       </section>
 
       <section className="mt-10 rounded-2xl bg-black/[0.03] px-6 py-5">
@@ -144,7 +159,14 @@ export default async function AuthorPage({
         <p className="mt-10 rounded-xl bg-black/[0.035] px-5 py-4 text-sm text-black/70">
           {author.name.split(" ")[0]} reviews content on {SITE.name} for
           accuracy. Articles carrying her review badge have been checked against
-          her clinical experience before publication. Read our{" "}
+          {/*
+            HOTFIX-30 Part 3 — was "her clinical experience". "Clinical"
+            implies a clinician, and Ayma is explicitly not one; the site
+            says so in her own scope disclaimer a few lines above. Claiming
+            it here, on the page whose whole job is establishing what she
+            is qualified to say, was the worst possible place for it.
+          */}
+          her practice before publication. Read our{" "}
           <Link href="/editorial-policy" className="underline underline-offset-2">
             editorial policy
           </Link>
