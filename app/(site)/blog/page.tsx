@@ -6,14 +6,15 @@ import JsonLd from "@/components/seo/JsonLd";
 import { listPublishedPosts } from "@/lib/studio/blog";
 import { AUTHORS } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph } from "@/lib/seo/schema";
-import { SITE } from "@/lib/seo/site";
+import { SITE, canonicalOg } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
   title: "Skin, explained",
   description:
     "Straight answers about skin from a certified practitioner — what is " +
     "actually happening, what to do about it, and when to see a doctor instead.",
-  alternates: { canonical: "/blog" },
+  // HOTFIX-31 §4.2 — canonical and og:url from one path.
+  ...canonicalOg("/blog"),
 };
 
 // Published posts change rarely; revalidate hourly rather than per request.

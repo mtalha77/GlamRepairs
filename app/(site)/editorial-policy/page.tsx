@@ -3,7 +3,7 @@ import Link from "next/link";
 import JsonLd from "@/components/seo/JsonLd";
 import { listReviewers, PRACTITIONER } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph } from "@/lib/seo/schema";
-import { SITE } from "@/lib/seo/site";
+import { SITE, canonicalOg } from "@/lib/seo/site";
 
 /**
  * Editorial policy.
@@ -19,7 +19,8 @@ import { SITE } from "@/lib/seo/site";
 export const metadata: Metadata = {
   title: "Editorial policy",
   description: `How ${SITE.name} researches, writes, reviews and updates its skincare content, and who is accountable for it.`,
-  alternates: { canonical: "/editorial-policy" },
+  // HOTFIX-31 §4.2 — canonical and og:url from one path.
+  ...canonicalOg("/editorial-policy"),
 };
 
 const SECTIONS = [

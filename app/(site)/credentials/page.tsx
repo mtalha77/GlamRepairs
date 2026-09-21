@@ -3,7 +3,7 @@ import Link from "next/link";
 import JsonLd from "@/components/seo/JsonLd";
 import { AUTHORS } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph } from "@/lib/seo/schema";
-import { CREDENTIALS, type Credential, type CredentialKind } from "@/lib/seo/site";
+import { CREDENTIALS, type Credential, type CredentialKind, canonicalOg } from "@/lib/seo/site";
 
 /**
  * HOTFIX-6 §2 — verifiable qualifications.
@@ -126,7 +126,8 @@ export const metadata: Metadata = {
   description:
     "Ayma Arif's confirmed credentials — issuing body, reference number, and " +
     "how to verify each one.",
-  alternates: { canonical: "/credentials" },
+  // HOTFIX-31 §4.2 — canonical and og:url from one path.
+  ...canonicalOg("/credentials"),
 };
 
 export default function CredentialsPage() {
