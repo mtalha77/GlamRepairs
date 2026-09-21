@@ -25,13 +25,15 @@ import { resolveFaqs } from "@/lib/faq";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 import { formatPlanPrice, getPaidPlan } from "@/lib/plans/plansPublic";
 import { faqSchema, graph } from "@/lib/seo/schema";
+import { canonicalOg } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description:
     "Compare our skin assessment plans. Each paid plan is read by a certified " +
     "practitioner and delivered as a written report you keep. One-time, no subscription.",
-  alternates: { canonical: "/pricing" },
+  // HOTFIX-31 §4.2 — canonical and og:url from one path.
+  ...canonicalOg("/pricing"),
 };
 
 export default async function PricingPage() {

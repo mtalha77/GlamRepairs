@@ -303,3 +303,39 @@ export const SOCIAL_CARD = {
   height: 630,
   alt: `${SITE.name} — ${SITE.tagline}`,
 } as const;
+
+/**
+ * Canonical and `og:url` from ONE path — HOTFIX-31 §4.2.
+ *
+ * ── The bug this closes ──────────────────────────────────────────────────
+ * Ten public pages set `alternates.canonical` and did not set
+ * `openGraph.url`. Page metadata merges field by field against the root, so
+ * canonical became the page while `og:url` stayed whatever the root layout
+ * declared — the HOMEPAGE. Every one of those pages told a crawler "I am
+ * /pricing" and told a social scraper "I am /". Ahrefs counted nine, which
+ * is the ten minus the homepage, where the two happen to agree.
+ *
+ * HOTFIX-31 §4.1/§4.2 blamed a non-www redirect. That is not it: production
+ * emits www everywhere and there is not one bare-domain URL in the markup.
+ * The mismatch is path-level, not host-level.
+ *
+ * ── Why `images` is not optional here ────────────────────────────────────
+ * A page-level `openGraph` REPLACES the inherited object rather than
+ * merging into it, so declaring `{ url }` alone would silently drop
+ * `og:image` and hand WhatsApp a thumbnailless preview — the exact
+ * regression HANDOVER-22 fixed. `SOCIAL_CARD` is therefore included by
+ * default, and a page with its own card passes `images` to override it.
+ */
+export function canonicalOg(
+  path: string,
+  extra: Record<string, unknown> = {},
+) {
+  return {
+    alternates: { canonical: path },
+    openGraph: {
+      url: path,
+      images: [SOCIAL_CARD],
+      ...extra,
+    },
+  };
+}

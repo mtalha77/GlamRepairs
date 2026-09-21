@@ -7,6 +7,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import { AIR_QUALITY_CITIES } from "@/lib/airQuality/cities";
 import { isAirQualityConfigured } from "@/lib/airQuality/provider";
 import { breadcrumbSchema, graph } from "@/lib/seo/schema";
+import { canonicalOg } from "@/lib/seo/site";
 
 /**
  * HANDOVER-22 §6 — the index.
@@ -29,7 +30,8 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: "Air quality and your skin",
   description: DESCRIPTION,
-  alternates: { canonical: "/air-quality" },
+  // HOTFIX-31 §4.2 — canonical and og:url from one path.
+  ...canonicalOg("/air-quality"),
 };
 
 export default function AirQualityIndexPage() {

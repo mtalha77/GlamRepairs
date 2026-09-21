@@ -37,6 +37,7 @@ import FaqSection from "@/components/faq/FaqSection";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
 import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
+import { canonicalOg } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
   title: "About",
@@ -44,7 +45,8 @@ export const metadata: Metadata = {
     "Glam Repairs provides online skin consultations in Pakistan — a personalised " +
     "skincare routine built for your skin, your climate and your budget, reviewed " +
     "by a certified aesthetics professional. No brand bias, no AI-generated advice.",
-  alternates: { canonical: "/about" },
+  // HOTFIX-31 §4.2 — canonical and og:url from one path.
+  ...canonicalOg("/about"),
 };
 
 export default function AboutPage() {

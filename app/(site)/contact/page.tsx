@@ -16,13 +16,15 @@ import FaqSection from "@/components/faq/FaqSection";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
 import { faqSchema, graph } from "@/lib/seo/schema";
+import { canonicalOg } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
   title: "Contact Us",
   description:
     "Questions about a skin assessment, your report, or how Glam Repairs " +
     "works? Get in touch and someone from our team will reply within one working day.",
-  alternates: { canonical: "/contact" },
+  // HOTFIX-31 §4.2 — canonical and og:url from one path.
+  ...canonicalOg("/contact"),
 };
 
 export default function ContactPage() {

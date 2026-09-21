@@ -34,7 +34,24 @@ export async function generateMetadata({
   const description = post.metaDescription || post.excerpt || undefined;
 
   return {
-    title,
+    /*
+     * HOTFIX-31 §4.3 — `absolute`, so the root template does NOT append
+     * " | GlamRepairs".
+     *
+     * The document's fix is "trim meta_title to 60", and on its own that
+     * does not work: the root layout's title template adds 14 characters,
+     * so a 60-character meta_title still renders a 74-character <title>.
+     * The live post measured 78.
+     *
+     * Those 14 characters were buying nothing. Google truncates around 60,
+     * so the brand suffix was being cut off in the result anyway, while
+     * still pushing the words that matter out of view. A post headline is
+     * self-describing and the domain is shown beside it.
+     *
+     * This drops every post by 14 characters. Titles still over 60 after
+     * it are an editorial trim, not a code fix — see the PR.
+     */
+    title: { absolute: title },
     description,
     alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
