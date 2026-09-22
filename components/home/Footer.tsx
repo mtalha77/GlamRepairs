@@ -10,23 +10,41 @@ const FOOTER_LOGO = "/svgs/GLAM REPAIR LOGO-08 2 (1).svg";
 
 const contactEmail = "glamrepairs@gmail.com";
 
+/*
+ * Footer navigation, in two columns.
+ *
+ * ── Privacy and Terms are deliberately NOT here ──────────────────────────
+ * They live in the bottom bar, and they used to live in both. Two links to
+ * the same page from one footer is wasted vertical space and splits the
+ * internal link signal between identical anchors.
+ *
+ * ── Why /air-quality is one link and not thirteen ────────────────────────
+ * HANDOVER-35 §4.1 asks for a footer block listing every published city.
+ * That is the right shape once cities exist, but it is also thirteen more
+ * rows in a footer that renders on every page, which is the opposite of
+ * compact. The index groups them by zone and is one click away, so this
+ * links the index and lets that page do the listing.
+ *
+ * Until this, /air-quality had NO incoming internal link from anywhere on
+ * the site. It was reachable only from the sitemap, which is the orphan
+ * condition Ahrefs has already flagged on two other pages.
+ */
 const pageLinks = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
-  { label: "Contact Us", href: "/contact" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Contact Us", href: "/contact" },
+];
+
+const resourceLinks = [
   // HANDOVER-22 §3 and §5b — the two pages that answer "what do I get?" and
   // "why you and not a clinic?", reachable from every page on the site.
   { label: "See a real assessment", href: "/sample-assessment" },
   { label: "Compare the options", href: "/compare" },
-];
-
-const resourceLinks = [
-  { label: "Terms & Conditions", href: "/terms" },
-  { label: "Privacy Policy", href: "/privacy" },
-  { label: "Editorial policy", href: "/editorial-policy" },
-  { label: "Credentials", href: "/credentials" },
   { label: "Blog", href: "/blog" },
+  { label: "Air quality and your skin", href: "/air-quality" },
+  { label: "Credentials", href: "/credentials" },
+  { label: "Editorial policy", href: "/editorial-policy" },
 ];
 
 const socialLinks = [
@@ -127,12 +145,12 @@ function FooterLinkList({
   links: { label: string; href: string }[];
 }) {
   return (
-    <ul className="mt-4 space-y-3">
+    <ul className="mt-3 space-y-1.5">
       {links.map((link) => (
         <li key={link.label}>
           <Link
             href={link.href}
-            className="gr-link-underline font-sans text-[17px] text-[#242424] transition-colors hover:text-brand-primary"
+            className="gr-link-underline font-sans text-[15px] text-[#242424] transition-colors hover:text-brand-primary"
           >
             {link.label}
           </Link>
@@ -147,10 +165,18 @@ export default function Footer() {
     <footer className="w-full bg-[#f3ecfb]">
       <CtaSection />
 
-      <div className="px-4 pt-12 pb-6 sm:px-8 sm:pt-14 lg:px-12">
+      <div className="px-4 pb-6 pt-10 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-md">
+          {/*
+            Three columns on desktop, stacked on mobile.
+
+            The link columns used to sit in their own row BELOW this one,
+            which left roughly 250px of empty space under the logo while the
+            footer grew by the height of the links. Same content, same
+            order on mobile, noticeably shorter page.
+          */}
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
+            <div className="lg:max-w-xs">
               <Image
                 src={FOOTER_LOGO}
                 alt="Glam Repairs"
@@ -165,13 +191,34 @@ export default function Footer() {
               </p>
             </div>
 
+            {/* The columns are unbalanced by design: four short links beside
+                six longer ones fills the row rather than leaving a ragged
+                gap. */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:gap-x-10 lg:flex-1">
+              <div>
+                <FooterHeading>Pages</FooterHeading>
+                <FooterLinkList links={pageLinks} />
+              </div>
+              <div>
+                <FooterHeading>Resources</FooterHeading>
+                <FooterLinkList links={resourceLinks} />
+              </div>
+            </div>
+
             <div className="lg:text-left">
               <p className="font-sans text-sm font-medium text-black">
                 Connect with us at
               </p>
               <a
                 href={`mailto:${contactEmail}`}
-                className="mt-1 block font-serif text-[1.75rem] italic tracking-[-0.02em] text-black transition-opacity hover:opacity-80 sm:text-[2.25rem] lg:text-[2.625rem]"
+                /*
+                 * `break-words` and a smaller mobile size because this
+                 * string is 21 characters of serif italic and was running
+                 * off the right edge of a 390px screen, where the sticky
+                 * Get Started tab also sits on top of it. It is a link
+                 * people tap, so it has to be fully visible.
+                 */
+                className="mt-1 block break-words pr-24 font-serif text-[1.125rem] italic tracking-[-0.02em] text-black transition-opacity hover:opacity-80 sm:pr-0 sm:text-[1.5rem] lg:text-[1.875rem]"
               >
                 {contactEmail}
               </a>
@@ -225,18 +272,7 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="mt-12 grid grid-cols-2 gap-8 lg:mt-16">
-            <div>
-              <FooterHeading>Pages</FooterHeading>
-              <FooterLinkList links={pageLinks} />
-            </div>
-            <div>
-              <FooterHeading>Resources</FooterHeading>
-              <FooterLinkList links={resourceLinks} />
-            </div>
-          </div>
-
-          <div className="mt-12 border-t border-brand-primary/15 pt-4 sm:mt-16">
+          <div className="mt-8 border-t border-brand-primary/15 pt-4">
             <div className="flex flex-col gap-2 text-xs text-[#242424] sm:flex-row sm:items-center sm:justify-between">
               <p>© 2026 Glam Repairs. All rights reserved.</p>
               <div className="flex gap-5">
