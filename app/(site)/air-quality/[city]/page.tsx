@@ -5,31 +5,44 @@ import Link from "next/link";
 import { onboardingHref } from "@/components/home/Navbar";
 import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
-import { AIR_QUALITY_BANDS } from "@/lib/airQuality/bands";
-import { AIR_QUALITY_CITIES, getAirQualityCity } from "@/lib/airQuality/cities";
-import { fetchAirQuality, isAirQualityConfigured } from "@/lib/airQuality/provider";
+import {
+  canShowLivePanel,
+  getAreaPage,
+  listPublishedAreaPages,
+  type AreaPage,
+} from "@/lib/airQuality/areaPages";
+import { renderMarkdown } from "@/lib/blog/markdown";
 import { breadcrumbSchema, graph } from "@/lib/seo/schema";
+import { SITE, SOCIAL_CARD, abs } from "@/lib/seo/site";
 
 /**
- * HANDOVER-22 §6 — a city page whose content updates itself.
+ * A city page whose content updates itself — HANDOVER-22 §6, rebuilt on the
+ * database per HANDOVER-35.
  *
  * ── Why a city page is defensible here and normally is not ───────────────
  * Templated "skincare in {city}" text is a doorway-page pattern and Google
  * filters it. Live local data removes that objection: a page carrying
- * today's actual particulate reading for Lahore, with guidance keyed to
- * that reading, is unique content that changes without anyone editing it.
+ * today's actual particulate reading, with guidance keyed to that reading
+ * and a paragraph of genuinely local fact above a shared zone essay, is
+ * unique content that changes without anyone editing it.
  *
- * That argument only holds while the live reading is actually there. So
- * with no API key configured, or with a city that has no entry, this route
- * 404s rather than publishing the thin version of itself.
+ * ── What changed from the first build ────────────────────────────────────
+ * It used to fetch OpenWeather live, per request, from a city list
+ * hardcoded in TypeScript, while a cron quietly populated WeatherAPI
+ * readings into tables this page never read. Two implementations of one
+ * feature. The content and the data both live in the database, so the page
+ * reads from there; see lib/airQuality/areaPages.ts.
  *
  * ── The medical boundary ─────────────────────────────────────────────────
- * Everything below describes what the air does to skin. Nothing describes
+ * Everything below describes what the air does to SKIN. Nothing describes
  * what it does to lungs, and nothing advises anyone about breathing, masks
- * or whether to go outside. See lib/airQuality/bands.ts.
+ * or whether to go outside. No medical schema is emitted for the same
+ * reason — HANDOVER-35 §3.2.
  */
 
-export const dynamic = "force-dynamic";
+/* One hour. The cron writes every 30 minutes, so this never serves a
+ * reading more than about ninety minutes old while costing one render. */
+export const revalidate = 3600;
 
 type PageProps = { params: Promise<{ city: string }> };
 
@@ -37,23 +50,32 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { city: slug } = await params;
-  const city = getAirQualityCity(slug);
-  if (!city) return {};
+  const page = await getAreaPage(slug);
+  if (!page) return {};
 
-  const title = `${city.name} air quality and your skin`;
-  const description =
-    `Today's particulate reading for ${city.name}, and what it actually means ` +
-    `for your skin — written by a certified practitioner, updated automatically.`;
-
+  const path = `/air-quality/${page.slug}`;
   return {
-    title,
-    description,
-    alternates: { canonical: `/air-quality/${city.slug}` },
+    /*
+     * The stored title is the bare headline; the root template appends
+     * " | GlamRepairs". Storing the brand here as well would double it,
+     * and HOTFIX-31 §4.3 is the cautionary tale about that suffix being
+     * forgotten in the arithmetic.
+     */
+    title: page.title,
+    description: page.metaDescription,
+    alternates: { canonical: path },
     openGraph: {
-      title: `${title} | GlamRepairs`,
-      description,
-      url: `/air-quality/${city.slug}`,
+      title: `${page.title} | ${SITE.name}`,
+      description: page.metaDescription,
+      url: path,
       type: "article",
+      /*
+       * `images` is not optional. A page-level openGraph REPLACES the
+       * inherited object, so omitting it drops og:image — which is exactly
+       * what the previous version of this file did, silently, on every
+       * air-quality page.
+       */
+      images: [SOCIAL_CARD],
     },
   };
 }
@@ -62,7 +84,6 @@ function formatWhen(iso: string) {
   return new Date(iso).toLocaleString("en-GB", {
     day: "numeric",
     month: "long",
-    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Asia/Karachi",
@@ -70,181 +91,302 @@ function formatWhen(iso: string) {
   });
 }
 
+function formatDay(iso: string) {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Karachi",
+  });
+}
+
+/**
+ * The structured data — HANDOVER-35 §3.1.
+ *
+ * `Dataset` is emitted only when there is a reading to describe. Claiming a
+ * dataset on a page showing no numbers would be describing something that
+ * is not on the page. `WebPage` and `BreadcrumbList` are emitted always,
+ * which is §6's rule: drop the Dataset node, keep the rest.
+ */
+function areaSchema(page: AreaPage, trail: Crumb[]) {
+  const path = `/air-quality/${page.slug}`;
+  const nodes: object[] = [
+    {
+      "@type": "WebPage",
+      "@id": abs(`${path}#webpage`),
+      url: abs(path),
+      name: page.title,
+      description: page.metaDescription,
+      inLanguage: "en-PK",
+      isPartOf: { "@id": abs("/#website") },
+      about: {
+        "@type": "City",
+        name: page.city,
+        address: {
+          "@type": "PostalAddress",
+          ...(page.province ? { addressRegion: page.province } : {}),
+          addressCountry: "PK",
+        },
+      },
+      // The honest freshness signal, and what makes the page worth
+      // re-crawling. It is the reading's time, never the build's.
+      ...(page.latest ? { dateModified: page.latest.fetchedAt } : {}),
+    },
+    breadcrumbSchema(trail),
+  ];
+
+  if (page.latest) {
+    nodes.push({
+      "@type": "Dataset",
+      name: `${page.city} air quality readings`,
+      description: `Hourly air quality and weather readings for ${page.city}, Pakistan.`,
+      temporalCoverage: `${page.latest.observedAt.slice(0, 7)}/..`,
+      spatialCoverage: {
+        "@type": "Place",
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: page.latitude,
+          longitude: page.longitude,
+        },
+      },
+      creator: {
+        "@type": "Organization",
+        name: "WeatherAPI.com",
+        url: "https://www.weatherapi.com/",
+      },
+      isAccessibleForFree: true,
+    });
+  }
+
+  return graph(...nodes);
+}
+
 export default async function AirQualityCityPage({ params }: PageProps) {
-  // Order matters: the key check comes first, so an unconfigured deployment
-  // never reveals which cities exist.
-  if (!isAirQualityConfigured()) notFound();
-
   const { city: slug } = await params;
-  const city = getAirQualityCity(slug);
-  if (!city) notFound();
+  const page = await getAreaPage(slug);
+  // Draft and unknown slugs both 404 here, so an unpublished city is a
+  // genuine miss rather than an empty rendered page — §1.1.
+  if (!page) notFound();
 
-  const reading = await fetchAirQuality(city.lat, city.lon);
-  const band = reading ? AIR_QUALITY_BANDS[reading.band] : null;
-
-  /* Declared once, consumed twice — see components/seo/Breadcrumbs. */
+  const showLive = canShowLivePanel(page);
   const trail: Crumb[] = [
     { name: "Home", path: "/" },
     { name: "Air quality", path: "/air-quality" },
-    { name: city.name, path: `/air-quality/${city.slug}` },
+    { name: page.city, path: `/air-quality/${page.slug}` },
   ];
 
   return (
     <>
-      <JsonLd data={graph(breadcrumbSchema(trail))} />
+      <JsonLd data={areaSchema(page, trail)} />
 
       <main className="mx-auto max-w-3xl px-5 py-14 sm:px-6 sm:py-16">
         <Breadcrumbs trail={trail} className="mb-8 text-brand-gray" />
 
         <header>
+          {/* Exactly one H1, and the live number is deliberately not in it:
+              a heading that changes hourly gives Google no stable signal
+              about what the page is — §2.3. */}
           <h1 className="font-serif text-3xl leading-tight text-brand-primary sm:text-4xl">
-            {city.name} air quality and your skin
+            {page.h1}
           </h1>
-          <p className="mt-3 text-sm text-brand-gray">{city.region}</p>
+          {page.introMarkdown ? (
+            <div
+              className="prose-area mt-4 text-brand-ink"
+              dangerouslySetInnerHTML={{
+                __html: renderMarkdown(page.introMarkdown),
+              }}
+            />
+          ) : null}
         </header>
 
-        {reading && band ? (
-          <section className={`mt-8 rounded-2xl border p-6 ${band.tone}`}>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-gray">
-              Right now
-            </p>
-            <p className="mt-2 font-serif text-4xl leading-none text-brand-ink">
-              {band.label}
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-brand-ink">
-              {band.summary}
-            </p>
+        {/*
+          §5.2 — the panel's height is reserved whether or not data arrives.
+          `min-h` on the container means the editorial below it sits in the
+          same place either way, so a missing reading cannot shift the page.
+          This is the single most likely way these pages would damage CLS.
+        */}
+        <section className="mt-10 min-h-[13rem]">
+          <h2 className="font-serif text-2xl leading-snug text-brand-primary">
+            Air in {page.city} right now
+          </h2>
 
-            <dl className="mt-5 grid grid-cols-2 gap-4 sm:max-w-sm">
-              <div>
-                <dt className="text-xs text-brand-gray">PM2.5</dt>
-                <dd className="mt-0.5 text-lg font-medium text-brand-ink">
-                  {reading.pm25.toFixed(1)}{" "}
-                  <span className="text-sm font-normal text-brand-gray">
-                    µg/m³
-                  </span>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-brand-gray">PM10</dt>
-                <dd className="mt-0.5 text-lg font-medium text-brand-ink">
-                  {reading.pm10.toFixed(1)}{" "}
-                  <span className="text-sm font-normal text-brand-gray">
-                    µg/m³
-                  </span>
-                </dd>
-              </div>
-            </dl>
-
-            <p className="mt-5 text-xs leading-relaxed text-brand-gray">
-              Measured {formatWhen(reading.measuredAt)}. The band shown is
-              OpenWeather&apos;s own five-point air quality index, which is a
-              different scale from the 0–500 US AQI quoted in the news — the
-              particulate figures above are the comparable numbers.
+          {showLive && page.latest ? (
+            <>
+              <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                  ["PM2.5", page.latest.pm25, "µg/m³"],
+                  ["PM10", page.latest.pm10, "µg/m³"],
+                  ["Temp", page.latest.tempC, "°C"],
+                  ["Humidity", page.latest.humidity, "%"],
+                ].map(([label, value, unit]) => (
+                  <div
+                    key={String(label)}
+                    className="rounded-2xl border border-brand-lavender/70 bg-white p-4"
+                  >
+                    <dt className="text-xs uppercase tracking-wide text-brand-gray">
+                      {label}
+                    </dt>
+                    <dd className="mt-1 text-2xl text-brand-primary tabular-nums">
+                      {value == null ? "—" : String(value)}
+                      <span className="ml-1 text-sm text-brand-gray">
+                        {value == null ? "" : unit}
+                      </span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-3 text-xs text-brand-gray">
+                {page.latest.conditionText ? `${page.latest.conditionText}. ` : ""}
+                Reading taken {formatWhen(page.latest.observedAt)}.{" "}
+                {/* Required by the WeatherAPI free plan, and a legitimate
+                    source citation rather than a link to suppress — §5.5. */}
+                Powered by{" "}
+                <a
+                  href="https://www.weatherapi.com/"
+                  title="Weather API"
+                  className="underline underline-offset-2"
+                >
+                  WeatherAPI.com
+                </a>
+              </p>
+            </>
+          ) : (
+            <p className="mt-4 rounded-2xl border border-brand-lavender/70 bg-white px-4 py-5 text-sm leading-relaxed text-brand-gray">
+              Live readings for {page.city} are unavailable at the moment. The
+              guidance below does not depend on today&apos;s number.
             </p>
-          </section>
-        ) : (
-          <p className="mt-8 rounded-2xl border border-brand-border-light/70 bg-brand-surface/50 px-5 py-5 text-sm leading-relaxed text-brand-gray">
-            Today&apos;s reading is unavailable. Rather than show you a stale
-            number, the guidance below is the part that does not change.
-          </p>
-        )}
+          )}
+        </section>
 
-        {band ? (
+        {page.advice ? (
           <section className="mt-10">
             <h2 className="font-serif text-2xl leading-snug text-brand-primary">
               What this means for your skin today
             </h2>
-            <ul className="mt-4 space-y-3">
-              {band.skinGuidance.map((line) => (
-                <li
-                  key={line}
-                  className="flex items-start gap-2.5 text-[0.9375rem] leading-relaxed text-brand-ink"
-                >
-                  <span
-                    aria-hidden
-                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-primary"
-                  />
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-4 text-xs leading-relaxed text-brand-gray">
-              This page is about skin. It does not give advice about
-              breathing, masks or respiratory symptoms — that is a doctor&apos;s
-              territory, not ours.
+            <p className="mt-3 font-medium text-brand-ink">
+              {page.advice.headline}
+            </p>
+            <p className="mt-2 leading-relaxed text-brand-ink">
+              {page.advice.advice}
             </p>
           </section>
         ) : null}
 
-        <section className="mt-10">
-          <h2 className="font-serif text-2xl leading-snug text-brand-primary">
-            {city.name} through the year
-          </h2>
-          <p className="mt-4 text-[0.9375rem] leading-relaxed text-brand-ink">
-            {city.seasonalNote}
-          </p>
-          <p className="mt-4 text-[0.9375rem] leading-relaxed text-brand-ink">
-            <Link
-              href={`/blog/${city.relatedPostSlug}`}
-              className="text-brand-primary underline underline-offset-2"
-            >
-              Why skin gets worse in Pakistan — pollution, humidity and hard
-              water
-            </Link>{" "}
-            goes through the mechanism in full.
-          </p>
-        </section>
+        {showLive && page.forecast.length ? (
+          <section className="mt-10">
+            <h2 className="font-serif text-2xl leading-snug text-brand-primary">
+              The next three days
+            </h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {page.forecast.map((d) => (
+                <div
+                  key={d.date}
+                  className="rounded-2xl border border-brand-lavender/70 bg-white p-4"
+                >
+                  <p className="text-xs uppercase tracking-wide text-brand-gray">
+                    {formatDay(d.date)}
+                  </p>
+                  <p className="mt-1 text-brand-ink">
+                    {d.maxTempC == null ? "—" : `${Math.round(d.maxTempC)}°`}
+                    {d.minTempC == null ? "" : ` / ${Math.round(d.minTempC)}°`}
+                  </p>
+                  <p className="mt-0.5 text-xs text-brand-gray">
+                    {d.conditionText ?? ""}
+                    {d.uvIndex == null ? "" : ` · UV ${d.uvIndex}`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-        <section className="mt-12 rounded-[2rem] bg-brand-cream/70 px-5 py-8 text-center sm:px-8 sm:py-10">
-          <h2 className="font-serif text-2xl leading-snug text-brand-primary sm:text-[1.75rem]">
-            A routine built for this air
+        {page.cityMarkdown ? (
+          <section className="mt-12">
+            <h2 className="font-serif text-2xl leading-snug text-brand-primary">
+              Skin in {page.city} specifically
+            </h2>
+            <div
+              className="prose-area mt-3 text-brand-ink"
+              dangerouslySetInnerHTML={{
+                __html: renderMarkdown(page.cityMarkdown),
+              }}
+            />
+          </section>
+        ) : null}
+
+        {page.zoneGuidance ? (
+          <section className="mt-12">
+            {/* The city paragraph renders ABOVE this, so a reader in
+                Faisalabad gets the Faisalabad fact before the shared essay. */}
+            <h2 className="font-serif text-2xl leading-snug text-brand-primary">
+              Skin in the {page.zoneName}
+            </h2>
+            <div
+              className="prose-area mt-3 text-brand-ink"
+              dangerouslySetInnerHTML={{
+                __html: renderMarkdown(page.zoneGuidance),
+              }}
+            />
+          </section>
+        ) : null}
+
+        {page.zoneSiblings.length ? (
+          <section className="mt-12">
+            <h2 className="font-serif text-2xl leading-snug text-brand-primary">
+              Other cities in this zone
+            </h2>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {page.zoneSiblings.map((s) => (
+                <li key={s.slug}>
+                  <Link
+                    href={`/air-quality/${s.slug}`}
+                    className="inline-block rounded-full border border-brand-lavender px-3 py-1.5 text-sm text-brand-primary hover:bg-brand-lavender/20"
+                  >
+                    {s.city} air quality
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <section className="mt-12 rounded-2xl border border-brand-lavender/70 bg-white p-6">
+          <h2 className="font-serif text-2xl leading-snug text-brand-primary">
+            Get an assessment for your skin
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-brand-gray sm:text-[0.9375rem]">
-            Generic guidance can only go so far. A practitioner reads your
-            photographs and writes a routine for your skin, in your climate.
+          <p className="mt-2 leading-relaxed text-brand-gray">
+            General guidance for {page.city} only goes so far. A practitioner
+            reading your photographs can tell you which of this actually
+            applies to you.
           </p>
-          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href={onboardingHref}
-              className="inline-flex items-center justify-center rounded-full bg-brand-primary px-10 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90 sm:text-sm"
+              className="rounded-full bg-brand-primary px-5 py-2.5 text-sm text-white"
             >
-              Start my assessment
+              Start an assessment
             </Link>
             <Link
               href="/sample-assessment"
-              className="inline-flex items-center justify-center rounded-full border border-brand-primary/40 px-10 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] text-brand-primary transition-colors hover:bg-brand-primary/5 sm:text-sm"
+              className="rounded-full border border-brand-lavender px-5 py-2.5 text-sm text-brand-primary"
             >
-              See a real assessment
+              See a sample assessment first
             </Link>
           </div>
         </section>
-
-        {/*
-          OpenWeather's free tier permits commercial use, and requires this
-          attribution to be visible on the page where the data appears. It is
-          a licence condition, not a courtesy — do not remove it, and do not
-          move it into a legal page.
-        */}
-        <p className="mt-10 text-xs text-brand-gray">
-          Air quality data provided by{" "}
-          <a
-            href="https://openweathermap.org/"
-            target="_blank"
-            rel="noopener"
-            className="underline underline-offset-2"
-          >
-            OpenWeather
-          </a>
-          , licensed under the Open Database License.
-        </p>
       </main>
     </>
   );
 }
 
-export function generateStaticParams() {
-  // Present for route typing; the page is force-dynamic, so nothing is
-  // prebuilt and an unconfigured deployment still 404s.
-  return AIR_QUALITY_CITIES.map((city) => ({ city: city.slug }));
+/**
+ * Published slugs only — §1.1.
+ *
+ * A static list means /air-quality/sargodha is a genuine 404 rather than an
+ * empty rendered page, and it is why no query parameter is ever read for a
+ * location: that would be a crawlable infinite space.
+ */
+export async function generateStaticParams() {
+  const pages = await listPublishedAreaPages();
+  return pages.map((p) => ({ city: p.slug }));
 }

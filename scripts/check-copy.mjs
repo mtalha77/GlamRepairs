@@ -250,8 +250,8 @@ if (skipped.length) {
   console.log("SKIPPED (not reachable — these were NOT checked):");
   skipped.forEach((s) => console.log(`  - ${s}`));
   console.log(
-    "  Locally this is usually Supabase or OPENWEATHER_API_KEY being " +
-      "absent, which 404s the blog posts and /air-quality. Those are the " +
+    "  Locally this is usually Supabase being " +
+      "unreachable, which 404s the blog posts and the area pages. Those " +
       "pages most of the copy lives on, so a local pass is weaker than a " +
       "pass against a real deployment.\n",
   );
