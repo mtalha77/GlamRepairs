@@ -778,6 +778,50 @@ export type Database = {
     };
     Views: {
       /**
+       * HANDOVER-35 — one row per city with its zone, latest reading,
+       * three-day forecast, band advice and PUBLISHED siblings pre-joined.
+       *
+       * Read through lib/airQuality/areaPages.ts rather than querying
+       * directly: the jsonb columns arrive loosely typed and every numeric
+       * crosses PostgREST as a string, so the mapping belongs in one place.
+       */
+      area_page_data: {
+        Row: {
+          slug: string;
+          city: string;
+          province: string | null;
+          latitude: number | string;
+          longitude: number | string;
+          timezone: string | null;
+          title: string;
+          h1: string;
+          meta_description: string;
+          target_keyword: string | null;
+          intro_markdown: string | null;
+          city_markdown: string | null;
+          seasonal_markdown: string | null;
+          water_note: string | null;
+          related_slugs: string[] | null;
+          status: string;
+          sort_order: number;
+          covers: string | null;
+          population_rank: number | null;
+          zone_slug: string | null;
+          zone_name: string | null;
+          zone_summary: string | null;
+          zone_guidance: string | null;
+          dominant_factor: string | null;
+          /** Null until the cron has succeeded once for this city. */
+          latest: Record<string, unknown> | null;
+          forecast: Record<string, unknown>[] | null;
+          advice: Record<string, unknown> | null;
+          zone_siblings: Record<string, unknown>[] | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /**
        * HOTFIX-29 §2.3 — one row per code with a computed `state`.
        *
        * `state` is `available` | `redeemed` | `expired` | `deactivated`,

@@ -2,8 +2,7 @@ import type { MetadataRoute } from "next";
 import { abs } from "@/lib/seo/site";
 import { listAuthors } from "@/lib/seo/authors";
 import { listPublishedForSitemap } from "@/lib/studio/blog";
-import { AIR_QUALITY_CITIES } from "@/lib/airQuality/cities";
-import { isAirQualityConfigured } from "@/lib/airQuality/provider";
+import { listPublishedAreaPages } from "@/lib/airQuality/areaPages";
 
 /**
  * sitemap.xml
@@ -62,20 +61,33 @@ const STATIC_ROUTES: {
 ];
 
 /**
- * HANDOVER-22 §6 — the air-quality pages are listed only when they exist.
+ * Air-quality entries, generated from the DATABASE — HANDOVER-35 §5.3.
  *
- * They 404 without an API key, and a sitemap that lists 404s is worse than
- * one that omits a page: it is a direct signal to Google that the file
- * cannot be trusted. Conditional here rather than always-on for that reason.
+ * It used to map a hardcoded city list gated on an API key. Two problems:
+ * the list could drift from what the site actually serves, which is how
+ * four URLs were silently omitted before, and the key gate is the wrong
+ * question now that readings come from a cron rather than a request-time
+ * fetch. A city is in the sitemap when it is PUBLISHED, which is the same
+ * condition the route itself uses to decide whether to 404.
+ *
+ * `lastmod` is the reading's own `fetched_at`. This is the one place on the
+ * site where a real lastmod is genuinely useful: it tells a crawler the
+ * page changed because the DATA changed, which is the whole argument for
+ * re-crawling it. On the static pages it is deliberately omitted, because
+ * a lastmod that just tracks the build is noise.
  */
-function airQualityEntries(): MetadataRoute.Sitemap {
-  if (!isAirQualityConfigured()) return [];
+async function airQualityEntries(): Promise<MetadataRoute.Sitemap> {
+  const cities = await listPublishedAreaPages();
+  if (cities.length === 0) return [];
+
   return [
     { url: abs("/air-quality"), changeFrequency: "daily", priority: 0.6 },
-    ...AIR_QUALITY_CITIES.map((city) => ({
-      url: abs(`/air-quality/${city.slug}`),
-      changeFrequency: "daily" as const,
-      priority: 0.7,
+    ...cities.map((c) => ({
+      url: abs(`/air-quality/${c.slug}`),
+      // hourly is honest here: the cron writes every thirty minutes.
+      changeFrequency: "hourly" as const,
+      priority: 0.6,
+      ...(c.latest ? { lastModified: new Date(c.latest.fetchedAt) } : {}),
     })),
   ];
 }
@@ -108,7 +120,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...staticEntries,
-    ...airQualityEntries(),
+    ...await airQualityEntries(),
     ...authorEntries,
     ...postEntries,
   ];

@@ -1,96 +1,107 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import Link from "next/link";
 
 import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
-import JsonLd from "@/components/seo/JsonLd";
-import { AIR_QUALITY_CITIES } from "@/lib/airQuality/cities";
-import { isAirQualityConfigured } from "@/lib/airQuality/provider";
-import { breadcrumbSchema, graph } from "@/lib/seo/schema";
+import { listPublishedAreaPages } from "@/lib/airQuality/areaPages";
 import { canonicalOg } from "@/lib/seo/site";
 
 /**
- * HANDOVER-22 §6 — the index.
+ * The air-quality index — HANDOVER-35 §4.1.
  *
- * One city today, by instruction: "Build Lahore first and only. Add Karachi
- * and Islamabad once Lahore proves it gets traffic." The page is written so
- * that adding a second city is an entry in lib/airQuality/cities.ts and
- * nothing here.
+ * Grouped by zone, because the zone is a content component rather than a
+ * URL: there are deliberately no /zones/ routes to duplicate against the
+ * city pages that already embed the same essay.
  *
- * 404s without an API key for the same reason the city page does — the live
- * reading is what makes these pages worth publishing at all.
+ * This is also one of the three incoming links every city page needs. The
+ * footer and the homepage strip are the other two — a page with one
+ * incoming link is the orphan warning Ahrefs has already raised twice.
  */
-
-export const dynamic = "force-dynamic";
-
-const DESCRIPTION =
-  "Today's particulate readings for Pakistani cities, and what they actually " +
-  "mean for your skin — not for your lungs.";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Air quality and your skin",
-  description: DESCRIPTION,
-  // HOTFIX-31 §4.2 — canonical and og:url from one path.
+  title: "Air quality and your skin, by city",
+  description:
+    "Live particulate readings for cities across Pakistan, and what each one means for your skin, written by a certified practitioner.",
   ...canonicalOg("/air-quality"),
 };
 
-export default function AirQualityIndexPage() {
-  if (!isAirQualityConfigured()) notFound();
+export default async function AirQualityIndexPage() {
+  const pages = await listPublishedAreaPages();
 
-  /*
-   * HOTFIX-25 §1.2 — the visible trail and the BreadcrumbList were two
-   * hand-written copies of the same hierarchy; they now share one array.
-   * See components/seo/Breadcrumbs.
-   */
+  const zones = pages.reduce<Map<string, { name: string; summary: string | null; cities: typeof pages }>>(
+    (acc, p) => {
+      const key = p.zoneSlug ?? "other";
+      const entry = acc.get(key) ?? {
+        name: p.zoneName ?? "Other cities",
+        summary: p.zoneSummary,
+        cities: [],
+      };
+      entry.cities.push(p);
+      acc.set(key, entry);
+      return acc;
+    },
+    new Map(),
+  );
+
   const trail: Crumb[] = [
     { name: "Home", path: "/" },
     { name: "Air quality", path: "/air-quality" },
   ];
 
   return (
-    <>
-      <JsonLd data={graph(breadcrumbSchema(trail))} />
+    <main className="mx-auto max-w-3xl px-5 py-14 sm:px-6 sm:py-16">
+      <Breadcrumbs trail={trail} className="mb-8 text-brand-gray" />
 
-      <main className="mx-auto max-w-3xl px-5 py-14 sm:px-6 sm:py-16">
-        <Breadcrumbs trail={trail} className="mb-8 text-brand-gray" />
+      <h1 className="font-serif text-3xl leading-tight text-brand-primary sm:text-4xl">
+        Air quality and your skin, by city
+      </h1>
+      <p className="mt-4 leading-relaxed text-brand-gray">
+        What the air is doing in each city, and what that means for skin. The
+        readings update through the day; the guidance is written once per
+        climate zone, because cities that share a climate share a problem.
+      </p>
 
-        <header>
-          <p className="gr-eyebrow mb-3">Live readings</p>
-          <h1 className="font-serif text-3xl leading-tight text-brand-primary sm:text-4xl">
-            Air quality and your skin
-          </h1>
-          <p className="mt-4 text-base leading-relaxed text-brand-ink sm:text-lg">
-            Every air quality site tells you what today&apos;s reading means
-            for your lungs. This one tells you what it means for your skin —
-            what to change in your routine, and what not to.
-          </p>
-        </header>
-
-        <ul className="mt-10 space-y-4">
-          {AIR_QUALITY_CITIES.map((city) => (
-            <li key={city.slug}>
-              <Link
-                href={`/air-quality/${city.slug}`}
-                className="block rounded-2xl border border-brand-lavender/60 bg-white px-5 py-5 shadow-sm transition-shadow hover:shadow-md"
-              >
-                <span className="font-serif text-2xl text-brand-primary">
-                  {city.name}
-                </span>
-                <span className="mt-0.5 block text-sm text-brand-gray">
-                  {city.region}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-
-        <p className="mt-8 text-sm leading-relaxed text-brand-gray">
-          More cities follow once this one proves useful. A city page is only
-          worth publishing when it carries that city&apos;s own live reading
-          and its own seasonal pattern — a page that is this one with the name
-          changed helps nobody.
+      {pages.length === 0 ? (
+        /* Not an error state. Cities are drafts until the content is signed
+           off, and an empty index is the honest rendering of that. */
+        <p className="mt-10 rounded-2xl border border-dashed border-brand-lavender bg-white px-4 py-10 text-center text-sm text-brand-gray">
+          City pages are being prepared and will appear here shortly.
         </p>
-      </main>
-    </>
+      ) : (
+        <div className="mt-10 space-y-10">
+          {[...zones.entries()].map(([slug, zone]) => (
+            <section key={slug}>
+              <h2 className="font-serif text-2xl leading-snug text-brand-primary">
+                {zone.name}
+              </h2>
+              {zone.summary ? (
+                <p className="mt-2 text-sm leading-relaxed text-brand-gray">
+                  {zone.summary}
+                </p>
+              ) : null}
+              <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                {zone.cities.map((c) => (
+                  <li key={c.slug}>
+                    <Link
+                      href={`/air-quality/${c.slug}`}
+                      className="block rounded-2xl border border-brand-lavender/70 bg-white p-4 transition-colors hover:border-brand-primary"
+                    >
+                      <span className="block font-medium text-brand-ink">
+                        {c.city}
+                      </span>
+                      {c.covers ? (
+                        <span className="mt-0.5 block text-xs text-brand-gray">
+                          Covers {c.covers}
+                        </span>
+                      ) : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
+    </main>
   );
 }
