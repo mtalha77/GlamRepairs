@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { refreshAirQuality } from "@/lib/airQuality/refresh";
@@ -87,6 +88,44 @@ export async function GET(request: Request) {
    * health check, and a non-2xx here would have Vercel retry a job that
    * already wrote the cities it could reach. The body carries the detail.
    */
+  /*
+   * Push the new readings onto the pages, rather than waiting for ISR.
+   *
+   * Both air-quality routes are `revalidate = 3600`. Without this the
+   * first successful refresh wrote thirteen cities into the database and
+   * every page carried on serving the render from before it — measured on
+   * production: the DB row was two minutes old and `is_stale` false while
+   * /air-quality/lahore still said "Live readings are unavailable at the
+   * moment". An hourly cron feeding hourly-cached pages means a reading is
+   * up to two hours old by the time anyone sees it, which is most of the
+   * six-hour freshness window spent before the page even updates.
+   *
+   * Only the cities that actually refreshed are invalidated, so a city
+   * that failed keeps serving its last good render instead of being
+   * rebuilt to show nothing.
+   */
+  for (const result of results) {
+    if (!result.ok || result.slug === "*") continue;
+    try {
+      revalidatePath(`/air-quality/${result.slug}`);
+    } catch (e) {
+      console.error(
+        `[cron/air-quality] revalidate ${result.slug}`,
+        e instanceof Error ? e.message : e,
+      );
+    }
+  }
+  if (results.some((r) => r.ok)) {
+    try {
+      revalidatePath("/air-quality");
+    } catch (e) {
+      console.error(
+        "[cron/air-quality] revalidate hub",
+        e instanceof Error ? e.message : e,
+      );
+    }
+  }
+
   return NextResponse.json({
     ok: failed.length === 0,
     refreshed: results.filter((r) => r.ok).length,
