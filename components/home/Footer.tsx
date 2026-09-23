@@ -101,7 +101,20 @@ function CtaSection() {
           </span>
         </h2>
         <p className="mx-auto mt-4 max-w-xl font-sans tracking-[-0.01em] text-brand-ink text-base sm:mt-5 sm:text-lg lg:text-[1.375rem]">
-          Let our skincare specialists create a treatment plan{" "}
+          {/*
+            HOTFIX-36 §4.1. Two faults, both real and both sitewide: "our
+            skincare specialists" is plural when there is one practitioner,
+            and "treatment plan" is medical language the rest of the site
+            avoids on purpose.
+
+            §4.1's replacement copy ("Credentials tell you who is reading
+            your photographs...") is not used HERE, because this block
+            renders on every page including the homepage, where a sentence
+            about credentials makes no sense. That copy is the closing card
+            on /credentials, which is where the design put it. This block
+            keeps its own job and loses the two faults.
+          */}
+          Let a certified practitioner read your skin and write a plan{" "}
           <span className="font-serif italic">tailored</span> to your{" "}
           <span className="font-serif italic">needs.</span>
         </p>

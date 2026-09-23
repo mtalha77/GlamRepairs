@@ -142,7 +142,15 @@ export function personSchema(author: Author) {
           ? {
               recognizedBy: {
                 "@type": "Organization",
-                name: HEC_DEGREE.issuer,
+                /*
+                 * HOTFIX-36 §3.5 — the bare organisation name, without the
+                 * "(HEC)" the display string carries. A parenthetical
+                 * abbreviation is a reading aid for a human looking at a
+                 * card; inside an `Organization` node it is part of the
+                 * name being asserted, and it is not what the commission
+                 * calls itself.
+                 */
+                name: HEC_DEGREE.issuer.replace(" (HEC)", ""),
               },
             }
           : {}),
