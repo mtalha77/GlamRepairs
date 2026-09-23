@@ -24,7 +24,53 @@ import { AUTHORS } from "@/lib/seo/authors";
  * qualified reviewer and a body long enough to be worth publishing.
  */
 
-export type ActionResult = { ok: true } | { ok: false; error: string };
+export type PublishBundleMember = {
+  slug: string;
+  title: string;
+  isRoot: boolean;
+};
+
+export type ActionResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error: string;
+      /**
+       * Set when publishing was refused because the post links to drafts.
+       *
+       * The editor uses it to offer publishing the whole set rather than
+       * leaving the author at a dead end — the refusal names one slug, but
+       * the real cost is usually more than one post, and they should see
+       * that before they agree to it.
+       */
+      bundle?: PublishBundleMember[];
+    };
+
+/**
+ * The link-integrity refusal, as raised by private.blog_link_integrity().
+ *
+ * Matched on the errcode the trigger sets rather than on the message, so
+ * rewording the message cannot silently turn the bundle offer off. 23514 is
+ * check_violation.
+ */
+function isLinkIntegrityError(err: { code?: string; message?: string }): boolean {
+  return err.code === "23514" && /unpublished slug/i.test(err.message ?? "");
+}
+
+/** The post plus every unpublished post it transitively links to. */
+async function publishBundleFor(slug: string): Promise<PublishBundleMember[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("blog_publish_set", {
+    p_slug: slug,
+  });
+  if (error || !data) {
+    console.error("[publishBundleFor]", error?.message);
+    return [];
+  }
+  return (data as { slug: string; title: string; is_root: boolean }[]).map(
+    (r) => ({ slug: r.slug, title: r.title, isRoot: r.is_root }),
+  );
+}
 
 const MIN_PUBLISH_CHARS = 1200;
 
@@ -202,12 +248,74 @@ export async function publishBlogPost(formData: FormData): Promise<ActionResult>
     .eq("id", saved.id);
 
   if (upErr) {
+    /*
+     * A link-integrity refusal is not a dead end any more.
+     *
+     * The message names one unpublished slug, but the set that actually
+     * has to go live is usually larger and is always transitive: this post
+     * links to a draft, which links to another draft. Hand the editor the
+     * whole set so it can offer to publish them together and show what
+     * that really costs, rather than the author discovering it one refusal
+     * at a time.
+     */
+    if (isLinkIntegrityError(upErr)) {
+      return {
+        ok: false,
+        error: upErr.message,
+        bundle: await publishBundleFor(data.slug),
+      };
+    }
     console.error("[publishBlogPost:update]", upErr.message);
     return { ok: false, error: upErr.message };
   }
 
   revalidatePath("/blog");
   revalidatePath(`/blog/${data.slug}`);
+  revalidatePath("/studio/blog");
+  revalidatePath("/sitemap.xml");
+  return { ok: true };
+}
+
+/**
+ * Publish this post together with every draft it links to.
+ *
+ * Only reachable after `publishBlogPost` has already refused and returned
+ * a bundle, so the author has seen the list and agreed to it. Everything
+ * the single-post path checks still applies: this saves and validates
+ * through `publishBlogPost` first, and only widens the set once that has
+ * passed on the root post.
+ *
+ * The publish itself goes through `publish_blog_posts`, which puts the
+ * whole set in one transaction so the deferred link check validates them
+ * together. Publishing them one at a time in a loop would fail on the
+ * first, which is the situation this exists to escape.
+ */
+export async function publishBlogPostBundle(
+  formData: FormData,
+): Promise<ActionResult> {
+  const auth = await guard();
+  if (!auth) return { ok: false, error: "Not signed in." };
+
+  // Re-run the single-post path. It saves, checks the reviewer and the
+  // length, and either succeeds outright (nothing else was needed) or comes
+  // back with the set to publish.
+  const single = await publishBlogPost(formData);
+  if (single.ok) return single;
+  if (!single.bundle?.length) return single;
+
+  const slugs = single.bundle.map((m) => m.slug);
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.rpc("publish_blog_posts", {
+    p_slugs: slugs,
+  });
+
+  if (error) {
+    console.error("[publishBlogPostBundle]", error.message);
+    return { ok: false, error: error.message };
+  }
+
+  revalidatePath("/blog");
+  for (const slug of slugs) revalidatePath(`/blog/${slug}`);
   revalidatePath("/studio/blog");
   revalidatePath("/sitemap.xml");
   return { ok: true };

@@ -4,8 +4,13 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   publishBlogPost,
+  publishBlogPostBundle,
   saveBlogPost,
   unpublishBlogPost,
+} from "@/lib/studio/blogActions";
+import type {
+  ActionResult,
+  PublishBundleMember,
 } from "@/lib/studio/blogActions";
 import type { BlogPost } from "@/lib/studio/blog";
 
@@ -86,6 +91,15 @@ export default function BlogEditor({
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Set when publishing was refused because this post links to drafts.
+   *
+   * Holds the whole transitive set, not just the slug the refusal named:
+   * this post links to a draft which links to another draft, and an author
+   * shown only the first would agree to "publish one more" and then be
+   * refused again. They see the real cost once.
+   */
+  const [bundle, setBundle] = useState<PublishBundleMember[] | null>(null);
   const [dirty, setDirty] = useState(false);
 
   const [body, setBody] = useState(post?.bodyMarkdown ?? "");
@@ -111,17 +125,21 @@ export default function BlogEditor({
   const longEnough = chars >= MIN_PUBLISH_CHARS;
   const canPublish = Boolean(reviewer) && longEnough;
 
-  function run(fn: () => Promise<{ ok: boolean; error?: string }>, ok: string) {
+  function run(fn: () => Promise<ActionResult>, ok: string) {
     setError(null);
     setMessage(null);
+    setBundle(null);
     start(async () => {
       const res = await fn();
       if (res.ok) {
         setMessage(ok);
         setDirty(false);
+        setBundle(null);
         router.refresh();
       } else {
-        setError(res.error ?? "Something went wrong.");
+        setError(res.error);
+        // A link refusal comes back with the set that would fix it.
+        setBundle(res.bundle?.length ? res.bundle : null);
       }
     });
   }
@@ -139,6 +157,24 @@ export default function BlogEditor({
     if (!form) return;
     const formData = new FormData(form);
     run(() => publishBlogPost(formData), "Published — it is live on /blog now.");
+  }
+
+  /**
+   * Publish this post and every draft it links to, in one transaction.
+   *
+   * Only reachable from the panel below, which only appears after a
+   * refusal — so it cannot be pressed by accident, and never before the
+   * author has seen exactly which posts it would take live.
+   */
+  function onPublishBundle() {
+    const form = formRef.current;
+    if (!form) return;
+    const count = bundle?.length ?? 0;
+    const formData = new FormData(form);
+    run(
+      () => publishBlogPostBundle(formData),
+      `Published ${count} posts — they are live on /blog now.`,
+    );
   }
 
   function onUnpublish() {
@@ -216,6 +252,53 @@ export default function BlogEditor({
         <p className="mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </p>
+      ) : null}
+
+      {/*
+        The way out of a link refusal.
+        
+        The guard is right: publishing a post that links to a draft would
+        put a live link to a 404 on the site. But two posts can link to
+        each other, and then neither can ever be published one at a time —
+        which is what this panel exists to resolve. It names every post
+        that would go live, because "publish" meaning "publish three
+        articles" is not something to discover afterwards.
+      */}
+      {bundle?.length ? (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3.5">
+          <p className="text-sm font-medium text-amber-900">
+            These {bundle.length} posts link to each other and have to go
+            live together.
+          </p>
+          <ul className="mt-2 space-y-1">
+            {bundle.map((member) => (
+              <li key={member.slug} className="text-sm text-amber-900">
+                <span aria-hidden className="mr-1.5 text-amber-500">
+                  •
+                </span>
+                {member.title}
+                {member.isRoot ? (
+                  <span className="ml-1.5 text-xs text-amber-700">
+                    (this one)
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={onPublishBundle}
+            disabled={pending}
+            className="mt-3 rounded-full bg-amber-900 px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {pending
+              ? "Publishing…"
+              : `Publish all ${bundle.length} together`}
+          </button>
+          <p className="mt-2 text-xs text-amber-800">
+            Each one still has to pass its own reviewer and length checks.
+          </p>
+        </div>
       ) : null}
       {message ? (
         <p className="mt-5 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
