@@ -1136,3 +1136,66 @@ select:autofill {
 .gr-slip__rule-double {
   border-top: 3px double var(--slip-rule, #d8d5cf);
 }
+
+/* ── Data figures in article prose — HANDOVER-38 §4a ──────────────────────
+   Rendered from lib/charts/render.ts as inline SVG inside the markdown
+   HTML, so these are plain element styles rather than component classes.
+   The SVG is width:100% with an intrinsic viewBox, which is what keeps a
+   680-wide chart readable on a 390px phone without a media query. */
+.gr-figure {
+  margin: 30px 0;
+  background: #fff;
+  border: 1px solid var(--brand-border-light);
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(102, 45, 145, 0.05),
+    0 16px 36px -24px rgba(102, 45, 145, 0.3);
+}
+
+.gr-figure__head {
+  padding: 20px 22px 4px;
+}
+
+.gr-figure__title {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--brand-ink);
+  line-height: 1.35;
+}
+
+/* The unit lives here, on every chart, and is not optional — §6. */
+.gr-figure__sub {
+  font-size: 0.8125rem;
+  color: #8a8590;
+  margin-top: 3px;
+  line-height: 1.5;
+}
+
+.gr-figure svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 6px 14px 0;
+}
+
+.gr-figure figcaption {
+  padding: 12px 22px 18px;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: #8a8590;
+  border-top: 1px solid var(--brand-border-light);
+}
+
+/* A missing chart is loud on purpose: a published article with a hole in
+   it should be obvious to whoever opens it, not found by a reader. */
+.gr-figure__missing {
+  margin: 30px 0;
+  padding: 14px 18px;
+  border: 1px dashed #dc2626;
+  border-radius: 0.75rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+}
