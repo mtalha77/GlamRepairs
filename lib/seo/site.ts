@@ -166,10 +166,12 @@ export const PAYMENT = {
  * • `membership` — joining a body. Says nothing about competence. Renders as
  *                  "Member" / "Membership No." Never "certified", never
  *                  "Certificate No.".
- * • `course`     — completed coursework or a platform specialization. Real
- *                  learning, and genuinely not a licence or a certification
- *                  to practise. Renders as completed coursework. Never
- *                  "certified".
+ * • `course`     — a course or specialization from a named institution.
+ *                  Real learning, and not a licence to practise. Renders
+ *                  under the awarding institution's name. Never
+ *                  "certified", and — HOTFIX-36 §1.3 — never labelled
+ *                  "completed coursework", which reads as a hedge rather
+ *                  than a description.
  *
  * The renderer in app/credentials/page.tsx derives its labels from `kind`
  * precisely so this rule cannot be broken by editing a string.
@@ -184,8 +186,6 @@ export type Credential = {
   name: string;
   /** The body that awarded or attested it. */
   issuer: string;
-  /** Where it was taken, when that differs from who awarded it (e.g. Coursera). */
-  platform?: string;
   /** A number a third party can quote back to the issuer. */
   reference?: string;
   /**
@@ -195,13 +195,43 @@ export type Credential = {
   referenceLabel?: string;
   /** A public URL anyone can open and check for themselves. The strongest form. */
   verifyUrl?: string;
+  /** The wording of the verify action, e.g. "Check with HEC". */
+  verifyLabel?: string;
   /** A redacted supporting document under /public, once one exists. */
   documentUrl?: string;
   /** Component courses inside a specialization. */
   includes?: string[];
-  /** Plain-English note: what this is, and — where it matters — what it isn't. */
-  note: string;
+  /**
+   * The plain-English paragraph: how a stranger checks this, and why it
+   * matters to a client.
+   *
+   * HOTFIX-36 §2.3 — what this field may NOT contain any more. It used to
+   * carry a "what it isn't" clause on every entry: the membership was
+   * "open membership, not a competence credential", the coursework was
+   * "not a licence or a certification to practise". Each was true and each
+   * was volunteered. Stating the limit once, in the scope panel, is honest;
+   * restating it under every credential in turn argues the opposite of what
+   * the page exists to argue. The `kind` map still prevents a membership
+   * being labelled a certification, which is the part that actually needed
+   * enforcing.
+   */
+  check: string;
+  /** Overrides the bolded lead-in, e.g. "Why it is relevant". */
+  checkLabel?: string;
+  /** An optional aside below the paragraph, in its own bordered block. */
+  aside?: { lead: string; body: string };
 };
+
+/**
+ * The chip shown beside each credential, derived from `kind` rather than
+ * typed. Same reasoning as the label maps in the renderer: an open
+ * membership must not be able to acquire a stronger badge than the
+ * government attestation sitting above it by way of someone editing a
+ * string.
+ */
+export function credentialStatus(kind: CredentialKind): string {
+  return kind === "degree" ? "Government verified" : "Verifiable";
+}
 
 export const CREDENTIALS: Credential[] = [
   {
@@ -215,12 +245,26 @@ export const CREDENTIALS: Credential[] = [
     //   ↑ uncomment once the redacted e-Attestation certificate (CNIC, DOB,
     //   home address and signature removed) is dropped at that path. Until
     //   then `note` says so plainly rather than linking to a 404.
-    note:
-      "The strongest verification on this page — an official Government of " +
-      "Pakistan confirmation that the degree, awarded by King Faisal " +
-      "University, is genuine. A redacted copy of the e-Attestation " +
-      "certificate will be published here; until then this reference number " +
-      "can be quoted when asking HEC to confirm it directly.",
+    verifyUrl: "https://eservices.hec.gov.pk/",
+    verifyLabel: "Check with HEC",
+    /*
+     * HOTFIX-36 §1.1 — the awarding university is gone, for the third and
+     * last time. It survived two previous passes because it was sitting in
+     * this string rather than in the byline they each edited. The sentence
+     * does not need it: what the reference proves is that the Government of
+     * Pakistan checked the degree, not who printed it.
+     */
+    check:
+      "quote the reference number to the Higher Education Commission and ask " +
+      "them to confirm the attestation. HEC attestation means the Government " +
+      "of Pakistan has independently confirmed the degree is genuine, which " +
+      "is a stronger test than the certificate itself.",
+    aside: {
+      lead: "The strongest item on this page.",
+      body:
+        "A redacted copy of the e-Attestation certificate will be published " +
+        "here once available.",
+    },
   },
   {
     id: "ids-membership",
@@ -229,29 +273,49 @@ export const CREDENTIALS: Credential[] = [
     issuer: "International Dermoscopy Society",
     reference: "D.2629.9466",
     verifyUrl: "https://dermoscopy-ids.org/",
-    note:
-      "A professional interest society (16,000+ members across 160+ " +
-      "countries) — open membership, not a competence credential. Listed " +
-      "for transparency, not as proof of clinical certification.",
+    verifyLabel: "Visit the society",
+    check:
+      "the membership number can be confirmed with the society directly. It " +
+      "connects more than 16,000 members across 160 countries, focused on " +
+      "dermoscopy and skin imaging.",
   },
   {
     id: "duke-telehealth",
     kind: "course",
-    name: "Telehealth: Essentials, Teamwork, and Dermatology",
+    /*
+     * HOTFIX-36 §1.3 fixes this title, on the third asking.
+     *
+     * HOTFIX-25 and HOTFIX-26 both requested "Essentials, Teamwork &
+     * Dermatology" and both times it was left alone with a note saying it
+     * needed a decision rather than a quiet edit, because it is not exactly
+     * how Duke punctuates it and altering an issuer's own credential title
+     * is a misquote. §1.3 now asks a third time and supplies the exact
+     * wording, which is the decision that note was waiting for. The
+     * `verifyUrl` below remains the authority if it is ever queried.
+     */
+    name: "Telehealth: Essentials, Teamwork & Dermatology",
     issuer: "Duke University",
-    platform: "Coursera",
+    /*
+     * HOTFIX-36 §1.4 — `platform` is deleted rather than left unrendered.
+     * A field that exists only so a renderer can be careful not to print it
+     * is an invitation to print it. The verification link is kept, because
+     * a checkable link is the point of this page; it just no longer names
+     * the platform beside the university that awarded the thing.
+     */
     verifyUrl:
       "https://www.coursera.org/account/accomplishments/specialization/XQMQARLK1WFC",
+    verifyLabel: "Verify the certificate",
     includes: [
       "Telehealth Clinical Essentials",
       "Telehealth: Interprofessional Team-Based Care",
       "Telehealth: Dermatology Assessment",
     ],
-    note:
-      "Completed coursework, directly relevant to how this service actually " +
-      "works — remote assessment, including dermatology specifically. " +
-      "Verifiable at the Coursera link. It is coursework, not a licence or a " +
-      "certification to practise.",
+    checkLabel: "Why it is relevant",
+    check:
+      "the three parts are clinical essentials, team-based care, and " +
+      "dermatology assessment, all delivered remotely. That is precisely how " +
+      "this service works, so it applies here more directly than a general " +
+      "qualification would.",
   },
 ];
 
@@ -330,12 +394,44 @@ export function canonicalOg(
   path: string,
   extra: Record<string, unknown> = {},
 ) {
+  const openGraph = {
+    url: path,
+    images: [SOCIAL_CARD],
+    ...extra,
+  } as Record<string, unknown>;
+
+  /*
+   * HOTFIX-36 §3.1 — the Twitter block is derived here, not left to fall
+   * through.
+   *
+   * Next merges metadata per key, exactly as it does for `openGraph`. A
+   * page that sets a title and an `openGraph` but no `twitter` inherits the
+   * ROOT `twitter` object wholesale, so every such page was serving the
+   * homepage's title and description to Twitter, Slack, WhatsApp and
+   * anything else reading `twitter:` in preference to `og:`. Measured on
+   * production: /credentials sent `og:title = "Credentials | GlamRepairs"`
+   * and `twitter:title = "GlamRepairs — Online skin assessment, read by a
+   * certified practitioner"` in the same document.
+   *
+   * §3.1 asked for this to be fixed in the shared helper rather than on the
+   * page, which is right: nine routes call `canonicalOg`, and fixing them
+   * one at a time is how the defect reached nine routes in the first place.
+   * The page passes its own title and description through `extra` and both
+   * blocks are built from the one set of values, so they cannot disagree
+   * again.
+   */
+  const twitter: Record<string, unknown> = {
+    card: "summary_large_image",
+    images: [SOCIAL_CARD.url],
+  };
+  if (typeof openGraph.title === "string") twitter.title = openGraph.title;
+  if (typeof openGraph.description === "string") {
+    twitter.description = openGraph.description;
+  }
+
   return {
     alternates: { canonical: path },
-    openGraph: {
-      url: path,
-      images: [SOCIAL_CARD],
-      ...extra,
-    },
+    openGraph,
+    twitter,
   };
 }

@@ -259,15 +259,28 @@ export default async function ComparePage() {
               did nothing wrong in twelve minutes; twelve minutes is simply
               not enough time to go through everything you use.
             </p>
+            {/*
+              HOTFIX-36 §2.3 — this opened on "We are not the cheapest
+              option on this page", and no longer does.
+
+              The rule it establishes: do not concede a weakness the visitor
+              has not raised, and do not open a block by conceding. Opening
+              on our own price invites the reader to weigh it before they
+              have finished reading what the alternatives cost. The claim
+              itself is not suppressed — the matrix prices every column, and
+              the first FAQ below answers "is this cheaper than a
+              dermatologist" with "not necessarily" in as many words. It is
+              answered where it is asked, rather than volunteered here.
+            */}
             <p>
               <strong className="font-medium text-brand-ink">
-                We are not the cheapest option on this page.
+                The first receipt bought no diagnosis, and the second bought
+                twenty one minutes.
               </strong>{" "}
-              Free advice is cheapest, and most of what is on the first
-              receipt was bought because of it. At our price we are
-              comparable to a clinic visit rather than cheaper than one. We
-              are the option where somebody is still there when your skin
-              does something unexpected in week three.
+              Free advice is cheapest of all, and most of what is on the
+              first receipt was bought because of it. We are the option where
+              somebody is still there when your skin does something
+              unexpected in week three.
             </p>
           </div>
         </div>
