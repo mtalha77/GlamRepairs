@@ -300,8 +300,25 @@ export default async function AirQualityCityPage({ params }: PageProps) {
 
         {showLive && forecast.length ? (
           <section className="mt-10">
+            {/*
+              The heading counts what is actually rendered.
+              
+              It said "The next three days" unconditionally. That was true
+              until the §6 filter started dropping a day that is already
+              yesterday in Pakistan — after which, for the five hours
+              between 19:00 UTC and midnight, the page promised three and
+              showed two. Verified on production immediately after that fix
+              shipped.
+              
+              Asking WeatherAPI for a fourth day would keep the count at
+              three, and is not available: the free plan returns three days
+              of forecast, which is why `days=3` is what the refresh sends.
+              So the heading adapts instead of the data.
+            */}
             <h2 className="font-serif text-2xl leading-snug text-brand-primary">
-              The next three days
+              {forecast.length === 1
+                ? "Tomorrow"
+                : `The next ${forecast.length === 2 ? "two" : "three"} days`}
             </h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {forecast.map((d) => (
