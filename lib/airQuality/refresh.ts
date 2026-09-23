@@ -157,9 +157,30 @@ export async function refreshAirQuality(): Promise<RefreshOutcome[]> {
         fetched_at: new Date().toISOString(),
       };
 
+      /*
+       * Upsert, not insert — `air_quality_readings` is UNIQUE (slug,
+       * observed_at).
+       *
+       * `observed_at` is WeatherAPI's `last_updated`, which moves roughly
+       * every fifteen minutes. Any refresh that runs while the upstream
+       * observation has not changed re-fetches the SAME observation, and a
+       * plain insert made that a unique violation: two runs five minutes
+       * apart failed all thirteen cities with
+       * "duplicate key value violates unique constraint". Observed in
+       * production the first time the scheduler ran twice in one quarter
+       * hour.
+       *
+       * Re-reading an unchanged observation is not an error, it is the
+       * expected result of polling faster than the source updates. So the
+       * row is upserted on that key and the run continues — which matters
+       * more than the duplicate row it avoids, because a city marked
+       * failed here never reached the `air_quality_latest` write below,
+       * and its `fetched_at` therefore stopped advancing. Freshness would
+       * have decayed on cities we were successfully reading.
+       */
       const { error: insertError } = await supabase
         .from("air_quality_readings")
-        .insert(reading);
+        .upsert(reading, { onConflict: "slug,observed_at" });
       if (insertError) {
         results.push({ slug: row.slug, ok: false, error: insertError.message });
         continue;
