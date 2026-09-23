@@ -213,6 +213,143 @@ export type Database = {
        * trigger, never by the app. Reading it is fine; writing it from here
        * would race the trigger and could hand out a second free assessment.
        */
+      /** HANDOVER-35 — the thirteen city pages and their editorial. */
+      area_pages: {
+        Row: {
+          slug: string;
+          city: string;
+          province: string | null;
+          latitude: number;
+          longitude: number;
+          title: string;
+          h1: string;
+          meta_description: string;
+          status: string;
+          sort_order: number;
+          zone_slug: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          slug: string;
+          city: string;
+          latitude: number;
+          longitude: number;
+          title: string;
+          h1: string;
+          meta_description: string;
+          status?: string;
+        };
+        Update: {
+          title?: string;
+          h1?: string;
+          meta_description?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      /**
+       * Every reading ever taken. Append-only: the history is what turns a
+       * single-day claim like "Sialkot is usually highest" into something
+       * checkable, which is exactly what Part C asks for.
+       */
+      air_quality_readings: {
+        Row: {
+          id: string;
+          slug: string;
+          observed_at: string;
+          pm2_5: number | null;
+          pm10: number | null;
+          no2: number | null;
+          so2: number | null;
+          o3: number | null;
+          co: number | null;
+          epa_index: number | null;
+          us_aqi: number | null;
+          uv_index: number | null;
+          temp_c: number | null;
+          humidity: number | null;
+          condition_text: string | null;
+          source: string | null;
+          fetched_at: string;
+        };
+        Insert: {
+          slug: string;
+          observed_at: string;
+          pm2_5?: number | null;
+          pm10?: number | null;
+          no2?: number | null;
+          so2?: number | null;
+          o3?: number | null;
+          co?: number | null;
+          epa_index?: number | null;
+          us_aqi?: number | null;
+          uv_index?: number | null;
+          temp_c?: number | null;
+          humidity?: number | null;
+          condition_text?: string | null;
+          source?: string | null;
+          fetched_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      /** One row per city: what the page renders, with band and staleness. */
+      air_quality_latest: {
+        Row: {
+          slug: string;
+          observed_at: string;
+          pm2_5: number | null;
+          pm10: number | null;
+          epa_index: number | null;
+          us_aqi: number | null;
+          uv_index: number | null;
+          temp_c: number | null;
+          humidity: number | null;
+          condition_text: string | null;
+          source: string | null;
+          fetched_at: string;
+          band: string;
+          is_stale: boolean;
+        };
+        Insert: {
+          slug: string;
+          observed_at: string;
+          band: string;
+          is_stale?: boolean;
+          [key: string]: unknown;
+        };
+        Update: {
+          band?: string;
+          is_stale?: boolean;
+          [key: string]: unknown;
+        };
+        Relationships: [];
+      };
+      /** Three days per city. Hourly data is deliberately never stored. */
+      air_quality_forecast: {
+        Row: {
+          slug: string;
+          forecast_date: string;
+          max_temp_c: number | null;
+          min_temp_c: number | null;
+          avg_humidity: number | null;
+          uv_index: number | null;
+          epa_index: number | null;
+          pm2_5: number | null;
+          condition_text: string | null;
+          fetched_at: string;
+        };
+        Insert: {
+          slug: string;
+          forecast_date: string;
+          [key: string]: unknown;
+        };
+        Update: {
+          [key: string]: unknown;
+        };
+        Relationships: [];
+      };
       gift_codes: {
         Row: {
           code: string;

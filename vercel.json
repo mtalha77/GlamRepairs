@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/cleanup-photos",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/air-quality",
+      "schedule": "*/30 * * * *"
     }
   ]
 }
