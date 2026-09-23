@@ -1245,6 +1245,28 @@ export type Database = {
           updated_at: string;
         }[];
       };
+      /**
+       * HANDOVER note — hand-written, like the air-quality block above. Do
+       * NOT regenerate this file wholesale; a previous regeneration
+       * destroyed the hand-written unions in it.
+       */
+      blog_publish_set: {
+        Args: { p_slug: string };
+        Returns: {
+          slug: string;
+          title: string;
+          status: string;
+          is_root: boolean;
+        }[];
+      };
+      publish_blog_posts: {
+        Args: { p_slugs: string[] };
+        Returns: {
+          slug: string;
+          status: string;
+          published_at: string;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
