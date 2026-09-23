@@ -22,6 +22,9 @@ const ESCAPES: Record<string, string> = {
   "'": "&#39;",
 };
 
+import { getSeries } from "@/lib/data/airQuality";
+import { renderSeries } from "@/lib/charts/render";
+
 function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ESCAPES[c] ?? c);
 }
@@ -41,6 +44,24 @@ function inline(s: string) {
           : `<a class="underline underline-offset-2" href="${href}" target="_blank" rel="noopener nofollow">${text}</a>`,
     );
 }
+
+/**
+ * HANDOVER-38 §4a — `[chart:series-id]` on its own line.
+ *
+ * Blog posts are rows in `studio_blog_posts`, rendered as a string of HTML
+ * through `dangerouslySetInnerHTML`. A React chart component cannot reach
+ * inside that, so the charts are built as SVG strings on the server and a
+ * shortcode is what lets an author place one — which is what "build once
+ * and reuse across all six articles" requires.
+ *
+ * The token survives `escapeHtml` because square brackets are not escaped,
+ * so this matches after escaping and the chart HTML is injected whole.
+ *
+ * An unknown id renders a visible marker rather than failing the page or
+ * silently vanishing: a missing chart in a published article should be
+ * obvious to whoever looks at it, not discovered by a reader.
+ */
+const CHART_RE = /^\[chart:([a-z0-9-]+)\]$/i;
 
 export function renderMarkdown(md: string): string {
   const lines = escapeHtml(md.replace(/\r\n/g, "\n")).split("\n");
@@ -67,6 +88,19 @@ export function renderMarkdown(md: string): string {
     if (!line.trim()) {
       flushPara();
       closeList();
+      continue;
+    }
+
+    const chart = CHART_RE.exec(line.trim());
+    if (chart) {
+      flushPara();
+      closeList();
+      const series = getSeries(chart[1]);
+      out.push(
+        series
+          ? renderSeries(series)
+          : `<p class="gr-figure__missing">Chart not found: ${escapeHtml(chart[1])}</p>`,
+      );
       continue;
     }
 
