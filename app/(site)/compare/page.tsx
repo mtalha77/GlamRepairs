@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import CompareMatrixTable from "@/components/compare/CompareMatrixTable";
+import ReceiptsComparison from "@/components/compare/ReceiptsComparison";
 import { onboardingHref } from "@/components/home/Navbar";
 import JsonLd from "@/components/seo/JsonLd";
 import { buildCompareMatrix } from "@/lib/compare/compareMatrix";
 import { compareSource } from "@/lib/compare/sources";
+import { getPlanSettings } from "@/lib/plans/planSettings";
+import { formatRegionPrice } from "@/lib/pricing/regions";
 import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
 import { SOCIAL_CARD } from "@/lib/seo/site";
 
@@ -34,6 +37,21 @@ import { SOCIAL_CARD } from "@/lib/seo/site";
  * price change in the database reaches this page the same way it reaches
  * /pricing. Caching it would reintroduce exactly the contradiction the
  * handover warns about.
+ *
+ * ── The receipts, added above the matrix ─────────────────────────────────
+ * The matrix answers "what does each option include". It does not answer
+ * the question a reader is actually holding, which is "what will this have
+ * cost me by the time my skin has changed". Skin responds over eight to
+ * twelve weeks, so a single consultation fee is the wrong unit of
+ * comparison and a table of one-off prices quietly flatters whichever
+ * column is cheapest on the day. Three till slips priced over a season fix
+ * that, and they do it before the table rather than after, because it is
+ * the frame the table should be read inside.
+ *
+ * The same sourcing rule applies to them: the two non-Glam-Repairs slips
+ * are marked illustrative and tied back to figures this page already
+ * cites, and every line on ours is read from the database. See
+ * components/compare/ReceiptsComparison.tsx.
  */
 
 export const dynamic = "force-dynamic";
@@ -141,7 +159,22 @@ function Cite({ id }: { id: string }) {
 }
 
 export default async function ComparePage() {
-  const matrix = await buildCompareMatrix();
+  const [matrix, plans] = await Promise.all([
+    buildCompareMatrix(),
+    getPlanSettings(),
+  ]);
+
+  /*
+   * The matrix pins itself to Pakistan, but falls back to the default
+   * region if that row is ever deactivated or the database is unreachable.
+   * That fallback is right — an outage should not blank the price — but it
+   * cannot go unsaid here, because every other figure on this page is in
+   * rupees. "$22" beside "Rs. 9,200" on a receipt compares nothing, and the
+   * sourcing sentence would otherwise read "prices are shown for
+   * International because the fees beside them are Pakistani", which is
+   * nonsense the moment it is true.
+   */
+  const pricedForPakistan = matrix.region.code === "PK";
 
   return (
     <>
@@ -169,26 +202,105 @@ export default async function ComparePage() {
           <span>Compared with the alternatives</span>
         </nav>
 
-        <header className="max-w-3xl">
-          <p className="gr-eyebrow mb-3">Honestly compared</p>
-          <h1 className="font-serif text-3xl leading-tight text-brand-primary sm:text-4xl">
-            {TITLE}
-          </h1>
-          <p className="mt-4 text-base leading-relaxed text-brand-ink sm:text-lg">
-            Every figure below is sourced and linked. Two rows in the table
-            read &ldquo;No&rdquo; for us and &ldquo;Yes&rdquo; for a doctor,
-            and they are the two rows worth reading first — a comparison that
-            wins everywhere is a sales page, not a comparison.
+        <header className="mx-auto max-w-3xl text-center">
+          <p className="gr-eyebrow gr-eyebrow--center mb-3">
+            Three months, three receipts
           </p>
-          <p className="mt-3 text-sm leading-relaxed text-brand-gray">
-            Prices are shown for {matrix.region.label} because the clinic and
-            consultation fees they sit beside are Pakistani market figures.
-            See <Link href="/pricing" className="underline underline-offset-2">pricing</Link>{" "}
-            for prices in your own currency.
+          {/*
+            The h1 is the argument, not the page's name. "Compared with the
+            alternatives" still does the search-facing work from the title
+            tag and the breadcrumb; a heading that only repeats the title
+            tells a reader who has already clicked nothing they did not
+            know. The sentence under it carries the same words for anyone —
+            or anything — reading the page rather than the head.
+          */}
+          <h1 className="font-serif text-[1.85rem] leading-tight text-brand-ink sm:text-[2.3rem]">
+            Everyone pays. The question is{" "}
+            <em className="italic text-brand-primary">
+              what you get a receipt for.
+            </em>
+          </h1>
+          <p className="mx-auto mt-3.5 max-w-xl text-[0.9375rem] leading-[1.75] text-brand-gray">
+            These are the three ways people deal with a skin problem in
+            Pakistan &mdash; an online skin assessment, a private clinic
+            visit, and working it out yourself &mdash; priced over the time
+            it actually takes skin to change.
           </p>
         </header>
 
         <div className="mt-10">
+          <ReceiptsComparison
+            region={matrix.region}
+            transform={plans.transform}
+            clinicFeeSourceIndex={
+              matrix.usedSourceIds.indexOf("oladocLahore") + 1
+            }
+            pricedForPakistan={pricedForPakistan}
+          />
+        </div>
+
+        {/* ── The verdict ── */}
+        <div className="mt-14 rounded-[1.25rem] border border-brand-border-light bg-white p-8 shadow-[0_1px_2px_rgba(102,45,145,.05),0_18px_40px_-20px_rgba(102,45,145,.24)]">
+          <h2 className="font-serif text-2xl leading-snug text-brand-ink sm:text-[1.6rem]">
+            The difference is not the price. It is{" "}
+            <em className="italic text-brand-primary">what the price buys</em>
+          </h2>
+          <div className="mt-3 max-w-[45rem] space-y-3.5 text-[0.9375rem] leading-[1.8] text-brand-gray">
+            <p className="text-[1.0625rem] text-brand-ink">
+              Two of these receipts end at the counter. One of them is still
+              working in week six.
+            </p>
+            <p>
+              Skin takes eight to twelve weeks to respond to anything, which
+              is why a receipt from one appointment is a strange thing to
+              compare against three months of a problem. The products on the
+              first receipt were not badly chosen; nobody had enough
+              information to choose well. The clinic on the second receipt
+              did nothing wrong in twelve minutes; twelve minutes is simply
+              not enough time to go through everything you use.
+            </p>
+            <p>
+              <strong className="font-medium text-brand-ink">
+                We are not the cheapest option on this page.
+              </strong>{" "}
+              Free advice is cheapest, and most of what is on the first
+              receipt was bought because of it. At our price we are
+              comparable to a clinic visit rather than cheaper than one. We
+              are the option where somebody is still there when your skin
+              does something unexpected in week three.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-14">
+          <p className="mb-5 text-sm leading-relaxed text-brand-gray">
+            Line by line, then. Every figure below is sourced and linked. Two
+            rows read &ldquo;No&rdquo; for us and &ldquo;Yes&rdquo; for a
+            doctor, and they are the two rows worth reading first &mdash; a
+            comparison that wins everywhere is a sales page, not a
+            comparison.{" "}
+            {pricedForPakistan ? (
+              <>
+                Prices are shown for {matrix.region.label} because the clinic
+                and consultation fees they sit beside are Pakistani market
+                figures; see{" "}
+                <Link href="/pricing" className="underline underline-offset-2">
+                  pricing
+                </Link>{" "}
+                for prices in your own currency.
+              </>
+            ) : (
+              <>
+                Our Pakistan price could not be read just now, so the Glam
+                Repairs figures below are shown for {matrix.region.label}{" "}
+                while every fee beside them is a Pakistani market figure.{" "}
+                <Link href="/pricing" className="underline underline-offset-2">
+                  Pricing
+                </Link>{" "}
+                has the current price in your own currency.
+              </>
+            )}
+          </p>
           <CompareMatrixTable matrix={matrix} />
         </div>
 
@@ -329,36 +441,71 @@ export default async function ComparePage() {
           </p>
         </Section>
 
-        <Section id="wrong-choice" title="When we are the wrong choice">
-          <p>
-            An honest comparison has to include the cases where the answer is
-            not us. These are those cases, and in every one of them the right
-            move is a doctor:
-          </p>
-          <ul className="space-y-2.5">
-            {[
-              "Anything painful, spreading, bleeding, or weeping.",
-              "A mole or mark that has changed shape, size or colour.",
-              "Widespread or cystic acne, or acne that has not responded to over-the-counter treatment.",
-              "A rash with fever, or one that appeared suddenly across the body.",
-              "Anything you need a prescription for — isotretinoin, prescription-strength retinoids, oral antibiotics.",
-              "A skin condition you have already been diagnosed with and are being treated for.",
-            ].map((item) => (
-              <li key={item} className="flex items-start gap-2.5">
-                <span
-                  aria-hidden
-                  className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-primary"
-                />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-          <p>
-            If you submit an assessment and it turns out to be one of these, we
-            tell you and refund you. We would rather lose the fee than write a
-            skincare routine for something that needs a doctor.
-          </p>
-        </Section>
+        {/*
+          HANDOVER-22's "When we are the wrong choice" section, rebuilt as
+          two cards.
+
+          The list itself is unchanged in substance and slightly longer: the
+          supplied design added persistent redness with visible blood
+          vessels, and skin problems alongside fatigue or irregular periods.
+          Both are worth routing away and neither was here before.
+
+          The second card is the actual change. A page that only lists who
+          should leave gives a reader who should stay nothing to recognise
+          themselves in, and the two lists are read together — which is what
+          makes the first one land as a boundary rather than as
+          small print.
+        */}
+        <section id="wrong-choice" className="mt-12 grid gap-4 sm:mt-14 md:grid-cols-2">
+          <div className="flex flex-col rounded-[1.25rem] border border-[#f0e4c8] bg-brand-cream-card px-[26px] py-6">
+            <h2 className="font-serif text-[1.1875rem] italic text-[#8a6a1f]">
+              When you should not choose us
+            </h2>
+            <ul className="mb-3.5 mt-3 list-disc space-y-1 pl-[18px] text-sm leading-[1.9] text-brand-gray marker:text-[#c9a94f]">
+              {[
+                "Anything painful, spreading, bleeding or weeping.",
+                "A mole or mark that has changed shape, size or colour.",
+                "Widespread or cystic acne, or acne that has not responded to over-the-counter treatment.",
+                "Persistent redness with visible blood vessels.",
+                "A rash with fever, or one that appeared suddenly across the body.",
+                "Skin problems alongside fatigue or irregular periods.",
+                "Anything you need a prescription for — isotretinoin, prescription-strength retinoids, oral antibiotics.",
+                "A skin condition you have already been diagnosed with and are being treated for.",
+              ].map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <p className="mt-auto border-t border-[#f0e4c8] pt-3 text-[0.8125rem] leading-relaxed text-brand-gray">
+              <strong className="font-medium text-brand-ink">
+                Tell us any of these and we say so, then refund you.
+              </strong>{" "}
+              We would rather lose the fee than write a skincare routine for
+              something that needs a doctor.
+            </p>
+          </div>
+
+          <div className="flex flex-col rounded-[1.25rem] border border-brand-border-light bg-white px-[26px] py-6">
+            <h2 className="font-serif text-[1.1875rem] italic text-brand-primary">
+              This is what we are for
+            </h2>
+            <ul className="mb-3.5 mt-3 list-disc space-y-1 pl-[18px] text-sm leading-[1.9] text-brand-gray marker:text-brand-accent">
+              {[
+                "You have tried things and nothing worked.",
+                "Your skin started reacting to products it used to tolerate.",
+                "You have dark marks and do not know which kind.",
+                "Your routine has grown to seven products.",
+                "You want to know why, not just what to buy.",
+                "You want someone to check when it is not working.",
+              ].map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <p className="mt-auto border-t border-brand-border-light pt-3 text-[0.8125rem] leading-relaxed text-brand-gray">
+              If two or more of these sound like you, an assessment is the
+              right next step.
+            </p>
+          </div>
+        </section>
 
         <Section id="questions" title="Questions people ask">
           <dl className="space-y-6">
@@ -373,28 +520,44 @@ export default async function ComparePage() {
           </dl>
         </Section>
 
-        <section className="mt-14 rounded-[2rem] bg-brand-cream/70 px-5 py-8 text-center sm:px-8 sm:py-10">
-          <h2 className="font-serif text-2xl leading-snug text-brand-primary sm:text-[1.75rem]">
-            Read one before you decide
+        {/*
+          One primary action, not two side by side.
+
+          The design this was built from ends on a single button to the
+          sample. That is the right order for this page: a reader who has
+          just been shown three receipts is deciding whether the third one
+          is worth it, and the honest answer to that is "read one". Starting
+          stays one click away in the line underneath rather than competing
+          with it, which is where the sticky Get Started tab already points
+          anyway.
+        */}
+        <section className="mt-[34px] rounded-[1.25rem] border border-[#f0e4c8] bg-brand-cream-card px-7 py-[34px] text-center">
+          <h2 className="font-serif text-2xl leading-snug text-brand-ink sm:text-[1.5rem]">
+            Read a full assessment{" "}
+            <em className="italic text-brand-primary">before you pay</em>
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-brand-gray sm:text-[0.9375rem]">
-            The whole document is published — structure, length and wording —
-            so you can judge it rather than take our word for it.
+          <p className="mx-auto mt-2 max-w-[32.5rem] text-[0.9063rem] leading-relaxed text-brand-gray">
+            The whole document, start to finish &mdash; structure, length and
+            wording. Decide whether it is worth{" "}
+            {formatRegionPrice(matrix.region, "transform")} after you have
+            seen one, not before.
           </p>
-          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link
-              href="/sample-assessment"
-              className="inline-flex items-center justify-center rounded-full bg-brand-primary px-10 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90 sm:text-sm"
-            >
-              See a real assessment
-            </Link>
+          <Link
+            href="/sample-assessment"
+            className="mt-5 inline-block rounded-full bg-brand-primary px-[34px] py-[15px] text-[0.9375rem] font-medium text-white shadow-[0_10px_24px_-10px_rgba(102,45,145,.6)] transition-transform hover:-translate-y-0.5"
+          >
+            See a real assessment &rarr;
+          </Link>
+          <span className="mt-3 block text-[0.8125rem] text-[#8a8590]">
+            Then, if it looks right,{" "}
             <Link
               href={onboardingHref}
-              className="inline-flex items-center justify-center rounded-full border border-brand-primary/40 px-10 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] text-brand-primary transition-colors hover:bg-brand-primary/5 sm:text-sm"
+              className="text-brand-primary underline underline-offset-2"
             >
-              Start my assessment
+              starting takes about eight minutes
             </Link>
-          </div>
+            .
+          </span>
         </section>
         </div>
       </main>
