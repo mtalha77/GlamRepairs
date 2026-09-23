@@ -1067,3 +1067,72 @@ select:autofill {
 .prose-gr code {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
 }
+
+/* ── The receipts on /compare ─────────────────────────────────────────────
+   Three till slips, torn top and bottom. The zigzag is two 45-degree
+   gradients meeting along the edge, which is why the paper colour has to
+   reach the pseudo-elements: `--slip-bg` is set once on the slip and the
+   torn edges read it, so the white "ours" variant needs no second rule.
+
+   Rotation is applied in the markup, not here, because it is only wanted
+   once the three sit side by side. Stacked on a phone they are upright. */
+.gr-slip {
+  --slip-bg: #fdfcfa;
+  position: relative;
+  background: var(--slip-bg);
+  box-shadow:
+    0 1px 2px rgba(60, 50, 40, 0.06),
+    0 18px 34px -18px rgba(60, 50, 40, 0.35);
+}
+
+.gr-slip::before,
+.gr-slip::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  background:
+    linear-gradient(-45deg, transparent 50%, var(--slip-bg) 51%) 0 0 / 10px 9px
+      repeat-x,
+    linear-gradient(45deg, transparent 50%, var(--slip-bg) 51%) 0 0 / 10px 9px
+      repeat-x;
+}
+
+.gr-slip::before {
+  top: -9px;
+}
+
+.gr-slip::after {
+  bottom: -9px;
+  transform: scaleY(-1);
+}
+
+.gr-slip--ours {
+  --slip-bg: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(102, 45, 145, 0.08),
+    0 24px 48px -18px rgba(102, 45, 145, 0.45);
+  /* Outline rather than border: a border would shift the torn edges by a
+     pixel against the other two slips. */
+  outline: 2px solid var(--brand-primary);
+  outline-offset: -2px;
+}
+
+.gr-slip__barcode {
+  height: 30px;
+  opacity: 0.55;
+  background: repeating-linear-gradient(
+    90deg,
+    #3a3a3a 0 2px,
+    transparent 2px 4px,
+    #3a3a3a 4px 5px,
+    transparent 5px 9px,
+    #3a3a3a 9px 12px,
+    transparent 12px 14px
+  );
+}
+
+.gr-slip__rule-double {
+  border-top: 3px double var(--slip-rule, #d8d5cf);
+}
