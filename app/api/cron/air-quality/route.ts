@@ -42,11 +42,22 @@ export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
   const isVercelCron = request.headers.get("x-vercel-cron") !== null;
 
-  if (secret) {
-    if (auth !== `Bearer ${secret}`) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    }
-  } else if (!isVercelCron) {
+  /*
+   * Either proof is enough, and that is deliberate.
+   *
+   * This used to be exclusive: once CRON_SECRET existed, ONLY a matching
+   * bearer token was accepted. That is the shape most guides use, and it
+   * has a failure mode — setting the secret to let an external scheduler
+   * in would lock out Vercel's own cron the moment it started working,
+   * turning one broken scheduler into two.
+   *
+   * Accepting `x-vercel-cron` as an alternative costs nothing, because
+   * Vercel sets that header on scheduled invocations and strips inbound
+   * copies of it, so it cannot be forged from outside. With no secret set
+   * at all it remains the only way in.
+   */
+  const hasSecret = Boolean(secret) && auth === `Bearer ${secret}`;
+  if (!hasSecret && !isVercelCron) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
@@ -59,7 +70,10 @@ export async function GET(request: Request) {
       refreshed: results.filter((r) => r.ok).length,
       failed: failed.length,
       detail: results,
-      trigger: secret ? "secret" : isVercelCron ? "vercel-cron" : "unknown",
+      // Which proof actually admitted this run, not which one is
+      // configured — that is the distinction that tells you whether the
+      // Vercel cron has come back to life.
+      trigger: isVercelCron ? "vercel-cron" : hasSecret ? "secret" : "unknown",
     });
   } catch (e) {
     console.error(

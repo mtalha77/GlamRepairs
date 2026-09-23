@@ -1,0 +1,89 @@
+name: Refresh air quality
+
+# Why this exists, and why it is not a Vercel cron.
+#
+# vercel.json schedules /api/cron/air-quality hourly. It does not run. The
+# endpoint writes a row to `air_quality_cron_runs` before it does anything
+# that can fail, and after the logging shipped, five consecutive hourly
+# slots passed with zero rows recorded — so the job is never invoked, and
+# no amount of changing the weather provider would alter that.
+#
+# GitHub's scheduler is independent of the Vercel plan, so this calls the
+# same endpoint on the same cadence. The Vercel cron is left in place: if
+# it ever starts firing, both are safe, because a refresh is idempotent in
+# the way that matters (readings append, `air_quality_latest` upserts).
+
+on:
+  schedule:
+    # Minute 7, not 0. GitHub queues scheduled runs and the top of the hour
+    # is the busiest slot on the platform, so :00 jobs are the ones that get
+    # delayed. Nothing here needs to land exactly on the hour.
+    - cron: "7 * * * *"
+  # So it can be run by hand from the Actions tab without waiting.
+  workflow_dispatch:
+
+# Two runs at once would double-fetch a paid API for no benefit.
+concurrency:
+  group: air-quality-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Refresh every published city
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          ENDPOINT: https://www.glamrepairs.com/api/cron/air-quality
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET is not set in this repository's Actions secrets."
+            echo "Add it at Settings -> Secrets and variables -> Actions, with the same"
+            echo "value as the CRON_SECRET environment variable in Vercel."
+            exit 1
+          fi
+
+          # --fail-with-body: a non-2xx still prints the body, so a 401 says
+          # so rather than failing silently. Retries cover a cold start.
+          http_code=$(curl --silent --show-error \
+            --retry 3 --retry-delay 5 --retry-all-errors \
+            --max-time 120 \
+            --write-out '%{http_code}' \
+            --output response.json \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            "${ENDPOINT}")
+
+          echo "HTTP ${http_code}"
+          cat response.json
+          echo
+
+          if [ "${http_code}" != "200" ]; then
+            echo "::error::Refresh endpoint returned ${http_code}."
+            exit 1
+          fi
+
+          # The endpoint answers 200 with ok:false on a partial failure, by
+          # design — it reports, it is not a health check. That must not pass
+          # silently here, or a wrong API key looks like a green tick forever.
+          ok=$(jq -r '.ok' response.json)
+          refreshed=$(jq -r '.refreshed // 0' response.json)
+          failed=$(jq -r '.failed // 0' response.json)
+
+          echo "### Air quality refresh" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| cities refreshed | cities failed |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| ${refreshed} | ${failed} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.results[]? | "- \(.slug): \(if .ok then "ok" else "FAILED — \(.error // "unknown")" end)"' \
+            response.json >> "$GITHUB_STEP_SUMMARY" || true
+
+          if [ "${ok}" != "true" ]; then
+            echo "::error::${failed} city/cities failed to refresh. See the job summary."
+            exit 1
+          fi
+
+          echo "Refreshed ${refreshed} cities."
