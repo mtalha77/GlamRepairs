@@ -9,9 +9,23 @@
  * credential claim — the fastest way to lose trust in a YMYL niche, and a
  * genuine liability if a client ever relies on it.
  *
- * So: `MedicalBusiness` (accurate — a business providing health-related
- * services) and `Person` carrying an explicit `hasCredential`, which states
- * exactly what the qualification is and lets Google weigh it correctly.
+ * HOTFIX-39 §3 takes that one step further, and it is right to.
+ * `MedicalBusiness` was chosen as "accurate — a business providing
+ * health-related services", and it is not. Three things were wrong with it:
+ *
+ * 1. It contradicts the footer, which says on the same page that we do not
+ *    diagnose or treat medical conditions. The structured data asserted the
+ *    opposite of the visible copy.
+ * 2. It is the type that puts a site in the YMYL *medical* category, judged
+ *    against hospitals and dermatology clinics. That is a comparison a
+ *    single-practitioner aesthetics service loses by definition.
+ * 3. HANDOVER-35 §3.2 asked for no medical schema on these pages.
+ *
+ * `HealthAndBeautyBusiness` is a real schema.org type, sits under
+ * LocalBusiness, and describes exactly what this is. Together with `Person`
+ * carrying an explicit `hasCredential`, it states the qualification
+ * precisely and lets Google weigh it correctly, without claiming a category
+ * the business is not in.
  *
  * Everything here is typed loosely as `object` on purpose. schema.org is not a
  * closed vocabulary and over-typing it produces friction with no payoff.
@@ -35,7 +49,9 @@ export function graph(...nodes: object[]) {
 
 export function organizationSchema() {
   return {
-    "@type": "MedicalBusiness",
+    // HOTFIX-39 §3 — was MedicalBusiness. See the note at the top of this
+    // file. One line, sitewide, and the highest-value change in that audit.
+    "@type": "HealthAndBeautyBusiness",
     "@id": abs("/#organization"),
     name: SITE.name,
     legalName: SITE.legalName,
@@ -47,9 +63,18 @@ export function organizationSchema() {
     // unavailable to us. That is out of date — a profile exists, and
     // HOTFIX-8 exists to make the site's phone number match the one listed
     // on it.)
+    /*
+     * `Service`, not `MedicalTherapy`. HOTFIX-39 §3 did not name this one —
+     * it read the @type of the organisation node and stopped — but it is
+     * the same error one property deeper, and leaving it would have kept a
+     * medical claim in the graph on every page of the site after the fix
+     * that was supposed to remove them. An online skin assessment is a
+     * service. It is not a therapy, and nothing here treats anything.
+     */
     availableService: {
-      "@type": "MedicalTherapy",
+      "@type": "Service",
       name: "Online skin assessment",
+      serviceType: "Skincare assessment",
     },
     // HOTFIX-8 — NAP consistency. Google cross-references name, address and
     // phone across sources to decide a business is real, so this has to be
@@ -273,9 +298,22 @@ export function faqSchema(
 }
 
 /**
- * Blog posts. `MedicalWebPage` rather than `Article` because the subject is
- * health — it is the type Google expects for this material, and it is the one
- * that carries `reviewedBy`.
+ * Blog posts.
+ *
+ * ── Was MedicalWebPage. HOTFIX-39 §9 asks for it gone, and it is ─────────
+ * The original reasoning was that the subject is health and that
+ * `MedicalWebPage` is the one type carrying `reviewedBy`. The first half
+ * stopped being a good reason once the organisation stopped calling itself
+ * a `MedicalBusiness`: labelling every post `MedicalWebPage` re-asserts on
+ * every content page exactly the medical framing §3 removed sitewide, and
+ * it is the type Google's medical-YMYL evaluation keys on.
+ *
+ * ⚠️ The cost is real and worth knowing. `reviewedBy` is defined on
+ * `MedicalWebPage`, not on `Article`, so the "a named practitioner checked
+ * this" signal cannot be carried the same way. It is emitted as `editor`
+ * instead, which IS valid on CreativeWork and says the same thing in a
+ * vocabulary that matches the type. If that trade looks wrong, this is the
+ * one line to reconsider — the reviewer data itself has not changed.
  *
  * `datePublished`, `dateModified` and `reviewedBy` are not decoration. Visible,
  * machine-readable dates and a named reviewer are among the strongest signals
@@ -293,7 +331,7 @@ export function medicalArticleSchema(opts: {
   image?: string;
 }) {
   return {
-    "@type": "MedicalWebPage",
+    "@type": "Article",
     "@id": abs(`${opts.path}#article`),
     url: abs(opts.path),
     name: opts.title,
@@ -303,14 +341,24 @@ export function medicalArticleSchema(opts: {
     isPartOf: { "@id": abs("/#website") },
     publisher: { "@id": abs("/#organization") },
     author: { "@id": abs(`/authors/${opts.author.slug}#person`) },
+    /*
+     * `editor`, not `reviewedBy`. Same person, same claim, valid on
+     * CreativeWork — see the note above this function.
+     */
     ...(opts.reviewer
-      ? { reviewedBy: { "@id": abs(`/authors/${opts.reviewer.slug}#person`) } }
+      ? { editor: { "@id": abs(`/authors/${opts.reviewer.slug}#person`) } }
       : {}),
     datePublished: opts.datePublished,
     dateModified: opts.dateModified ?? opts.datePublished,
     ...(opts.image ? { image: abs(opts.image) } : {}),
-    // Tells Google this is general information, not individualised advice.
-    audience: { "@type": "Patient" },
+    /*
+     * Was `{ "@type": "Patient" }`, which is a MedicalAudience subtype and
+     * therefore the same mistake as the one §3 removed, hiding in a
+     * property rather than in a @type. A plain Audience says "general
+     * information, not individualised advice" without putting the reader
+     * in a clinical category we have no business assigning them to.
+     */
+    audience: { "@type": "Audience", audienceType: "General public" },
   };
 }
 

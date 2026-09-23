@@ -13,7 +13,7 @@ import {
 } from "@/lib/airQuality/areaPages";
 import { renderMarkdown } from "@/lib/blog/markdown";
 import { breadcrumbSchema, graph } from "@/lib/seo/schema";
-import { SITE, SOCIAL_CARD, abs } from "@/lib/seo/site";
+import { SITE, abs, canonicalOg } from "@/lib/seo/site";
 
 /**
  * A city page whose content updates itself — HANDOVER-22 §6, rebuilt on the
@@ -63,20 +63,25 @@ export async function generateMetadata({
      */
     title: page.title,
     description: page.metaDescription,
-    alternates: { canonical: path },
-    openGraph: {
+    /*
+     * HOTFIX-39 §4 — through `canonicalOg`, not hand-rolled.
+     *
+     * This route built `alternates` and `openGraph` itself and never set
+     * `twitter`, so it inherited the ROOT twitter object and served the
+     * homepage's title and description on all thirteen city pages. The
+     * shared helper was fixed in HOTFIX-36 §3.1; this call site was simply
+     * not using it, which is why that fix did not reach here.
+     *
+     * The helper also keeps `images` on the openGraph object, which is the
+     * other trap this file already documented: a page-level openGraph
+     * REPLACES the inherited one, so omitting images silently drops
+     * og:image.
+     */
+    ...canonicalOg(path, {
       title: `${page.title} | ${SITE.name}`,
       description: page.metaDescription,
-      url: path,
       type: "article",
-      /*
-       * `images` is not optional. A page-level openGraph REPLACES the
-       * inherited object, so omitting it drops og:image — which is exactly
-       * what the previous version of this file did, silently, on every
-       * air-quality page.
-       */
-      images: [SOCIAL_CARD],
-    },
+    }),
   };
 }
 
@@ -89,6 +94,24 @@ function formatWhen(iso: string) {
     timeZone: "Asia/Karachi",
     timeZoneName: "short",
   });
+}
+
+/**
+ * Today's date in Pakistan, as YYYY-MM-DD — HOTFIX-39 §6.
+ *
+ * `area_page_data` filters the forecast with `forecast_date >=
+ * CURRENT_DATE`, which is the DATABASE's date, in UTC. Every reader of
+ * this page is five hours ahead of that. Between 19:00 UTC and midnight
+ * the two disagree, and the first forecast card showed yesterday: at 22:00
+ * UTC on 23 September, beside a reading stamped "24 September 02:00", the
+ * forecast opened on "Wed 23 Sept".
+ *
+ * Filtering here rather than widening the view, because the view is
+ * generic and this is a Pakistan-facing page. `en-CA` is the shortest way
+ * to an ISO date string, and ISO dates compare correctly as strings.
+ */
+function todayInPakistan(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Karachi" });
 }
 
 function formatDay(iso: string) {
@@ -169,6 +192,9 @@ export default async function AirQualityCityPage({ params }: PageProps) {
   if (!page) notFound();
 
   const showLive = canShowLivePanel(page);
+  // Drop any forecast day that is already yesterday where the reader is.
+  const today = todayInPakistan();
+  const forecast = page.forecast.filter((d) => d.date >= today);
   const trail: Crumb[] = [
     { name: "Home", path: "/" },
     { name: "Air quality", path: "/air-quality" },
@@ -272,13 +298,13 @@ export default async function AirQualityCityPage({ params }: PageProps) {
           </section>
         ) : null}
 
-        {showLive && page.forecast.length ? (
+        {showLive && forecast.length ? (
           <section className="mt-10">
             <h2 className="font-serif text-2xl leading-snug text-brand-primary">
               The next three days
             </h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {page.forecast.map((d) => (
+              {forecast.map((d) => (
                 <div
                   key={d.date}
                   className="rounded-2xl border border-brand-lavender/70 bg-white p-4"

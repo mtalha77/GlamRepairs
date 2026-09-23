@@ -67,6 +67,7 @@ export function renderMarkdown(md: string): string {
   const lines = escapeHtml(md.replace(/\r\n/g, "\n")).split("\n");
   const out: string[] = [];
   let inList = false;
+  let inOrdered = false;
   let para: string[] = [];
 
   const flushPara = () => {
@@ -77,8 +78,9 @@ export function renderMarkdown(md: string): string {
   };
   const closeList = () => {
     if (inList) {
-      out.push("</ul>");
+      out.push(inOrdered ? "</ol>" : "</ul>");
       inList = false;
+      inOrdered = false;
     }
   };
 
@@ -115,11 +117,40 @@ export function renderMarkdown(md: string): string {
 
     if (/^[-*]\s+/.test(line)) {
       flushPara();
+      // A bullet inside a numbered list ends it, rather than nesting.
+      if (inList && inOrdered) closeList();
       if (!inList) {
         out.push("<ul>");
         inList = true;
+        inOrdered = false;
       }
       out.push(`<li>${inline(line.replace(/^[-*]\s+/, ""))}</li>`);
+      continue;
+    }
+
+    /*
+     * Ordered lists — HOTFIX-39 §5.
+     *
+     * There was no branch for these at all, so "1. Cleanse every evening…"
+     * fell through to the paragraph accumulator and rendered as one run-on
+     * <p> with the numerals as literal text. Two costs: it reads as a wall,
+     * and there is no <ol> for a list rich result or an answer engine to
+     * lift, which is the traffic these pages are best placed to win.
+     *
+     * `start` is honoured so a list that genuinely begins at 3 still reads
+     * correctly, rather than being silently renumbered from 1.
+     */
+    const ordered = /^(\d{1,3})[.)]\s+(.*)$/.exec(line);
+    if (ordered) {
+      flushPara();
+      if (inList && !inOrdered) closeList();
+      if (!inList) {
+        const start = Number(ordered[1]);
+        out.push(start === 1 ? "<ol>" : `<ol start="${start}">`);
+        inList = true;
+        inOrdered = true;
+      }
+      out.push(`<li>${inline(ordered[2])}</li>`);
       continue;
     }
 
