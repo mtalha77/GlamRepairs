@@ -197,13 +197,50 @@ export async function listPublishedAreaPages(): Promise<AreaPage[]> {
 }
 
 /**
+ * How old a reading may be and still be shown as current.
+ *
+ * Six hours. WeatherAPI itself updates roughly hourly, so this tolerates
+ * five consecutive missed refreshes before a page goes quiet — generous
+ * enough to ride out a provider blip or a skipped cron, short enough that
+ * nobody is shown yesterday's air as though it were now. The panel prints
+ * "Reading taken ..." underneath either way, so an older-but-valid number
+ * is labelled rather than passed off as live.
+ */
+export const STALE_AFTER_MS = 6 * 60 * 60 * 1000;
+
+/**
  * Whether the live panel may be rendered — HANDOVER-35 §6.
  *
- * Both conditions hide it: no reading at all, and a reading the database has
- * marked stale. The editorial half of the page renders either way, because a
- * page with no number still answers the question it was written for, and a
- * 500 on a URL Google is actively crawling is far worse than a quiet page.
+ * ── Why the age is computed here and not trusted from the row ────────────
+ * `air_quality_latest.is_stale` is a STORED column, and nothing in this
+ * system has ever set it back to true: there is no trigger on the table,
+ * pg_cron and pg_net are not installed, and the refresh job writes
+ * `is_stale: false` on every successful write and never anything else. It
+ * is currently true on all three populated cities only because the one-off
+ * external backfill left it that way.
+ *
+ * So the flag cannot be the test. Had it been, the first successful cron
+ * run would have pinned every city to "live" permanently — and a page
+ * showing a three-day-old PM2.5 reading under the heading "Air in Lahore
+ * right now" is a worse failure than showing nothing, which is exactly what
+ * §6 was written to prevent. The flag is still honoured as a manual
+ * override (an operator can set it true to pull a city's panel), but
+ * freshness is decided by `fetched_at`, which is written on every refresh
+ * and cannot go stale without the reading going stale with it.
+ *
+ * The editorial half of the page renders either way, because a page with no
+ * number still answers the question it was written for, and a 500 on a URL
+ * Google is actively crawling is far worse than a quiet page.
  */
 export function canShowLivePanel(page: AreaPage): boolean {
-  return page.latest !== null && !page.latest.isStale;
+  if (page.latest === null) return false;
+  if (page.latest.isStale) return false;
+  return readingAgeMs(page.latest) <= STALE_AFTER_MS;
+}
+
+/** How old a reading is, in milliseconds. Unparseable dates read as ancient. */
+export function readingAgeMs(reading: AirReading): number {
+  const fetched = new Date(reading.fetchedAt).getTime();
+  if (!Number.isFinite(fetched)) return Number.POSITIVE_INFINITY;
+  return Date.now() - fetched;
 }

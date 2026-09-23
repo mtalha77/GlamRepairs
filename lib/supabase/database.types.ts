@@ -294,6 +294,39 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      /**
+       * One row per /api/cron/air-quality invocation.
+       *
+       * Hand-written, like the rest of the air-quality block. Do NOT
+       * regenerate this file wholesale — a previous regeneration destroyed
+       * the hand-written unions elsewhere in it.
+       */
+      air_quality_cron_runs: {
+        Row: {
+          id: number;
+          ran_at: string;
+          ok: boolean;
+          refreshed: number;
+          failed: number;
+          detail: unknown;
+          trigger: string;
+        };
+        Insert: {
+          ok: boolean;
+          refreshed?: number;
+          failed?: number;
+          detail?: unknown;
+          trigger?: string;
+        };
+        Update: {
+          ok?: boolean;
+          refreshed?: number;
+          failed?: number;
+          detail?: unknown;
+          trigger?: string;
+        };
+        Relationships: [];
+      };
       /** One row per city: what the page renders, with band and staleness. */
       air_quality_latest: {
         Row: {
