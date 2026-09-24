@@ -227,7 +227,10 @@ export type Database = {
           status: string;
           sort_order: number;
           zone_slug: string | null;
+          created_at: string;
+          /** Moved only by a copy change — HOTFIX-40 §3. */
           updated_at: string;
+          faqs: { question: string; answer: string }[];
         };
         Insert: {
           slug: string;
@@ -245,6 +248,7 @@ export type Database = {
           meta_description?: string;
           status?: string;
           updated_at?: string;
+          faqs?: { question: string; answer: string }[];
         };
         Relationships: [];
       };
@@ -986,6 +990,9 @@ export type Database = {
           forecast: Record<string, unknown>[] | null;
           advice: Record<string, unknown> | null;
           zone_siblings: Record<string, unknown>[] | null;
+          created_at: string;
+          updated_at: string;
+          faqs: { question: string; answer: string }[];
         };
         Insert: never;
         Update: never;

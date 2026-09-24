@@ -8,12 +8,16 @@ import JsonLd from "@/components/seo/JsonLd";
 import {
   canShowLivePanel,
   getAreaPage,
+  getDailyPm25,
   listPublishedAreaPages,
   type AreaPage,
+  type DailyPm25,
 } from "@/lib/airQuality/areaPages";
 import { renderMarkdown } from "@/lib/blog/markdown";
-import { breadcrumbSchema, graph } from "@/lib/seo/schema";
-import { SITE, abs, canonicalOg } from "@/lib/seo/site";
+import { barChart } from "@/lib/charts/render";
+import { PRACTITIONER } from "@/lib/seo/authors";
+import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
+import { SITE, SOCIAL_CARD, abs, canonicalOg } from "@/lib/seo/site";
 
 /**
  * A city page whose content updates itself — HANDOVER-22 §6, rebuilt on the
@@ -124,15 +128,58 @@ function formatDay(iso: string) {
 }
 
 /**
- * The structured data — HANDOVER-35 §3.1.
+ * The structured data — HANDOVER-35 §3.1, extended by HOTFIX-40 §3–§4.
  *
- * `Dataset` is emitted only when there is a reading to describe. Claiming a
- * dataset on a page showing no numbers would be describing something that
- * is not on the page. `WebPage` and `BreadcrumbList` are emitted always,
- * which is §6's rule: drop the Dataset node, keep the rest.
+ * ── The two dates, and what may not move them ────────────────────────────
+ * `datePublished` is the row's `created_at` and `dateModified` its
+ * `updated_at`, which a trigger moves only when reader-facing copy changes.
+ *
+ * `dateModified` used to be the sensor reading's `fetched_at`, on the
+ * argument that a changed number is a changed page. HOTFIX-40 §3 is right
+ * that it is not: that value moved every hour, so the page told Google its
+ * content changed sixty times a day when nobody had touched it — a signal
+ * Google learns to discount, and one that spends crawl budget a small site
+ * cannot spare. The reading's time now lives where it belongs, on the
+ * Dataset node and in the visible "Reading taken …" table caption.
+ *
+ * ── Where `reviewedBy` goes ──────────────────────────────────────────────
+ * §4.2's example puts `reviewedBy` on the Article. It is not an Article
+ * property: schema.org defines it on WebPage (MedicalWebPage inherits it
+ * from there). So the WebPage carries `reviewedBy` and the Article carries
+ * `author`, and the two nodes are tied by `isPartOf` / `mainEntity`.
+ *
+ * `Dataset` is still emitted only when there is a reading to describe, and
+ * `FAQPage` only when the page renders a visible FAQ block — never markup
+ * for questions that are not on the page (§4.4).
  */
+function toKarachiIso(isoUtc: string): string {
+  // Stable, explicit offset. Pakistan does not observe DST, so +05:00 is
+  // always correct and reads the way §4.2's example does.
+  const d = new Date(new Date(isoUtc).getTime() + 5 * 60 * 60 * 1000);
+  return `${d.toISOString().slice(0, 19)}+05:00`;
+}
+
 function areaSchema(page: AreaPage, trail: Crumb[]) {
   const path = `/air-quality/${page.slug}`;
+  const person = { "@id": abs(`/authors/${PRACTITIONER.slug}#person`) };
+  const published = toKarachiIso(page.createdAt);
+  const modified = toKarachiIso(page.updatedAt);
+  const place = {
+    "@type": "Place",
+    name: page.city,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: page.city,
+      ...(page.province ? { addressRegion: page.province } : {}),
+      addressCountry: "PK",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: page.latitude,
+      longitude: page.longitude,
+    },
+  };
+
   const nodes: object[] = [
     {
       "@type": "WebPage",
@@ -142,46 +189,141 @@ function areaSchema(page: AreaPage, trail: Crumb[]) {
       description: page.metaDescription,
       inLanguage: "en-PK",
       isPartOf: { "@id": abs("/#website") },
-      about: {
-        "@type": "City",
-        name: page.city,
-        address: {
-          "@type": "PostalAddress",
-          ...(page.province ? { addressRegion: page.province } : {}),
-          addressCountry: "PK",
-        },
-      },
-      // The honest freshness signal, and what makes the page worth
-      // re-crawling. It is the reading's time, never the build's.
-      ...(page.latest ? { dateModified: page.latest.fetchedAt } : {}),
+      datePublished: published,
+      dateModified: modified,
+      reviewedBy: person,
+      mainEntity: { "@id": abs(`${path}#article`) },
+      breadcrumb: { "@id": abs(`${path}#breadcrumb`) },
     },
-    breadcrumbSchema(trail),
+    {
+      "@type": "Article",
+      "@id": abs(`${path}#article`),
+      headline: page.h1,
+      description: page.metaDescription,
+      inLanguage: "en-PK",
+      datePublished: published,
+      dateModified: modified,
+      author: person,
+      publisher: { "@id": abs("/#organization") },
+      isPartOf: { "@id": abs(`${path}#webpage`) },
+      mainEntityOfPage: { "@id": abs(`${path}#webpage`) },
+      image: SOCIAL_CARD.url,
+      about: place,
+    },
+    { ...breadcrumbSchema(trail), "@id": abs(`${path}#breadcrumb`) },
   ];
 
   if (page.latest) {
+    const measured = [
+      { name: "PM2.5", value: page.latest.pm25 },
+      { name: "PM10", value: page.latest.pm10 },
+    ].filter((m) => m.value !== null);
+
     nodes.push({
       "@type": "Dataset",
+      "@id": abs(`${path}#dataset`),
       name: `${page.city} air quality readings`,
-      description: `Hourly air quality and weather readings for ${page.city}, Pakistan.`,
-      temporalCoverage: `${page.latest.observedAt.slice(0, 7)}/..`,
-      spatialCoverage: {
-        "@type": "Place",
-        geo: {
-          "@type": "GeoCoordinates",
-          latitude: page.latitude,
-          longitude: page.longitude,
-        },
-      },
+      description:
+        `Hourly particulate, temperature and humidity readings for ` +
+        `${page.city}, Pakistan, refreshed every hour and shown with what ` +
+        `the current level means for skin.`,
+      // §4.3: the Dataset describes the reading, so it carries the
+      // reading's time — the one place that time belongs.
+      temporalCoverage: toKarachiIso(page.latest.observedAt),
+      spatialCoverage: place,
       creator: {
         "@type": "Organization",
         name: "WeatherAPI.com",
         url: "https://www.weatherapi.com/",
       },
       isAccessibleForFree: true,
+      // `GQ` is the UN/CEFACT common code for microgram per cubic metre.
+      variableMeasured: measured.map((m) => ({
+        "@type": "PropertyValue",
+        name: m.name,
+        value: m.value,
+        unitCode: "GQ",
+        unitText: "µg/m³",
+      })),
     });
   }
 
+  if (page.faqs.length) {
+    nodes.push(faqSchema(page.faqs, path));
+  }
+
   return graph(...nodes);
+}
+
+function formatDate(isoUtc: string) {
+  return new Date(isoUtc).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Karachi",
+  });
+}
+
+/**
+ * The seven-day chart — HOTFIX-40 §2.1.
+ *
+ * The page had four images and none of them was about its subject: three
+ * logos and the shared CTA photo. This adds the one image worth describing,
+ * built from the site's own hourly readings.
+ *
+ * ── Why the guideline is 15, not 5 ───────────────────────────────────────
+ * §2.1's example describes daily means "against a WHO guideline of 5". Five
+ * is the WHO's ANNUAL guideline. Daily means are compared against the
+ * 24-HOUR guideline, which is 15 µg/m³. Plotting a day against a year's
+ * threshold is the same mismatch HANDOVER-38 §3 warns about for units —
+ * right-looking, and wrong in a way anyone who knows the guidelines will
+ * catch.
+ *
+ * ── Why it may not appear yet ────────────────────────────────────────────
+ * It needs three days with enough readings to mean something. The hourly
+ * refresh has only been writing every city since 23 September, so for the
+ * first few days the section is simply absent rather than showing one bar
+ * under a "last seven days" heading.
+ */
+const MIN_CHART_DAYS = 3;
+const WHO_24H_PM25 = 15;
+
+function sevenDayChart(page: AreaPage, days: DailyPm25[]): string | null {
+  if (days.length < MIN_CHART_DAYS) return null;
+
+  const fmt = (d: string) =>
+    new Date(`${d}T12:00:00Z`).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      timeZone: "Asia/Karachi",
+    });
+  const first = days[0].date;
+  const last = days[days.length - 1].date;
+  const means = days.map((d) => d.mean);
+  const lo = Math.min(...means);
+  const hi = Math.max(...means);
+  const anyPartial = days.some((d) => d.partial);
+
+  return barChart({
+    id: `aq7-${page.slug}`,
+    title: `${page.city} PM2.5, daily mean, ${fmt(first)} to ${fmt(last)}`,
+    subtitle: `The dashed line is the WHO 24-hour guideline of ${WHO_24H_PM25}.`,
+    unit: "pm25",
+    source: "WeatherAPI.com readings collected hourly by Glam Repairs",
+    points: days.map((d) => ({
+      label: fmt(d.date),
+      value: d.mean,
+      partial: d.partial,
+    })),
+    guideline: { value: WHO_24H_PM25, label: `WHO 24-hour guideline ${WHO_24H_PM25}` },
+    desc:
+      `Daily mean PM2.5 in ${page.city} from ${fmt(first)} to ${fmt(last)}, ` +
+      `ranging from ${lo} to ${hi} micrograms per cubic metre, against a ` +
+      `WHO 24-hour guideline of ${WHO_24H_PM25}.`,
+    ...(anyPartial
+      ? { partialNote: "Today is still in progress, so its mean covers only the hours so far." }
+      : {}),
+  });
 }
 
 export default async function AirQualityCityPage({ params }: PageProps) {
@@ -195,6 +337,7 @@ export default async function AirQualityCityPage({ params }: PageProps) {
   // Drop any forecast day that is already yesterday where the reader is.
   const today = todayInPakistan();
   const forecast = page.forecast.filter((d) => d.date >= today);
+  const chart = sevenDayChart(page, await getDailyPm25(page.slug));
   const trail: Crumb[] = [
     { name: "Home", path: "/" },
     { name: "Air quality", path: "/air-quality" },
@@ -215,6 +358,26 @@ export default async function AirQualityCityPage({ params }: PageProps) {
           <h1 className="font-serif text-3xl leading-tight text-brand-primary sm:text-4xl">
             {page.h1}
           </h1>
+          {/*
+            HOTFIX-40 §3.2 — the same two dates the schema carries, where a
+            reader can see them. "Last reviewed", not "Last updated": a
+            person checked the copy, and the live numbers below change
+            hourly without anyone reviewing anything.
+          */}
+          <p className="mt-3 text-sm text-brand-gray">
+            Published{" "}
+            <time dateTime={page.createdAt}>{formatDate(page.createdAt)}</time>.
+            Last reviewed{" "}
+            <time dateTime={page.updatedAt}>{formatDate(page.updatedAt)}</time>{" "}
+            by{" "}
+            <Link
+              href={`/authors/${PRACTITIONER.slug}`}
+              className="underline underline-offset-2"
+            >
+              {PRACTITIONER.name}
+            </Link>
+            .
+          </p>
           {page.introMarkdown ? (
             <div
               className="prose-area mt-4 text-brand-ink"
@@ -238,32 +401,58 @@ export default async function AirQualityCityPage({ params }: PageProps) {
 
           {showLive && page.latest ? (
             <>
-              <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {[
-                  ["PM2.5", page.latest.pm25, "µg/m³"],
-                  ["PM10", page.latest.pm10, "µg/m³"],
-                  ["Temp", page.latest.tempC, "°C"],
-                  ["Humidity", page.latest.humidity, "%"],
-                ].map(([label, value, unit]) => (
-                  <div
-                    key={String(label)}
-                    className="rounded-2xl border border-brand-lavender/70 bg-white p-4"
-                  >
-                    <dt className="text-xs uppercase tracking-wide text-brand-gray">
-                      {label}
-                    </dt>
-                    <dd className="mt-1 text-2xl text-brand-primary tabular-nums">
-                      {value == null ? "—" : String(value)}
-                      <span className="ml-1 text-sm text-brand-gray">
-                        {value == null ? "" : unit}
-                      </span>
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              {/*
+                HOTFIX-40 §4.5 — a real table, not four styled boxes. A
+                <caption> and column headers are what a screen reader
+                announces and what an answer engine can lift as a fact
+                ("PM2.5 in Lahore: 88 µg/m³ at 14:00 PKT"); a grid of divs
+                is neither. Units sit in the header so each cell is a
+                bare number.
+              */}
+              <div className="mt-4 overflow-x-auto rounded-2xl border border-brand-lavender/70 bg-white">
+                <table className="w-full text-left">
+                  <caption className="px-4 pt-3 text-left text-xs text-brand-gray">
+                    Reading taken {formatWhen(page.latest.observedAt)}
+                  </caption>
+                  <thead>
+                    <tr>
+                      {[
+                        ["PM2.5", "µg/m³"],
+                        ["PM10", "µg/m³"],
+                        ["Temperature", "°C"],
+                        ["Humidity", "%"],
+                      ].map(([label, unit]) => (
+                        <th
+                          key={label}
+                          scope="col"
+                          className="px-4 pt-3 text-xs font-normal uppercase tracking-wide text-brand-gray"
+                        >
+                          {label} <span className="normal-case">({unit})</span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {[
+                        page.latest.pm25,
+                        page.latest.pm10,
+                        page.latest.tempC,
+                        page.latest.humidity,
+                      ].map((value, i) => (
+                        <td
+                          key={i}
+                          className="px-4 pb-4 pt-1 text-2xl text-brand-primary tabular-nums"
+                        >
+                          {value == null ? "—" : String(value)}
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
               <p className="mt-3 text-xs text-brand-gray">
                 {page.latest.conditionText ? `${page.latest.conditionText}. ` : ""}
-                Reading taken {formatWhen(page.latest.observedAt)}.{" "}
                 {/* Required by the WeatherAPI free plan, and a legitimate
                     source citation rather than a link to suppress — §5.5. */}
                 Powered by{" "}
@@ -283,6 +472,16 @@ export default async function AirQualityCityPage({ params }: PageProps) {
             </p>
           )}
         </section>
+
+        {chart ? (
+          <section className="mt-10">
+            <h2 className="font-serif text-2xl leading-snug text-brand-primary">
+              The last seven days in {page.city}
+            </h2>
+            <div dangerouslySetInnerHTML={{ __html: chart }}
+            />
+          </section>
+        ) : null}
 
         {page.advice ? (
           <section className="mt-10">
@@ -370,6 +569,29 @@ export default async function AirQualityCityPage({ params }: PageProps) {
                 __html: renderMarkdown(page.zoneGuidance),
               }}
             />
+          </section>
+        ) : null}
+
+        {/*
+          HOTFIX-40 §4.4 — the FAQ renders only when the row has questions,
+          and the FAQPage node in the schema is gated on the same array, so
+          markup never describes questions a reader cannot see.
+        */}
+        {page.faqs.length ? (
+          <section className="mt-12">
+            <h2 className="font-serif text-2xl leading-snug text-brand-primary">
+              Questions about skin and air in {page.city}
+            </h2>
+            <div className="mt-4 space-y-5">
+              {page.faqs.map((f) => (
+                <div key={f.question}>
+                  <h3 className="font-medium text-brand-ink">{f.question}</h3>
+                  <p className="mt-1.5 leading-relaxed text-brand-ink">
+                    {f.answer}
+                  </p>
+                </div>
+              ))}
+            </div>
           </section>
         ) : null}
 

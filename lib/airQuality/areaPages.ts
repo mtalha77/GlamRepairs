@@ -79,6 +79,16 @@ export type AreaPage = {
   forecast: ForecastDay[];
   advice: { headline: string; advice: string } | null;
   zoneSiblings: { slug: string; city: string }[];
+  /**
+   * HOTFIX-40 §3. When the row was created, and when its reader-facing copy
+   * last changed. `updatedAt` is moved ONLY by
+   * area_pages_touch_on_copy_change_trg — never by a publish, a reorder or
+   * the hourly sensor reading — so it is safe to report as dateModified.
+   */
+  createdAt: string;
+  updatedAt: string;
+  /** HOTFIX-40 §4.4. Empty means no FAQ block and no FAQPage markup. */
+  faqs: { question: string; answer: string }[];
 };
 
 /** PostgREST returns numerics as strings; every number crosses that wire. */
@@ -155,6 +165,16 @@ function mapRow(r: RawRow): AreaPage {
       slug: String(s.slug),
       city: String(s.city),
     })),
+    createdAt: String(r.created_at),
+    updatedAt: String(r.updated_at),
+    faqs: ((r.faqs ?? []) as RawRow[])
+      .map((f) => ({
+        question: String(f.question ?? "").trim(),
+        answer: String(f.answer ?? "").trim(),
+      }))
+      // A half-written entry is dropped rather than rendered, so the
+      // visible block and the FAQPage markup cannot disagree.
+      .filter((f) => f.question && f.answer),
   };
 }
 
@@ -243,4 +263,72 @@ export function readingAgeMs(reading: AirReading): number {
   const fetched = new Date(reading.fetchedAt).getTime();
   if (!Number.isFinite(fetched)) return Number.POSITIVE_INFINITY;
   return Date.now() - fetched;
+}
+
+/**
+ * Daily mean PM2.5 for a city, in Pakistan days — HOTFIX-40 §2.1.
+ *
+ * Built from this site's own `air_quality_readings`, which the hourly
+ * refresh has been writing since 23 September. §2.1 suggested Punjab EPA's
+ * seven-day history; that source is not ingested (and is unreachable from
+ * the build environment), and it would not cover Sindh, KP or Balochistan
+ * anyway. Our own history covers all thirteen and is already on hand.
+ *
+ * A day only counts once it has enough readings to mean something
+ * (`minReadings`, default 6 — a quarter of a day's hours). The current day
+ * is returned too, flagged `partial`, because it is still filling.
+ */
+export type DailyPm25 = {
+  date: string; // YYYY-MM-DD, Asia/Karachi
+  mean: number;
+  readings: number;
+  partial: boolean;
+};
+
+export async function getDailyPm25(
+  slug: string,
+  days = 7,
+  minReadings = 6,
+): Promise<DailyPm25[]> {
+  const supabase = createAdminSupabaseClient();
+  const since = new Date(Date.now() - (days + 1) * 24 * 60 * 60 * 1000);
+  const { data, error } = await supabase
+    .from("air_quality_readings")
+    .select("observed_at, pm2_5")
+    .eq("slug", slug)
+    .gte("observed_at", since.toISOString())
+    .not("pm2_5", "is", null)
+    .order("observed_at", { ascending: true });
+
+  if (error || !data) {
+    if (error) console.error("[getDailyPm25]", error.message);
+    return [];
+  }
+
+  const byDay = new Map<string, number[]>();
+  for (const row of data as { observed_at: string; pm2_5: number | string }[]) {
+    const v = Number(row.pm2_5);
+    if (!Number.isFinite(v)) continue;
+    const day = new Date(row.observed_at).toLocaleDateString("en-CA", {
+      timeZone: "Asia/Karachi",
+    });
+    const bucket = byDay.get(day) ?? [];
+    bucket.push(v);
+    byDay.set(day, bucket);
+  }
+
+  const today = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Karachi",
+  });
+
+  return [...byDay.entries()]
+    .filter(([, values]) => values.length >= minReadings)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-days)
+    .map(([date, values]) => ({
+      date,
+      mean: Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10,
+      readings: values.length,
+      partial: date === today,
+    }));
 }

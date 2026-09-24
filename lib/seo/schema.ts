@@ -308,12 +308,12 @@ export function faqSchema(
  * every content page exactly the medical framing §3 removed sitewide, and
  * it is the type Google's medical-YMYL evaluation keys on.
  *
- * ⚠️ The cost is real and worth knowing. `reviewedBy` is defined on
- * `MedicalWebPage`, not on `Article`, so the "a named practitioner checked
- * this" signal cannot be carried the same way. It is emitted as `editor`
- * instead, which IS valid on CreativeWork and says the same thing in a
- * vocabulary that matches the type. If that trade looks wrong, this is the
- * one line to reconsider — the reviewer data itself has not changed.
+ * `reviewedBy` is defined on `WebPage` (MedicalWebPage only inherits it),
+ * not on `Article`. HOTFIX-39 got that wrong and dropped the signal to
+ * `editor`; HOTFIX-40 restores it the correct way — a plain WebPage node,
+ * `reviewedPageSchema` below, carries `reviewedBy` and `lastReviewed`, and
+ * the Article is its `mainEntity`. `editor` stays on the Article, because
+ * it is valid there and costs nothing.
  *
  * `datePublished`, `dateModified` and `reviewedBy` are not decoration. Visible,
  * machine-readable dates and a named reviewer are among the strongest signals
@@ -345,8 +345,13 @@ export function medicalArticleSchema(opts: {
      * `editor`, not `reviewedBy`. Same person, same claim, valid on
      * CreativeWork — see the note above this function.
      */
+    // With a reviewer, the caller also emits `reviewedPageSchema`, so the
+    // #webpage node this points at exists.
     ...(opts.reviewer
-      ? { editor: { "@id": abs(`/authors/${opts.reviewer.slug}#person`) } }
+      ? {
+          editor: { "@id": abs(`/authors/${opts.reviewer.slug}#person`) },
+          mainEntityOfPage: { "@id": abs(`${opts.path}#webpage`) },
+        }
       : {}),
     datePublished: opts.datePublished,
     dateModified: opts.dateModified ?? opts.datePublished,
@@ -359,6 +364,38 @@ export function medicalArticleSchema(opts: {
      * in a clinical category we have no business assigning them to.
      */
     audience: { "@type": "Audience", audienceType: "General public" },
+  };
+}
+
+/**
+ * The WebPage that holds an Article and says who reviewed it.
+ *
+ * `reviewedBy` and `lastReviewed` are WebPage properties, so this is where
+ * the "checked by a named practitioner" claim lives. Pair it with
+ * `medicalArticleSchema` for the same path: that node points back here via
+ * `mainEntityOfPage`, this one forward via `mainEntity`.
+ */
+export function reviewedPageSchema(opts: {
+  title: string;
+  description: string;
+  path: string;
+  reviewer: Author;
+  datePublished: string;
+  dateModified?: string;
+}) {
+  return {
+    "@type": "WebPage",
+    "@id": abs(`${opts.path}#webpage`),
+    url: abs(opts.path),
+    name: opts.title,
+    description: opts.description,
+    inLanguage: SITE.language,
+    isPartOf: { "@id": abs("/#website") },
+    datePublished: opts.datePublished,
+    dateModified: opts.dateModified ?? opts.datePublished,
+    reviewedBy: { "@id": abs(`/authors/${opts.reviewer.slug}#person`) },
+    lastReviewed: opts.dateModified ?? opts.datePublished,
+    mainEntity: { "@id": abs(`${opts.path}#article`) },
   };
 }
 
