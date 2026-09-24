@@ -6,7 +6,12 @@ import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
 import AuthorByline from "@/components/seo/AuthorByline";
 import JsonLd from "@/components/seo/JsonLd";
 import { getAuthor } from "@/lib/seo/authors";
-import { breadcrumbSchema, graph, medicalArticleSchema } from "@/lib/seo/schema";
+import {
+  breadcrumbSchema,
+  graph,
+  medicalArticleSchema,
+  reviewedPageSchema,
+} from "@/lib/seo/schema";
 import { getPublishedPost } from "@/lib/studio/blog";
 import { extractHeadings, renderMarkdown, slugifyHeading } from "@/lib/blog/markdown";
 
@@ -137,6 +142,19 @@ export default async function BlogPostPage({
             dateModified: post.updatedAt,
             image: post.heroImageUrl ?? undefined,
           }),
+          ...(reviewer
+            ? [
+                reviewedPageSchema({
+                  title: post.title,
+                  description:
+                    post.metaDescription || post.excerpt || post.title,
+                  path: `/blog/${post.slug}`,
+                  reviewer,
+                  datePublished: post.publishedAt ?? post.createdAt,
+                  dateModified: post.updatedAt,
+                }),
+              ]
+            : []),
           breadcrumbSchema(trail),
         )}
       />

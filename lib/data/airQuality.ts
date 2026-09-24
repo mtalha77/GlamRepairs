@@ -67,6 +67,19 @@ export type Series = {
   partialNote?: string;
   /** Extra sentence under the figure, e.g. a cross-check against the publisher. */
   caption?: string;
+  /**
+   * The long description read by assistive technology, emitted as the
+   * SVG's own <desc>. Should say what the chart shows in numbers — the
+   * range, the period — not restate the title. Optional; when absent the
+   * title and unit are all a screen reader gets.
+   */
+  desc?: string;
+  /**
+   * A reference line, e.g. a WHO guideline. Drawn only when it falls inside
+   * the plotted range, and always labelled with its own value, because an
+   * unlabelled line invites a reader to guess what it is.
+   */
+  guideline?: { value: number; label: string };
 };
 
 /**

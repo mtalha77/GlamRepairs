@@ -85,7 +85,19 @@ function figure(series: Series, svg: string, width: number, height: number): str
     // §6 — the unit leads the subtitle on every single chart.
     `<div class="gr-figure__sub">${esc(unit)}. ${esc(series.subtitle)}</div>`,
     `</div>`,
-    `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(series.title)}. ${esc(unit)}." xmlns="http://www.w3.org/2000/svg">${svg}</svg>`,
+    /*
+     * HOTFIX-40 §2.1 — the accessible name comes from the SVG's own
+     * <title> and <desc>, referenced by aria-labelledby, rather than a
+     * flat aria-label. That is what lets the chart count as a described
+     * image rather than an unlabelled one, and it keeps the description in
+     * the markup where a crawler reads it too. Ids are namespaced by series
+     * so two charts on one page cannot collide.
+     */
+    `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${esc(series.id)}-t${series.desc ? ` ${esc(series.id)}-d` : ""}" xmlns="http://www.w3.org/2000/svg">`,
+    `<title id="${esc(series.id)}-t">${esc(series.title)}. ${esc(unit)}.</title>`,
+    series.desc ? `<desc id="${esc(series.id)}-d">${esc(series.desc)}</desc>` : "",
+    svg,
+    `</svg>`,
     `<figcaption>`,
     // The unit keeps its own casing: "US AQI" is an initialism and
     // lowercasing it produced "Figures in us aqi."
@@ -113,6 +125,15 @@ export function barChart(series: Series): string {
   const parts: string[] = [];
   if (series.unit === "aqi") parts.push(bands(max, x0, x1, top, base));
   parts.push(axis(max, x0, x1, top, base));
+
+  // A labelled reference line, drawn only if it falls inside the scale.
+  if (series.guideline && series.guideline.value < max) {
+    const gy = base - (series.guideline.value / max) * (base - top);
+    parts.push(
+      `<line x1="${x0}" y1="${gy.toFixed(1)}" x2="${x1}" y2="${gy.toFixed(1)}" stroke="#2f7d52" stroke-width="1.5" stroke-dasharray="5 4"/>` +
+        `<text x="${x1 - 4}" y="${(gy - 6).toFixed(1)}" text-anchor="end" font-size="11" font-weight="600" fill="#2f7d52" font-family="${SANS}">${esc(series.guideline.label)}</text>`,
+    );
+  }
 
   series.points.forEach((p, i) => {
     const cx = x0 + slot * (i + 0.5);
