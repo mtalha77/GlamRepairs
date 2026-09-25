@@ -210,7 +210,7 @@ export default function SkinWellnessChart() {
             y={124}
             textAnchor="middle"
             dominantBaseline="middle"
-            className="fill-[#1b1b1b] font-serif"
+            className="fill-brand-ink font-serif"
             fontSize={23}
           >
             Skin wellness level

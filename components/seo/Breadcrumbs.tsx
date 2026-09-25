@@ -79,7 +79,7 @@ export default function Breadcrumbs({
 
   return (
     <nav aria-label="Breadcrumb" className={`text-sm ${className}`.trim()}>
-      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <ol className="flex flex-wrap items-center gap-x-2">
         {trail.map((crumb, i) => (
           <li key={crumb.path} className="flex items-center gap-x-2">
             {i > 0 ? (
@@ -101,7 +101,7 @@ export default function Breadcrumbs({
             ) : (
               <Link
                 href={crumb.path}
-                className="rounded underline decoration-black/20 underline-offset-2 transition-colors hover:text-brand-primary hover:decoration-brand-primary/40"
+                className="inline-flex min-h-11 min-w-11 items-center rounded underline decoration-black/20 underline-offset-2 transition-colors hover:text-brand-primary hover:decoration-brand-primary/40"
               >
                 {crumb.name}
               </Link>

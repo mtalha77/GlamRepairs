@@ -246,17 +246,27 @@ export default function TestimonialDeck() {
         Review {index + 1} of {count}: {REVIEWS[index].name}, {REVIEWS[index].city}
       </p>
 
-      <div className="mt-[30px] flex items-center justify-center gap-3.5">
+      {/*
+        HOTFIX-41 §4 — every control is at least 44×44 at phone width.
+
+        The dots were 7×7, which a thumb cannot hit. Each is now a 44px
+        button holding the same small dot, so nothing looks different and it
+        becomes usable. Six 44px dots plus three 44px controls do not fit on
+        one line at 375px, so below `sm` the dots take their own row above
+        the arrows. From `sm` the dot targets narrow to 24px, the WCAG 2.2
+        minimum for pointer input, and rejoin the arrows on one line.
+      */}
+      <div className="mt-[30px] flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1">
         <button
           type="button"
           onClick={goPrev}
           aria-label="Previous review"
-          className="grid h-10 w-10 place-items-center rounded-full border border-brand-lavender bg-white text-brand-primary shadow-sm transition-colors duration-150 hover:border-brand-primary hover:bg-brand-primary hover:text-white"
+          className="grid h-11 w-11 place-items-center rounded-full border border-brand-lavender bg-white text-brand-primary shadow-sm transition-colors duration-150 hover:border-brand-primary hover:bg-brand-primary hover:text-white"
         >
           <ArrowIcon direction="prev" />
         </button>
 
-        <div className="flex gap-[7px]">
+        <div className="order-first flex w-full justify-center sm:order-none sm:w-auto">
           {REVIEWS.map((review, i) => (
             <button
               key={review.name}
@@ -264,10 +274,17 @@ export default function TestimonialDeck() {
               onClick={() => goTo(i)}
               aria-label={`Go to review ${i + 1} of ${count}`}
               aria-current={i === index}
-              className={`h-[7px] rounded-full transition-[width,background-color] duration-300 motion-reduce:transition-none ${
-                i === index ? "w-6 bg-brand-primary" : "w-[7px] bg-brand-lavender"
+              className={`grid h-11 place-items-center ${
+                i === index ? "w-11 sm:w-8" : "w-11 sm:w-6"
               }`}
-            />
+            >
+              <span
+                aria-hidden
+                className={`block h-[7px] rounded-full transition-[width,background-color] duration-300 motion-reduce:transition-none ${
+                  i === index ? "w-6 bg-brand-primary" : "w-[7px] bg-brand-lavender"
+                }`}
+              />
+            </button>
           ))}
         </div>
 
@@ -275,14 +292,14 @@ export default function TestimonialDeck() {
             a single review, or reduced motion — because a dead button is
             worse than no button. */}
         {count > 1 && !prefersReducedMotion ? (
-          <div className="relative h-10 w-10">
-            <svg width="40" height="40" className="-rotate-90" aria-hidden>
-              <circle className="tdeck-ring-track" cx="20" cy="20" r={RING_RADIUS} fill="none" strokeWidth="2" />
+          <div className="relative h-11 w-11">
+            <svg width="44" height="44" className="-rotate-90" aria-hidden>
+              <circle className="tdeck-ring-track" cx="22" cy="22" r={RING_RADIUS} fill="none" strokeWidth="2" />
               <circle
                 ref={ringRef}
                 className="tdeck-ring-fill"
-                cx="20"
-                cy="20"
+                cx="22"
+                cy="22"
                 r={RING_RADIUS}
                 fill="none"
                 strokeWidth="2"
@@ -314,7 +331,7 @@ export default function TestimonialDeck() {
           type="button"
           onClick={goNext}
           aria-label="Next review"
-          className="grid h-10 w-10 place-items-center rounded-full border border-brand-lavender bg-white text-brand-primary shadow-sm transition-colors duration-150 hover:border-brand-primary hover:bg-brand-primary hover:text-white"
+          className="grid h-11 w-11 place-items-center rounded-full border border-brand-lavender bg-white text-brand-primary shadow-sm transition-colors duration-150 hover:border-brand-primary hover:bg-brand-primary hover:text-white"
         >
           <ArrowIcon direction="next" />
         </button>

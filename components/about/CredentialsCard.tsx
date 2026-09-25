@@ -218,13 +218,13 @@ export default function CredentialsCard() {
         <div className="flex shrink-0 flex-wrap gap-2.5">
           <Link
             href="/credentials"
-            className="rounded-full bg-brand-primary px-4 py-2 text-xs font-medium text-white transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-brand-primary-dark"
+            className="inline-flex min-h-11 items-center rounded-full bg-brand-primary px-4 py-2 text-xs font-medium text-white transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-brand-primary-dark"
           >
             Verify credentials
           </Link>
           <Link
             href={`/authors/${ayma.slug}`}
-            className="rounded-full border border-brand-primary/35 px-4 py-2 text-xs font-medium text-brand-primary transition-[background-color,border-color,transform] duration-150 hover:-translate-y-px hover:border-brand-primary hover:bg-brand-purple-soft"
+            className="inline-flex min-h-11 items-center rounded-full border border-brand-primary/35 px-4 py-2 text-xs font-medium text-brand-primary transition-[background-color,border-color,transform] duration-150 hover:-translate-y-px hover:border-brand-primary hover:bg-brand-purple-soft"
           >
             Full profile
           </Link>

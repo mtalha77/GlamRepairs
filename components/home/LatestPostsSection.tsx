@@ -77,7 +77,7 @@ export default async function LatestPostsSection() {
                     {post.title}
                   </span>
                   {post.excerpt ? (
-                    <span className="mt-3 flex-1 font-sans text-sm leading-relaxed text-brand-ink sm:text-[0.9375rem]">
+                    <span className="mt-3 line-clamp-2 flex-1 font-sans text-sm leading-relaxed text-brand-ink sm:line-clamp-none sm:text-[0.9375rem]">
                       {post.excerpt}
                     </span>
                   ) : null}

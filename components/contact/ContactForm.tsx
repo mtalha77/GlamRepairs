@@ -198,7 +198,7 @@ export default function ContactForm() {
             variant="subscribe"
             disabled={isSubmitting}
             aria-disabled={isSubmitting}
-            className={`w-full bg-brand-accent px-8 py-2.5 text-sm uppercase tracking-normal sm:w-auto sm:px-10 sm:py-3 sm:text-base${isFormComplete && !isSubmitting ? "" : " is-incomplete"}`}
+            className={`min-h-12 w-full bg-brand-accent px-8 py-2.5 text-sm uppercase tracking-normal sm:w-auto sm:px-10 sm:py-3 sm:text-base${isFormComplete && !isSubmitting ? "" : " is-incomplete"}`}
           >
             {isSubmitting ? "Sending..." : "Send now"}
           </FillButton>

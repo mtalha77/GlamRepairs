@@ -23,7 +23,7 @@ export default function AboutHeroSection() {
         className="object-cover object-center"
       />
 
-      <div className="absolute inset-0 bg-[#1b1b1b]/40" aria-hidden />
+      <div className="absolute inset-0 bg-brand-ink/40" aria-hidden />
 
       <div className="relative z-10 flex min-h-[80svh] flex-col items-center justify-center px-5 pb-12 pt-[92px] text-center sm:px-6 lg:min-h-[100svh] lg:pb-16 lg:pt-[72px]">
         <h1 className="mx-auto max-w-[46rem] font-sans text-[40px] leading-[1.1] tracking-[-0.72px] text-white sm:text-[56px] lg:text-[72px] lg:leading-[0.95]">

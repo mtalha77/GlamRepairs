@@ -38,7 +38,7 @@ type ShareSkinStepImageProps = {
 
 export default function ShareSkinStepImage({ alt }: ShareSkinStepImageProps) {
   return (
-    <div className="relative aspect-[433/415] w-full overflow-hidden rounded-[25px] bg-brand-light/30">
+    <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-brand-light/30 sm:aspect-[433/415] sm:rounded-[25px]">
       <Image
         src="/images,svgs/woman-hand-.webp"
         alt={alt}
@@ -52,7 +52,7 @@ export default function ShareSkinStepImage({ alt }: ShareSkinStepImageProps) {
           key={item.label}
           direction="right"
           delay={item.delay}
-          className={item.className}
+          className={`${item.className} max-sm:hidden`}
         >
           <ConcernPill
             label={item.label}

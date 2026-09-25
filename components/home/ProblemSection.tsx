@@ -46,14 +46,19 @@ export default function ProblemSection() {
     <section className="relative overflow-hidden bg-brand-surface-alt px-4 pt-12 pb-16 sm:px-6 sm:pt-20 sm:pb-24 lg:px-12 lg:pt-24 lg:pb-32">
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-brand-light/35 blur-3xl"
+        // HOTFIX-41 §5 — below `sm` this 320px blob sat mostly past the
+        // right edge, laid out and painted off-screen for nothing.
+        className="pointer-events-none absolute -right-16 bottom-0 hidden h-80 w-80 rounded-full bg-brand-light/35 blur-3xl sm:block"
       />
 
       <div className="relative mx-auto max-w-7xl">
         <ProblemSectionHeader />
 
         <div className="relative mt-8 sm:mt-12 lg:mt-10 lg:min-h-[880px]">
-          <div className="relative z-[1] flex justify-center sm:-mt-6 lg:absolute lg:inset-x-0 lg:top-[44%] lg:-translate-y-1/2 lg:-mt-0">
+          {/* HOTFIX-41 §2 — the illustration is decoration around the
+              three cards, and on a phone it stacked above them as its own
+              300px block. It returns from `sm`, where it sits among them. */}
+          <div className="relative z-[1] hidden justify-center sm:-mt-6 sm:flex lg:absolute lg:inset-x-0 lg:top-[44%] lg:-translate-y-1/2 lg:-mt-0">
             <div className="relative aspect-[840/749] w-full max-w-[20rem] sm:max-w-[38rem] lg:max-w-[46rem] xl:max-w-[52rem] 2xl:max-w-[58rem]">
               <Image
                 src={WOMAN_IMAGE}

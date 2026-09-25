@@ -39,7 +39,7 @@ export default function SkinAssessmentCta({
       >
         <Link
           href={href}
-          className="gr-btn cta-fill-btn inline-block w-full cursor-pointer rounded-full bg-white/20 px-8 py-3.5 text-center text-sm font-medium tracking-[0.15em] text-white backdrop-blur-sm sm:w-auto sm:px-10 sm:py-4 sm:text-base lg:whitespace-nowrap"
+          className="gr-btn cta-fill-btn inline-block min-h-12 w-full cursor-pointer rounded-full bg-white/20 px-8 py-3.5 text-center text-sm font-medium tracking-[0.15em] text-white backdrop-blur-sm sm:w-auto sm:px-10 sm:py-4 sm:text-base lg:whitespace-nowrap"
           {...props}
         >
           {label}
@@ -52,7 +52,7 @@ export default function SkinAssessmentCta({
     return (
       <Link
         href={href}
-        className={`gr-btn analysis-fill-btn inline-block cursor-pointer whitespace-nowrap rounded-full bg-white px-6 py-3 text-xs font-normal tracking-[0.15em] sm:px-8 sm:py-3.5 sm:text-sm ${className}`.trim()}
+        className={`gr-btn analysis-fill-btn inline-flex min-h-12 items-center justify-center cursor-pointer whitespace-nowrap rounded-full bg-white px-6 py-3 text-xs font-normal tracking-[0.15em] sm:px-8 sm:py-3.5 sm:text-sm ${className}`.trim()}
         {...props}
       >
         {label}

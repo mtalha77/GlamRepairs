@@ -101,7 +101,7 @@ export default function BlogIndex({ posts }: { posts: BlogIndexPost[] }) {
             type="button"
             onClick={() => setActive(ALL)}
             aria-pressed={active === ALL}
-            className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
+            className={`min-h-11 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
               active === ALL
                 ? "bg-[#662d91] text-white"
                 : "bg-black/[0.04] text-black/60 hover:bg-black/[0.08]"
@@ -115,7 +115,7 @@ export default function BlogIndex({ posts }: { posts: BlogIndexPost[] }) {
               type="button"
               onClick={() => setActive(cluster)}
               aria-pressed={active === cluster}
-              className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
+              className={`min-h-11 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
                 active === cluster
                   ? "bg-[#662d91] text-white"
                   : "bg-black/[0.04] text-black/60 hover:bg-black/[0.08]"

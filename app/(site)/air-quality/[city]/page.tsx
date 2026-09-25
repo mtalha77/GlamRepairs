@@ -403,54 +403,55 @@ export default async function AirQualityCityPage({ params }: PageProps) {
             <>
               {/*
                 HOTFIX-40 §4.5 — a real table, not four styled boxes. A
-                <caption> and column headers are what a screen reader
-                announces and what an answer engine can lift as a fact
-                ("PM2.5 in Lahore: 88 µg/m³ at 14:00 PKT"); a grid of divs
-                is neither. Units sit in the header so each cell is a
-                bare number.
+                <caption> and header cells are what a screen reader announces
+                and what an answer engine can lift as a fact ("PM2.5 in
+                Lahore: 88 µg/m³ at 14:00 PKT"); a grid of divs is neither.
+
+                HOTFIX-41 §3 — one ROW per reading, not one column. Four
+                columns needed 383px at a 375px viewport, so humidity was
+                clipped behind a sideways scroll. As rows, the same table
+                lays out as a 2×2 grid below `sm` and four across above it.
+                Changing a table's `display` strips its implicit roles in
+                Chromium and Safari, so the roles are stated explicitly.
               */}
-              <div className="mt-4 overflow-x-auto rounded-2xl border border-brand-lavender/70 bg-white">
-                <table className="w-full text-left">
-                  <caption className="px-4 pt-3 text-left text-xs text-brand-gray">
-                    Reading taken {formatWhen(page.latest.observedAt)}
-                  </caption>
-                  <thead>
-                    <tr>
-                      {[
-                        ["PM2.5", "µg/m³"],
-                        ["PM10", "µg/m³"],
-                        ["Temperature", "°C"],
-                        ["Humidity", "%"],
-                      ].map(([label, unit]) => (
-                        <th
-                          key={label}
-                          scope="col"
-                          className="px-4 pt-3 text-xs font-normal uppercase tracking-wide text-brand-gray"
-                        >
-                          {label} <span className="normal-case">({unit})</span>
-                        </th>
-                      ))}
+              <table role="table" className="mt-4 block w-full text-left">
+                <caption className="block pb-2 text-left text-xs text-brand-gray">
+                  Reading taken {formatWhen(page.latest.observedAt)}
+                </caption>
+                <tbody
+                  role="rowgroup"
+                  className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-brand-lavender/70 bg-brand-lavender/70 sm:grid-cols-4"
+                >
+                  {(
+                    [
+                      ["PM2.5", "µg/m³", page.latest.pm25],
+                      ["PM10", "µg/m³", page.latest.pm10],
+                      ["Temperature", "°C", page.latest.tempC],
+                      ["Humidity", "%", page.latest.humidity],
+                    ] as const
+                  ).map(([label, unit, value]) => (
+                    <tr
+                      key={label}
+                      role="row"
+                      className="flex min-w-0 flex-col bg-white px-4 py-3"
+                    >
+                      <th
+                        role="rowheader"
+                        scope="row"
+                        className="text-xs font-normal uppercase tracking-wide text-brand-gray"
+                      >
+                        {label} <span className="normal-case">({unit})</span>
+                      </th>
+                      <td
+                        role="cell"
+                        className="mt-1 text-2xl text-brand-primary tabular-nums"
+                      >
+                        {value == null ? "—" : String(value)}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      {[
-                        page.latest.pm25,
-                        page.latest.pm10,
-                        page.latest.tempC,
-                        page.latest.humidity,
-                      ].map((value, i) => (
-                        <td
-                          key={i}
-                          className="px-4 pb-4 pt-1 text-2xl text-brand-primary tabular-nums"
-                        >
-                          {value == null ? "—" : String(value)}
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
               <p className="mt-3 text-xs text-brand-gray">
                 {page.latest.conditionText ? `${page.latest.conditionText}. ` : ""}
                 {/* Required by the WeatherAPI free plan, and a legitimate
@@ -605,7 +606,7 @@ export default async function AirQualityCityPage({ params }: PageProps) {
                 <li key={s.slug}>
                   <Link
                     href={`/air-quality/${s.slug}`}
-                    className="inline-block rounded-full border border-brand-lavender px-3 py-1.5 text-sm text-brand-primary hover:bg-brand-lavender/20"
+                    className="inline-flex min-h-11 items-center rounded-full border border-brand-lavender px-4 text-sm text-brand-primary hover:bg-brand-lavender/20"
                   >
                     {s.city} air quality
                   </Link>
@@ -627,13 +628,13 @@ export default async function AirQualityCityPage({ params }: PageProps) {
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href={onboardingHref}
-              className="rounded-full bg-brand-primary px-5 py-2.5 text-sm text-white"
+              className="inline-flex min-h-12 items-center rounded-full bg-brand-primary px-5 text-sm text-white"
             >
               Start an assessment
             </Link>
             <Link
               href="/sample-assessment"
-              className="rounded-full border border-brand-lavender px-5 py-2.5 text-sm text-brand-primary"
+              className="inline-flex min-h-12 items-center rounded-full border border-brand-lavender px-5 text-sm text-brand-primary"
             >
               See a sample assessment first
             </Link>

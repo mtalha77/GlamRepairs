@@ -195,7 +195,7 @@ export default async function ComparePage() {
       <main className="gr-section-glow--white px-5 py-14 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-5xl">
         <nav className="mb-8 text-sm text-brand-gray">
-          <Link href="/" className="underline underline-offset-2">
+          <Link href="/" className="inline-flex min-h-11 min-w-11 items-center underline underline-offset-2">
             Home
           </Link>
           <span aria-hidden> / </span>

@@ -157,7 +157,7 @@ export function UploadPhotosFooter({ backHref, nextHref }: UploadPhotosFooterPro
             const target = resolveUnlockTarget("onboarding", nextHref);
             if (target !== null) unlockFlowStep("onboarding", target);
           }}
-          className="subscribe-fill-btn flex-1 rounded-full bg-brand-light px-6 py-3 text-center text-xs font-normal uppercase tracking-[0.15em] text-white sm:py-3.5 sm:text-sm"
+          className="subscribe-fill-btn min-h-12 flex-1 rounded-full bg-brand-light px-6 py-3 text-center text-xs font-normal uppercase tracking-[0.15em] text-white sm:py-3.5 sm:text-sm"
         >
           Upload Photos
         </Link>
@@ -165,7 +165,7 @@ export function UploadPhotosFooter({ backHref, nextHref }: UploadPhotosFooterPro
         <button
           type="button"
           onClick={requestStepValidation}
-          className="subscribe-fill-btn flex-1 rounded-full bg-brand-light px-6 py-3 text-center text-xs font-normal uppercase tracking-[0.15em] text-white sm:py-3.5 sm:text-sm"
+          className="subscribe-fill-btn min-h-12 flex-1 rounded-full bg-brand-light px-6 py-3 text-center text-xs font-normal uppercase tracking-[0.15em] text-white sm:py-3.5 sm:text-sm"
         >
           Upload Photos
         </button>

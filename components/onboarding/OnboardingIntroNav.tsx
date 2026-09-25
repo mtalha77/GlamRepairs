@@ -95,7 +95,7 @@ export default function OnboardingIntroNav({
       <Link
         href={resolvedBackHref}
         aria-label="Go back"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-brand-border-light bg-white text-brand-gray shadow-sm transition-opacity hover:opacity-80"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-brand-border-light bg-white text-brand-gray shadow-sm transition-opacity hover:opacity-80"
       >
         <svg
           aria-hidden
@@ -118,7 +118,7 @@ export default function OnboardingIntroNav({
         <Link
           href={resolvedNextHref}
           onClick={unlockNext}
-          className="subscribe-fill-btn inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-full bg-brand-light px-4 py-3 text-[11px] font-normal uppercase tracking-[0.08em] text-white sm:px-12 sm:py-3.5 sm:text-sm sm:tracking-[0.15em]"
+          className="subscribe-fill-btn min-h-12 inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-full bg-brand-light px-4 py-3 text-[11px] font-normal uppercase tracking-[0.08em] text-white sm:px-12 sm:py-3.5 sm:text-sm sm:tracking-[0.15em]"
         >
           {nextLabel}
         </Link>
@@ -126,7 +126,7 @@ export default function OnboardingIntroNav({
         <button
           type="button"
           onClick={requestStepValidation}
-          className="subscribe-fill-btn inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-full bg-brand-light px-4 py-3 text-[11px] font-normal uppercase tracking-[0.08em] text-white sm:px-12 sm:py-3.5 sm:text-sm sm:tracking-[0.15em]"
+          className="subscribe-fill-btn min-h-12 inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-full bg-brand-light px-4 py-3 text-[11px] font-normal uppercase tracking-[0.08em] text-white sm:px-12 sm:py-3.5 sm:text-sm sm:tracking-[0.15em]"
         >
           {nextLabel}
         </button>

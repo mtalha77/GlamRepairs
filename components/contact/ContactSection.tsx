@@ -29,7 +29,7 @@ export default function ContactSection() {
                 />
                 <Link
                   href={contactReachOut.emailHref}
-                  className="min-w-0 break-all font-serif text-[1.125rem] italic leading-snug tracking-normal text-brand-ink transition-opacity hover:opacity-80 sm:text-[1.5rem] sm:tracking-[0.04em] lg:text-[2rem] lg:tracking-[0.1em]"
+                  className="inline-flex min-h-11 min-w-0 items-center break-all font-serif text-[1.125rem] italic leading-snug tracking-normal text-brand-ink transition-opacity hover:opacity-80 sm:text-[1.5rem] sm:tracking-[0.04em] lg:text-[2rem] lg:tracking-[0.1em]"
                 >
                   {contactReachOut.emailDisplay}
                 </Link>
@@ -44,7 +44,7 @@ export default function ContactSection() {
               <div className="mt-6 flex min-w-0 flex-wrap items-center gap-3 sm:mt-7 sm:gap-4">
                 <a
                   href={`tel:${SITE.phone.e164}`}
-                  className="min-w-0 font-serif text-[1.125rem] italic leading-snug tracking-normal text-brand-ink transition-opacity hover:opacity-80 sm:text-[1.5rem] sm:tracking-[0.04em] lg:text-[2rem] lg:tracking-[0.1em]"
+                  className="inline-flex min-h-11 min-w-0 items-center font-serif text-[1.125rem] italic leading-snug tracking-normal text-brand-ink transition-opacity hover:opacity-80 sm:text-[1.5rem] sm:tracking-[0.04em] lg:text-[2rem] lg:tracking-[0.1em]"
                 >
                   {SITE.phone.display}
                 </a>
@@ -52,7 +52,7 @@ export default function ContactSection() {
                   href={`https://wa.me/${SITE.phone.digits}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex shrink-0 items-center rounded-full border border-brand-primary px-4 py-2 font-sans text-sm font-medium text-brand-primary transition-colors hover:bg-brand-primary hover:text-white"
+                  className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-brand-primary px-4 py-2 font-sans text-sm font-medium text-brand-primary transition-colors hover:bg-brand-primary hover:text-white"
                 >
                   WhatsApp
                 </a>

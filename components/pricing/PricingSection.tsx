@@ -67,7 +67,7 @@ export default async function PricingSection({
     >
       <div className="mx-auto max-w-[86rem]">
         <header className="mx-auto max-w-2xl text-center">
-          <h2 className="font-serif italic tracking-normal text-brand-primary text-[2.5rem] sm:text-5xl lg:text-[3.875rem]">
+          <h2 className="font-serif italic leading-[1.1] tracking-normal text-brand-primary text-[2.125rem] sm:text-5xl sm:leading-normal lg:text-[3.875rem]">
             {title}
           </h2>
           <p className="mt-4 font-sans leading-snug text-brand-ink text-base sm:mt-5 sm:text-lg lg:text-2xl">
@@ -110,7 +110,11 @@ export default async function PricingSection({
 
         {showCompareStrip ? <CompareStrip region={region} /> : null}
 
-        {showSampleLink ? (
+        {/* The PK comparison already ends with "See a real assessment
+            first", so a second link to the same page two lines later is
+            dropped there. Everywhere else the strip is a single link and
+            this sentence is the only route to the sample. */}
+        {showSampleLink && !(showCompareStrip && region.code === "PK") ? (
           <p className="mt-8 text-center text-sm leading-relaxed text-brand-ink sm:mt-10 sm:text-[0.9375rem]">
             Not sure what you get for that?{" "}
             <Link

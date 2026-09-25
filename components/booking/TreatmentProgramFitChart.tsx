@@ -173,7 +173,7 @@ export default function TreatmentProgramFitChart() {
                 y={bar.cy}
                 textAnchor="start"
                 dominantBaseline="middle"
-                className="fill-[#1b1b1b]"
+                className="fill-brand-ink"
                 fontSize={20}
                 style={fadeAfter(480)}
               >
