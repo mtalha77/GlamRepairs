@@ -1,0 +1,29 @@
+name: Submit sitemap to IndexNow
+
+# HOTFIX-43 §3.2. Run by hand from the Actions tab after a bulk change made
+# directly in the database, which no studio publish action saw. Everyday
+# publishes ping IndexNow on their own, so this is deliberately not on a
+# schedule: resubmitting URLs that have not changed is what IndexNow asks
+# sites not to do.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Submit every sitemap URL
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          ENDPOINT: https://www.glamrepairs.com/api/indexnow
+        run: |
+          set -euo pipefail
+          body=$(curl -sS -X POST -H "Authorization: Bearer ${CRON_SECRET}" "$ENDPOINT")
+          echo "$body"
+          echo "### IndexNow" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          echo "$body" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "$body" | grep -q '"ok":true'

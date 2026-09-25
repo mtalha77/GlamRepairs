@@ -13,6 +13,7 @@ import {
   isGiftedLead,
   showBankDetails as computeShowBankDetails,
 } from "@/lib/leads/paymentVisibility";
+import { deleteUnreferencedPhotos } from "@/lib/leads/deleteLeadPhotos";
 
 function isConfigured() {
   return Boolean(
@@ -171,6 +172,42 @@ export async function POST(request: Request) {
     imageUrls,
     photoPaths,
   });
+
+  /*
+   * HOTFIX-43 §1 — a failed insert is a failure, and its photos go.
+   *
+   * This used to carry on regardless: the photos were already in Storage,
+   * the response said `ok: true`, and the "we've received it" email went
+   * out, for a lead that did not exist. The practitioner never saw it, and
+   * the photographs sat in the bucket with no row pointing at them, which
+   * put them out of reach of both the studio and the 30-day sweep. Every
+   * file in the bucket when this was fixed was one of these.
+   *
+   * The funnel continues to the WhatsApp summary whatever this returns, so
+   * the client is not stranded; they are just not told something untrue.
+   */
+  if (!lead) {
+    if (photoPaths.length > 0) {
+      const cleanup = await deleteUnreferencedPhotos(photoPaths);
+      if (!cleanup.ok) {
+        console.error(
+          "[api/leads] Lead insert failed AND orphaned photos could not be removed:",
+          photoPaths,
+          cleanup.message,
+        );
+      }
+    }
+    console.error("[api/leads] Lead insert failed for session", body.sessionId);
+    return NextResponse.json<LeadSubmitResult>(
+      {
+        ok: false,
+        reason: "unknown",
+        message:
+          "We could not save your assessment. Please send us the WhatsApp message so we can help.",
+      },
+      { status: 500 },
+    );
+  }
 
   const paymentFacts = {
     paymentStatus: lead?.paymentStatus,

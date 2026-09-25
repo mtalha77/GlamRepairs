@@ -65,8 +65,9 @@ export async function uploadAssessmentPhotos(
       }
 
       photoPaths.push(path);
-      // Long Storage URL as fallback; API route rewrites to short /p/... links.
-      imageUrls.push(`${base}/storage/v1/object/public/${bucket}/${path}`);
+      // Never a public Storage URL (HOTFIX-43 §1): the bucket is private, and
+      // the route turns these paths into auth-gated /p/ links.
+      imageUrls.push(`/p/${packId}/${slot}.${ext}`);
     } catch (error) {
       console.error(`[uploadAssessmentPhotos] Error photo ${index + 1}:`, error);
     }

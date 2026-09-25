@@ -81,6 +81,43 @@ function serviceHeaders(key: string) {
 }
 
 /**
+ * Remove Storage objects that no lead row points at — HOTFIX-43 §1.
+ *
+ * The one caller is /api/leads when the insert fails after the upload
+ * succeeded. Those files belong to no record, so nothing in the studio can
+ * show them and no retention sweep will ever find them: before this, every
+ * failed submission left a client's face in the bucket indefinitely (29
+ * files across 7 uploads when this was written, 10 of them past the 30-day
+ * retention the site promises). Best-effort, and it reports rather than
+ * throws, because the caller is already on an error path.
+ */
+export async function deleteUnreferencedPhotos(
+  paths: string[],
+): Promise<{ ok: boolean; message?: string }> {
+  const credentials = getCredentials();
+  const list = paths.filter(Boolean);
+  if (!credentials || list.length === 0) return { ok: list.length === 0 };
+  try {
+    const response = await fetch(
+      `${credentials.base}/storage/v1/object/${getPhotosBucket()}`,
+      {
+        method: "DELETE",
+        headers: serviceHeaders(credentials.key),
+        // `{ prefixes }`, not a bare array — see deletePhotosForLead.
+        body: JSON.stringify({ prefixes: list }),
+      },
+    );
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      return { ok: false, message: `${response.status} ${detail.slice(0, 160)}` };
+    }
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/**
  * Delete one lead's photographs: Storage first, row second, row only on
  * success.
  *
