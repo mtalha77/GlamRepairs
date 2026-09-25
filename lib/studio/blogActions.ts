@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { requireStudioMember } from "@/lib/studio/member";
 import { readingMinutes } from "@/lib/blog/markdown";
 import { AUTHORS } from "@/lib/seo/authors";
+import { submitToIndexNow } from "@/lib/seo/indexnow";
 
 /**
  * Server actions for the blog admin.
@@ -273,6 +275,10 @@ export async function publishBlogPost(formData: FormData): Promise<ActionResult>
   revalidatePath(`/blog/${data.slug}`);
   revalidatePath("/studio/blog");
   revalidatePath("/sitemap.xml");
+  // HOTFIX-43 §3.2 — tell Bing and the other IndexNow engines now rather
+  // than waiting for a crawl. After the response, so it never slows the
+  // studio and a failed ping never fails a publish.
+  after(() => submitToIndexNow([`/blog/${data.slug}`, "/blog"]));
   return { ok: true };
 }
 
@@ -318,6 +324,7 @@ export async function publishBlogPostBundle(
   for (const slug of slugs) revalidatePath(`/blog/${slug}`);
   revalidatePath("/studio/blog");
   revalidatePath("/sitemap.xml");
+  after(() => submitToIndexNow([...slugs.map((slug) => `/blog/${slug}`), "/blog"]));
   return { ok: true };
 }
 
@@ -347,5 +354,9 @@ export async function unpublishBlogPost(id: string): Promise<ActionResult> {
   revalidatePath("/blog");
   if (data?.slug) revalidatePath(`/blog/${data.slug}`);
   revalidatePath("/studio/blog");
+  // An unpublished URL now 404s; IndexNow is also how engines learn a page
+  // is gone, so it drops out of Bing instead of lingering.
+  const gone = data?.slug;
+  if (gone) after(() => submitToIndexNow([`/blog/${gone}`, "/blog"]));
   return { ok: true };
 }

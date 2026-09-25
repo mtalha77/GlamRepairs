@@ -1,11 +1,6 @@
-const DEFAULT_BUCKET = "assessment-photos";
 const PACK_ID_BYTES = 6;
 const PACK_ID_PATTERN = /^[A-Za-z0-9_-]{8}$/;
 const FILE_PATTERN = /^(\d{2})\.(jpg|png)$/;
-
-function getPhotosBucket() {
-  return process.env.SUPABASE_PHOTOS_BUCKET?.trim() || DEFAULT_BUCKET;
-}
 
 function toBase64Url(bytes: Uint8Array) {
   if (typeof Buffer !== "undefined") {
@@ -43,13 +38,6 @@ export function storagePathFromShortParts(packId: string, file: string) {
   return `leads/${packId}/${file}`;
 }
 
-export function buildStoragePublicUrl(storagePath: string) {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-  if (!base) return null;
-  const bucket = getPhotosBucket();
-  return `${base}/storage/v1/object/public/${bucket}/${storagePath}`;
-}
-
 /** WhatsApp-friendly short link on our domain. */
 export function buildShortPhotoUrl(
   appBase: string,
@@ -60,22 +48,24 @@ export function buildShortPhotoUrl(
   return `${base}/p/${packId}/${file}`;
 }
 
+/**
+ * Photo links for a lead row — always the auth-gated /p/ route.
+ *
+ * HOTFIX-43 §1: this used to fall back to a public Storage URL when there
+ * was no app base or a path did not match the short-link shape. The bucket
+ * is private now, so those links would be dead; and while it was public
+ * they were the permanent, un-revocable kind. With no base the link is
+ * site-relative, which the studio renders the same way. A path that cannot
+ * be expressed as a short link is dropped rather than exposed.
+ */
 export function toShortPhotoUrls(
   appBase: string,
   packId: string,
   photoPaths: string[],
 ) {
-  if (!appBase) {
-    return photoPaths
-      .map((path) => buildStoragePublicUrl(path))
-      .filter((url): url is string => Boolean(url));
-  }
-
-  return photoPaths.map((path) => {
+  return photoPaths.flatMap((path) => {
     const file = path.split("/").pop();
-    if (!file || !isValidPhotoFileName(file)) {
-      return buildStoragePublicUrl(path) ?? path;
-    }
-    return buildShortPhotoUrl(appBase, packId, file);
+    if (!file || !isValidPhotoFileName(file)) return [];
+    return [buildShortPhotoUrl(appBase, packId, file)];
   });
 }

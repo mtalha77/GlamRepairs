@@ -5,6 +5,23 @@ import type { Database } from "@/lib/supabase/database.types";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 /**
+ * Hero images on our own domain become site-relative paths — HOTFIX-43 §2.2.
+ *
+ * The rows store absolute URLs (https://www.glamrepairs.com/images/blog/…).
+ * `next/image` only optimises an absolute URL whose host is listed in
+ * `images.remotePatterns`, which ours is not, so every homepage card would
+ * request /_next/image?url=https://www.glamrepairs.com/… and get a 400 even
+ * once the file exists. As a relative path the same file is served straight
+ * from /public. Metadata and JSON-LD resolve it back to absolute through
+ * `metadataBase` and `abs()`. Any other host is left untouched.
+ */
+function siteRelativeImage(url: string | null): string | null {
+  if (!url) return null;
+  const match = url.match(/^https?:\/\/(?:www\.)?glamrepairs\.com(\/.*)$/i);
+  return match ? match[1] : url;
+}
+
+/**
  * Blog data access. Mirrors the conventions in lib/studio/member.ts — log the
  * error, return an empty/null value, never throw into a Server Component.
  *
@@ -61,7 +78,7 @@ function mapRow(row: any): BlogPost {
     // read through an older projection would otherwise map to undefined
     // and every `.length` downstream would throw.
     relatedSlugs: Array.isArray(row.related_slugs) ? row.related_slugs : [],
-    heroImageUrl: row.hero_image_url,
+    heroImageUrl: siteRelativeImage(row.hero_image_url),
     readingMinutes: row.reading_minutes,
     authorSlug: row.author_slug,
     reviewerSlug: row.reviewer_slug,

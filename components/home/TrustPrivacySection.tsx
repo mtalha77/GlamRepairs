@@ -13,15 +13,12 @@ const cardTopOffsets = ["lg:-mt-20", "lg:-mt-12", "lg:-mt-4"] as const;
  * copy about not sharing or selling.
  *
  * ⚠️ Accuracy constraint, deliberately observed: every claim here has to be
- * true of the system as it stands TODAY, not only after the storage
- * lockdown finishes. The assessment-photos bucket is still public
- * (HANDOVER-6 §1 shipped the application half — the auth-gated /p/ route,
- * short-lived signed URLs, and no photo links in outbound messages — but
- * the bucket flip itself is still waiting on the owner's go-ahead). So the
- * first card no longer asserts "a private internal system"; it describes
- * the access control that genuinely exists, which is also exactly what
- * stays true once the bucket is flipped. Do not reintroduce a storage
- * claim here until `storage.buckets.public` is false for that bucket.
+ * true of the system as it stands today. The storage lockdown finished on
+ * 25 September 2026 (HOTFIX-43): the assessment-photos bucket is private,
+ * the anon read policy is gone, and photos are reached only through the
+ * auth-gated /p/ route, which mints five-minute signed URLs. The first
+ * card describes that access control. If the bucket is ever made public
+ * again, this copy becomes false.
  */
 const privacyCards = [
   {

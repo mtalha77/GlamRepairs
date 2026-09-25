@@ -1,0 +1,54 @@
+# GlamRepairs
+
+> Online skin assessment for people in Pakistan. A client answers an intake form and sends photographs; a certified aesthetics practitioner (Ayma Arif, BS Cosmetology & Dermatology Science) reads them and writes a personal skincare plan, delivered within 24 hours. GlamRepairs gives cosmetic skincare guidance. It does not diagnose or treat medical conditions.
+
+The site also publishes live air-quality pages for 13 Pakistani cities, updated hourly from WeatherAPI.com readings, with what the current level means for skin in that city's climate. Articles are written or reviewed by the practitioner named on each page.
+
+## Service
+
+- [Home](https://www.glamrepairs.com/): What the assessment is, how it works, and pricing.
+- [Pricing](https://www.glamrepairs.com/pricing): Current plans in the visitor's currency.
+- [Sample assessment](https://www.glamrepairs.com/sample-assessment): A complete example of the written report a client receives.
+- [Compare the options](https://www.glamrepairs.com/compare): GlamRepairs against a clinic visit and trying products yourself, with sources.
+- [Credentials](https://www.glamrepairs.com/credentials): The practitioner's qualifications, each with a way to verify it.
+- [Ayma Arif](https://www.glamrepairs.com/authors/ayma-arif): The practitioner who writes and reviews the content.
+- [Editorial policy](https://www.glamrepairs.com/editorial-policy): How articles are researched, reviewed and corrected.
+
+## Air quality and skin, by city
+
+- [Air quality in Pakistan](https://www.glamrepairs.com/air-quality): Index of all city pages.
+- [Lahore](https://www.glamrepairs.com/air-quality/lahore): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Lahore.
+- [Karachi](https://www.glamrepairs.com/air-quality/karachi): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Karachi.
+- [Islamabad](https://www.glamrepairs.com/air-quality/islamabad): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Islamabad.
+- [Faisalabad](https://www.glamrepairs.com/air-quality/faisalabad): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Faisalabad.
+- [Sialkot](https://www.glamrepairs.com/air-quality/sialkot): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Sialkot.
+- [Gujranwala](https://www.glamrepairs.com/air-quality/gujranwala): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Gujranwala.
+- [Peshawar](https://www.glamrepairs.com/air-quality/peshawar): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Peshawar.
+- [Multan](https://www.glamrepairs.com/air-quality/multan): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Multan.
+- [Bahawalpur](https://www.glamrepairs.com/air-quality/bahawalpur): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Bahawalpur.
+- [Rahim Yar Khan](https://www.glamrepairs.com/air-quality/rahim-yar-khan): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Rahim Yar Khan.
+- [Hyderabad](https://www.glamrepairs.com/air-quality/hyderabad): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Hyderabad.
+- [Sukkur](https://www.glamrepairs.com/air-quality/sukkur): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Sukkur.
+- [Quetta](https://www.glamrepairs.com/air-quality/quetta): Live PM2.5, PM10, temperature and humidity, a three-day forecast, and skin guidance for Quetta.
+
+## Articles
+
+- [Why your skin is worse in Lahore than it was anywhere else](https://www.glamrepairs.com/blog/why-skin-worse-in-pakistan-pollution-humidity-hard-water): Hard water, monsoon humidity, smog and year-round UV, and why routines written for temperate climates fail in Pakistan.
+- [Reading Pakistan's Air Quality Index](https://www.glamrepairs.com/blog/air-quality-index-pakistan-smog-skin): How to read AQI in Pakistan, why Punjab's scale labels the same number more mildly than the US scale, and which smog-season changes help skin.
+- [Smog and your skin: what Lahore winter actually does](https://www.glamrepairs.com/blog/smog-skin-problems-lahore): Why "smog allergy" is usually irritation, how winter air worsens pigmentation, and what protects skin.
+- [Do air purifiers help your skin?](https://www.glamrepairs.com/blog/air-purifiers-smog-skin-pakistan): What trials show about indoor PM2.5, what that means for skin, and how to size a unit.
+- [How to tell if you have a damaged skin barrier](https://www.glamrepairs.com/blog/damaged-skin-barrier-signs-repair): The signs, the usual causes, and what repairs it.
+- [Oily or dehydrated?](https://www.glamrepairs.com/blog/oily-or-dehydrated-skin): How to tell the two apart and why it changes what you should use.
+- [Fungal acne vs regular acne](https://www.glamrepairs.com/blog/fungal-acne-vs-regular-acne-monsoon): Why humidity triggers it and why acne treatment makes it worse.
+- [Where your acne appears, and what it tells you](https://www.glamrepairs.com/blog/acne-location-face-map): What breakout location does and does not indicate.
+- [Dark spots: melasma, acne marks or sun damage](https://www.glamrepairs.com/blog/melasma-acne-marks-sun-spots-difference): How to tell the three apart and what fades each.
+- [Which creams fade dark spots, and which make them worse](https://www.glamrepairs.com/blog/cream-for-dark-spots-pakistan): Ingredients that work, and those that cause rebound damage.
+- [Does brown skin need sunscreen?](https://www.glamrepairs.com/blog/does-brown-skin-need-sunscreen): Why melanin is not enough protection against pigmentation.
+- [How to start retinol](https://www.glamrepairs.com/blog/how-to-start-retinol-pakistan): Starting strength, pace and what to expect in the first weeks.
+- [Dermatologist or aesthetics practitioner?](https://www.glamrepairs.com/blog/dermatologist-or-aesthetics-practitioner-lahore): Which concerns need which, and how to tell before you pay.
+
+## Optional
+
+- [All articles](https://www.glamrepairs.com/blog): The full journal.
+- [Privacy policy](https://www.glamrepairs.com/privacy): How client photographs and data are handled.
+- [Contact](https://www.glamrepairs.com/contact): WhatsApp, email and hours (Pakistan time).

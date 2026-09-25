@@ -22,11 +22,12 @@ import { PRACTITIONER } from "@/lib/seo/authors";
  *    checked against production, `photos_deleted_at` is null on all 36 lead
  *    rows and 22 are past the 30-day mark. Claiming automatic deletion today
  *    would be false. Add the entry once a purge has actually run.
- * 2. The stronger `photo-privacy` wording ("stored privately, not on any
- *    public address… links that expire"). The assessment-photos bucket is
- *    still public — verified, `storage.buckets.public` is true — so that
- *    copy would also be false. The wording below is what is true today.
- *    Swap it only when the bucket flip ships.
+ * 2. (Shipped, HOTFIX-43.) The `photo-privacy` answer now says the photos
+ *    are held in private storage with no public address and opened only
+ *    through a signed-in portal. That became true on 25 September 2026,
+ *    when `storage.buckets.public` went false for assessment-photos and the
+ *    policy letting the anon role read the bucket was dropped. If either of
+ *    those is ever reverted, this sentence must go with it.
  *
  * Removing a claim is not a downgrade. A privacy promise a competitor could
  * disprove in one request is worth less than a smaller one that holds.
@@ -164,12 +165,14 @@ export const FAQS: Faq[] = [
     q: "Are my photographs private?",
     group: "trust",
     tags: ["home", "about", "contact"],
-    // ⚠️ This is the true-today wording. See the file header before changing
-    // it: the stronger version depends on the bucket flip, and the previous
-    // homepage copy ("stored under an anonymous case ID") described a system
-    // that does not exist.
+    // ⚠️ Every clause here is checked against the system, not the intent.
+    // See the file header before strengthening it: the previous homepage
+    // copy ("stored under an anonymous case ID") described a system that
+    // does not exist, and "private storage" was only added once it was true.
     a:
       "Your photographs are used only to prepare your assessment. They are " +
+      "held in private storage with no public web address, and opened only " +
+      "through our practitioner portal, which requires a sign-in. They are " +
       "seen by the practitioner working on your case, and are never " +
       "published, sold, or used in marketing without your separate written " +
       "permission.",
