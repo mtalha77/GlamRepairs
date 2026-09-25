@@ -15,7 +15,7 @@ export default function WelcomeScreen() {
       footer={
         <Link
           href="/onboarding/program"
-          className="subscribe-fill-btn inline-flex w-full items-center justify-center whitespace-nowrap rounded-full bg-brand-light px-4 py-3 text-center text-[11px] font-normal tracking-[0.08em] text-white sm:px-6 sm:py-3.5 sm:text-sm sm:tracking-[0.12em]"
+          className="subscribe-fill-btn min-h-12 inline-flex w-full items-center justify-center whitespace-nowrap rounded-full bg-brand-light px-4 py-3 text-center text-[11px] font-normal tracking-[0.08em] text-white sm:px-6 sm:py-3.5 sm:text-sm sm:tracking-[0.12em]"
         >
           Get My Skin Assessment →
         </Link>

@@ -4,7 +4,7 @@ import { StepBody } from "@/components/steps";
 export default function SkinConditionWorseningStep() {
   return (
     <div>
-      <p className="font-serif text-[1.75rem] leading-[1.2] text-[#1b1b1b] sm:text-[2rem]">
+      <p className="font-serif text-[1.75rem] leading-[1.2] text-brand-ink sm:text-[2rem]">
         Get rid of your skin issues with science and self-care
       </p>
 
@@ -13,7 +13,7 @@ export default function SkinConditionWorseningStep() {
           <SkinConditionTrendChart />
         </div>
 
-        <p className="mt-8 font-serif text-[1.75rem] leading-[1.2] text-[#1b1b1b] sm:mt-10 sm:text-[2rem]">
+        <p className="mt-8 font-serif text-[1.75rem] leading-[1.2] text-brand-ink sm:mt-10 sm:text-[2rem]">
           Skin condition worsening
         </p>
       </StepBody>

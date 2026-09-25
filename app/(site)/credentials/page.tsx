@@ -247,7 +247,7 @@ function ReferenceBar({
             not added: these are links we are happy to be seen sending.
           */
           rel="nofollow noopener"
-          className="whitespace-nowrap border-b border-brand-lavender pb-px text-[0.8125rem] font-medium text-brand-primary"
+          className="inline-flex min-h-11 items-center whitespace-nowrap border-b border-brand-lavender text-[0.8125rem] font-medium text-brand-primary"
         >
           {action}
         </a>
@@ -322,7 +322,7 @@ function CredentialCard({ credential }: { credential: Credential }) {
             href={credential.documentUrl}
             target="_blank"
             rel="nofollow noopener"
-            className="text-[0.8125rem] font-medium text-brand-primary underline underline-offset-2"
+            className="inline-flex min-h-11 items-center text-[0.8125rem] font-medium text-brand-primary underline underline-offset-2"
           >
             View the document
           </a>
@@ -426,7 +426,7 @@ export default function CredentialsPage() {
       />
       <main className="mx-auto max-w-[55rem] px-6 pb-[90px] pt-8">
         <nav className="text-[0.8125rem] text-[#8a8590]">
-          <Link href="/" className="text-brand-accent underline underline-offset-2">
+          <Link href="/" className="inline-flex min-h-11 min-w-11 items-center text-brand-accent underline underline-offset-2">
             Home
           </Link>
           <span aria-hidden> / </span>

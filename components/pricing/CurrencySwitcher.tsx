@@ -46,7 +46,7 @@ export default function CurrencySwitcher({
           });
           startTransition(() => router.refresh());
         }}
-        className="rounded-full border border-brand-border-light/60 bg-white px-3 py-1.5 text-sm text-brand-ink"
+        className="min-h-11 rounded-full border border-brand-border-light/60 bg-white px-3 py-1.5 text-sm text-brand-ink"
         aria-label="Show prices in"
       >
         {regions.map((option) => (

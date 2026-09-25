@@ -130,7 +130,7 @@ export default function ThankYouStep({
       footer={
         <Link
           href="/"
-          className="subscribe-fill-btn block w-full rounded-full bg-brand-light px-6 py-3 text-center text-xs font-normal uppercase tracking-[0.08em] text-white sm:py-3.5 sm:text-sm"
+          className="subscribe-fill-btn min-h-12 block w-full rounded-full bg-brand-light px-6 py-3 text-center text-xs font-normal uppercase tracking-[0.08em] text-white sm:py-3.5 sm:text-sm"
         >
           Back to Home
         </Link>

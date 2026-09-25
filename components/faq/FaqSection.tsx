@@ -213,7 +213,7 @@ export default function FaqSection({
                   type="button"
                   onClick={() => setFilter(value)}
                   aria-pressed={active}
-                  className={`gr-btn rounded-full border px-4 py-2 font-sans text-[0.8125rem] font-medium ${
+                  className={`gr-btn min-h-11 rounded-full border px-4 py-2 font-sans text-[0.8125rem] font-medium ${
                     active
                       ? "border-brand-primary bg-brand-primary text-white"
                       : "border-brand-lavender bg-white text-brand-gray hover:border-brand-accent hover:text-brand-primary"
@@ -322,7 +322,7 @@ export default function FaqSection({
             href={`https://wa.me/${SITE.phone.digits}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="gr-btn whitespace-nowrap rounded-full bg-brand-primary px-[22px] py-[11px] font-sans text-[0.8438rem] font-medium text-white hover:bg-brand-primary-dark"
+            className="gr-btn inline-flex min-h-11 items-center whitespace-nowrap rounded-full bg-brand-primary px-[22px] py-[11px] font-sans text-[0.8438rem] font-medium text-white hover:bg-brand-primary-dark"
           >
             WhatsApp us
           </a>

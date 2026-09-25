@@ -158,12 +158,14 @@ function FooterLinkList({
   links: { label: string; href: string }[];
 }) {
   return (
-    <ul className="mt-3 space-y-1.5">
+    // HOTFIX-41 §4 — each link is a 44px row on phones. The visual rhythm is
+    // unchanged from `sm`, where a pointer does not need the height.
+    <ul className="mt-2 sm:mt-3 sm:space-y-1.5">
       {links.map((link) => (
         <li key={link.label}>
           <Link
             href={link.href}
-            className="gr-link-underline font-sans text-[15px] text-[#242424] transition-colors hover:text-brand-primary"
+            className="gr-link-underline inline-flex min-h-11 min-w-11 items-center font-sans text-[15px] text-brand-ink transition-colors hover:text-brand-primary sm:min-h-0"
           >
             {link.label}
           </Link>
@@ -231,17 +233,17 @@ export default function Footer() {
                  * Get Started tab also sits on top of it. It is a link
                  * people tap, so it has to be fully visible.
                  */
-                className="mt-1 block break-words pr-24 font-serif text-[1.125rem] italic tracking-[-0.02em] text-black transition-opacity hover:opacity-80 sm:pr-0 sm:text-[1.5rem] lg:text-[1.875rem]"
+                className="mt-1 flex min-h-11 items-center break-words pr-24 font-serif text-[1.125rem] italic tracking-[-0.02em] text-black transition-opacity hover:opacity-80 sm:pr-0 sm:text-[1.5rem] lg:text-[1.875rem]"
               >
                 {contactEmail}
               </a>
               {/* HOTFIX-8 — the business number, on every page, matching the
                   Google Business Profile listing. Number and links both come
                   from SITE.phone; never hardcode one here. */}
-              <p className="mt-2 flex flex-wrap items-center gap-3 font-sans text-sm text-[#242424]">
+              <p className="mt-2 flex flex-wrap items-center gap-3 font-sans text-sm text-brand-ink">
                 <a
                   href={`tel:${SITE.phone.e164}`}
-                  className="font-medium transition-colors hover:text-brand-primary"
+                  className="inline-flex min-h-11 items-center font-medium transition-colors hover:text-brand-primary"
                 >
                   {SITE.phone.display}
                 </a>
@@ -249,7 +251,7 @@ export default function Footer() {
                   href={`https://wa.me/${SITE.phone.digits}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-brand-primary/40 px-3 py-1 font-medium text-brand-primary transition-colors hover:bg-brand-primary hover:text-white"
+                  className="inline-flex min-h-11 items-center rounded-full border border-brand-primary/40 px-4 font-medium text-brand-primary transition-colors hover:bg-brand-primary hover:text-white"
                 >
                   WhatsApp
                 </a>
@@ -275,7 +277,7 @@ export default function Footer() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={social.label}
-                      className="flex size-10 items-center justify-center rounded-full bg-white text-brand-primary shadow-sm transition-colors hover:bg-brand-primary hover:text-white"
+                      className="flex size-11 items-center justify-center rounded-full bg-white text-brand-primary shadow-sm transition-colors hover:bg-brand-primary hover:text-white"
                     >
                       {social.icon}
                     </a>
@@ -286,13 +288,13 @@ export default function Footer() {
           </div>
 
           <div className="mt-8 border-t border-brand-primary/15 pt-4">
-            <div className="flex flex-col gap-2 text-xs text-[#242424] sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-2 text-xs text-brand-ink sm:flex-row sm:items-center sm:justify-between">
               <p>© 2026 Glam Repairs. All rights reserved.</p>
               <div className="flex gap-5">
-                <Link href="/privacy" className="transition-colors hover:text-brand-primary">
+                <Link href="/privacy" className="inline-flex min-h-11 items-center transition-colors hover:text-brand-primary sm:min-h-0">
                   Privacy policy
                 </Link>
-                <Link href="/terms" className="transition-colors hover:text-brand-primary">
+                <Link href="/terms" className="inline-flex min-h-11 items-center transition-colors hover:text-brand-primary sm:min-h-0">
                   Terms &amp; Conditions
                 </Link>
               </div>

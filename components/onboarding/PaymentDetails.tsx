@@ -203,7 +203,7 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
         href={whatsappHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="subscribe-fill-btn mt-4 block w-full rounded-full bg-brand-light px-6 py-3 text-center text-xs font-normal uppercase tracking-[0.08em] text-white sm:py-3.5 sm:text-sm"
+        className="subscribe-fill-btn min-h-12 mt-4 block w-full rounded-full bg-brand-light px-6 py-3 text-center text-xs font-normal uppercase tracking-[0.08em] text-white sm:py-3.5 sm:text-sm"
       >
         Send payment screenshot on WhatsApp
       </a>

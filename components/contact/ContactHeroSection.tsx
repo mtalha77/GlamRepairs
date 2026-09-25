@@ -27,7 +27,7 @@ export default function ContactHeroSection() {
         className="object-cover object-[center_28%]"
       />
 
-      <div className="absolute inset-0 bg-[#1b1b1b]/40" aria-hidden />
+      <div className="absolute inset-0 bg-brand-ink/40" aria-hidden />
 
       <div className="relative z-[2] flex flex-1 flex-col items-center justify-center px-4 pb-16 pt-28 text-center text-white sm:px-8 sm:pb-20 sm:pt-32 lg:pt-36">
         <h1 className="mx-auto max-w-4xl font-serif text-[2.25rem] italic leading-[1.05] tracking-[-0.02em] sm:text-[3.75rem] md:text-[4.5rem] lg:text-[4.5rem]">

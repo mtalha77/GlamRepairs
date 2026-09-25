@@ -32,7 +32,7 @@ export default function NotAloneStep() {
       <MapWithAnimatedDots />
 
       <StepBody className="mt-10 sm:mt-12">
-        <p className="font-serif text-[2rem] leading-[1.15] text-[#1b1b1b] sm:text-[2.375rem]">
+        <p className="font-serif text-[2rem] leading-[1.15] text-brand-ink sm:text-[2.375rem]">
           You&apos;re not alone — our practitioner has helped{" "}
           <AnimatedCount value={900} className="inline-block" />+ people with
           similar concerns

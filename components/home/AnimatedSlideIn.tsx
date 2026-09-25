@@ -50,10 +50,18 @@ export default function AnimatedSlideIn({
   return (
     <div ref={ref} className={className}>
       <div
-        className={`will-change-transform transform motion-reduce:transform-none motion-reduce:opacity-100 motion-reduce:transition-none transition-all duration-[400ms] ease-[cubic-bezier(0.2,0.7,0.3,1)] ${
+        /*
+         * HOTFIX-41 §5 — `will-change` only until the reveal. Every block
+         * wrapped in this component animates exactly once, but the hint
+         * stayed on for the life of the page, keeping dozens of compositor
+         * layers alive on the phones least able to afford them. The browser
+         * promotes an element for the duration of a running transform
+         * transition by itself, so nothing is lost by dropping it after.
+         */
+        className={`transform motion-reduce:transform-none motion-reduce:opacity-100 motion-reduce:transition-none transition-all duration-[400ms] ease-[cubic-bezier(0.2,0.7,0.3,1)] ${
           visible
             ? "translate-x-0 translate-y-0 opacity-100"
-            : getHiddenClasses(direction)
+            : `will-change-transform ${getHiddenClasses(direction)}`
         }`}
       >
         {children}

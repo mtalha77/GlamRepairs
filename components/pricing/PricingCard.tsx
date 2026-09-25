@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import PlanFeatureList from "@/components/pricing/PlanFeatureList";
 import { getOnboardingStartHref } from "@/lib/funnel/plans";
 import {
   formatOfferEndDate,
@@ -146,16 +147,7 @@ export default function PricingCard({
         </div>
       </div>
 
-      <ul className="flex flex-1 flex-col gap-3 px-5 py-2 sm:gap-3.5 sm:px-6 sm:py-3">
-        {plan.features.map((feature) => (
-          <li key={feature} className="flex items-start gap-2.5">
-            <CheckIcon />
-            <span className="font-sans leading-snug text-[#242424] text-sm sm:text-[15px] lg:text-base">
-              {feature}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <PlanFeatureList features={plan.features} icon={<CheckIcon />} />
 
       <div className="px-5 pb-6 pt-3 sm:px-6 sm:pb-7 sm:pt-4">
         <Link

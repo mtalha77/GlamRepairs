@@ -99,7 +99,7 @@ export default function IngredientsFitChart() {
             y={282}
             textAnchor="middle"
             dominantBaseline="middle"
-            className="fill-[#1b1b1b] font-serif"
+            className="fill-brand-ink font-serif"
             fontSize={24}
             style={{
               opacity: visible ? 1 : 0,
@@ -111,7 +111,7 @@ export default function IngredientsFitChart() {
           <text
             x={416}
             y={433}
-            className="fill-[#1b1b1b] font-serif"
+            className="fill-brand-ink font-serif"
             fontSize={24}
             style={{
               opacity: visible ? 1 : 0,

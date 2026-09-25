@@ -1,5 +1,10 @@
 import Link from "next/link";
 
+import {
+  CellContent,
+  type CompareRow as Row,
+} from "@/components/compare/compareCells";
+import CompareTabs, { type CompareColumn } from "@/components/compare/CompareTabs";
 import { ILLUSTRATIVE_PRODUCT_SPEND } from "@/lib/compare/compareMatrix";
 import { getPlanSettings } from "@/lib/plans/planSettings";
 import { type PricingRegion } from "@/lib/pricing/regions";
@@ -51,68 +56,6 @@ import {
 /** The clinic band /compare cites. Keep these two pages in agreement. */
 const CLINIC_PRICE_RANGE = "Rs. 300–5,000";
 
-type Cell =
-  | { kind: "yes"; note?: string }
-  | { kind: "no" }
-  | { kind: "text"; value: string; strong?: boolean };
-
-type Row = {
-  label: string;
-  products: Cell;
-  clinic: Cell;
-  us: Cell;
-};
-
-function Tick({ solid = false }: { solid?: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={`inline-grid h-6 w-6 place-items-center rounded-full ${
-        solid ? "bg-brand-primary text-white" : "bg-[#e8f6ee] text-[#16794a]"
-      }`}
-    >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" className="h-3 w-3">
-        <path d="M20 6L9 17l-5-5" />
-      </svg>
-    </span>
-  );
-}
-
-function CellContent({ cell, ours }: { cell: Cell; ours?: boolean }) {
-  if (cell.kind === "no") {
-    return (
-      <>
-        <span aria-hidden className="text-[1.1rem] leading-none text-brand-lavender">
-          –
-        </span>
-        <span className="sr-only">No</span>
-      </>
-    );
-  }
-  if (cell.kind === "text") {
-    return cell.strong ? (
-      <strong className="font-semibold text-brand-ink">{cell.value}</strong>
-    ) : (
-      <span className="text-brand-gray">{cell.value}</span>
-    );
-  }
-  return (
-    <>
-      <Tick solid={ours} />
-      <span className="sr-only">Yes</span>
-      {cell.note ? (
-        <small
-          className={`mt-1 block text-xs ${
-            ours ? "font-medium text-brand-primary" : "text-brand-gray"
-          }`}
-        >
-          {cell.note}
-        </small>
-      ) : null}
-    </>
-  );
-}
-
 export default async function CompareStrip({
   region,
 }: {
@@ -128,7 +71,7 @@ export default async function CompareStrip({
       <p className="mt-10 text-center text-sm text-brand-gray sm:mt-12">
         <Link
           href="/compare"
-          className="font-medium text-brand-primary underline underline-offset-4 hover:opacity-80"
+          className="inline-flex min-h-11 items-center font-medium text-brand-primary underline underline-offset-4 hover:opacity-80"
         >
           See the full comparison →
         </Link>
@@ -219,6 +162,33 @@ export default async function CompareStrip({
     },
   ];
 
+  const columns: CompareColumn[] = [
+    {
+      key: "us",
+      tab: "Glam Repairs",
+      title: "Glam Repairs",
+      price: paidPrice,
+      priceNote: "one payment",
+      struck: false,
+    },
+    {
+      key: "clinic",
+      tab: "Clinic",
+      title: "A clinic visit",
+      price: CLINIC_PRICE_RANGE,
+      priceNote: "per appointment",
+      struck: true,
+    },
+    {
+      key: "products",
+      tab: "DIY products",
+      title: "Trying products yourself",
+      price: ILLUSTRATIVE_PRODUCT_SPEND,
+      priceNote: "illustrative, on things that didn't suit you",
+      struck: true,
+    },
+  ];
+
   return (
     <div className="mt-14 sm:mt-16">
       {/* HANDOVER-23 §1.5 — the matrix gets its own three-beat opening
@@ -229,12 +199,22 @@ export default async function CompareStrip({
         Everything you need to actually{" "}
         <em className="italic text-brand-primary">fix your skin</em>
       </h3>
-      <p className="mx-auto mb-11 mt-3 max-w-[530px] text-center text-[0.9375rem] leading-[1.7] text-brand-gray">
+      <p className="mx-auto mb-8 mt-3 max-w-[530px] sm:mb-11 text-center text-[0.9375rem] leading-[1.7] text-brand-gray">
         A plan built around your skin, your routine and what you can buy near
         you. Here is how that compares.
       </p>
 
-      <div className="overflow-hidden rounded-[1.4rem] border border-brand-lavender/45 bg-white shadow-brand">
+      {/* HOTFIX-41 §2.1 — one option at a time on a phone. See CompareTabs. */}
+      <div className="sm:hidden">
+        <CompareTabs
+          columns={columns}
+          rows={rows}
+          paidHref={paidHref}
+          paidPrice={paidPrice}
+        />
+      </div>
+
+      <div className="hidden overflow-hidden rounded-[1.4rem] border border-brand-lavender/45 bg-white shadow-brand sm:block">
         {/* Wide by nature, so it scrolls inside its own container rather
             than making the page scroll sideways. */}
         <div className="overflow-x-auto">
@@ -334,7 +314,7 @@ export default async function CompareStrip({
       <div className="mt-[26px] text-center">
         <Link
           href="/sample-assessment"
-          className="border-b border-brand-lavender pb-0.5 text-[0.9063rem] font-medium text-brand-primary transition-colors hover:border-brand-primary"
+          className="inline-flex min-h-11 items-center border-b border-brand-lavender text-[0.9063rem] font-medium text-brand-primary transition-colors hover:border-brand-primary"
         >
           See a real assessment first
         </Link>
@@ -352,7 +332,7 @@ export default async function CompareStrip({
         <p className="mt-3 text-xs text-brand-gray">
           <Link
             href="/compare"
-            className="underline underline-offset-4 hover:text-brand-primary"
+            className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-brand-primary"
           >
             See the full comparison, with sources →
           </Link>

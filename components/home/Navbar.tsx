@@ -197,7 +197,7 @@ export default function Navbar({ className = "", theme = "dark" }: NavbarProps) 
       </nav>
 
       <div className="flex h-full items-center justify-between px-5 sm:px-8 lg:hidden">
-        <Link href="/" aria-label="Glam Repairs home">
+        <Link href="/" aria-label="Glam Repairs home" className="inline-flex min-h-11 items-center">
           <Logo className={logoClass} variant={logoVariant} />
         </Link>
 
@@ -206,7 +206,7 @@ export default function Navbar({ className = "", theme = "dark" }: NavbarProps) 
           onClick={() => setMenuOpen((prev) => !prev)}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
           aria-expanded={menuOpen}
-          className={`flex items-center justify-center p-2 ${
+          className={`flex min-h-11 min-w-11 items-center justify-center p-2 ${
             isLight ? "text-brand-primary" : "text-white"
           }`}
         >

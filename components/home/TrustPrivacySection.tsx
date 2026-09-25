@@ -86,7 +86,7 @@ export default function TrustPrivacySection() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="-mt-16 grid grid-cols-1 place-items-center gap-12 sm:-mt-32 md:grid-cols-2 md:gap-x-6 md:gap-y-16 lg:-ml-10 lg:-mt-40 lg:flex lg:flex-row lg:items-start lg:gap-0">
+        <div className="-mt-16 grid grid-cols-1 place-items-center gap-10 sm:-mt-32 sm:gap-12 md:grid-cols-2 md:gap-x-6 md:gap-y-16 lg:-ml-10 lg:-mt-40 lg:flex lg:flex-row lg:items-start lg:gap-0">
           {privacyCards.map((card, index) => (
             <AnimatedSlideIn
               key={card.title}
