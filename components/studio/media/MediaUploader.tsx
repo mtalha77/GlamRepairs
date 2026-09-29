@@ -22,7 +22,13 @@ const ACCEPT = ["image/png", "image/jpeg", "image/webp"];
 const MAX_EDGE = 2400;
 
 const ROLE_HELP: Record<MediaRole, string> = {
-  hero: "Top of a blog post. Resized to at most 1600px wide.",
+  // The size people need to hear before they shoot or crop, not after an
+  // upload is rejected. Homepage cards crop heroes to 16:9, so a 16:9
+  // landscape shows the same picture everywhere.
+  hero:
+    "Top of a blog post. Upload a landscape photo, ideally 1600 × 900 (16:9), at least " +
+    "1200px wide. Saved at up to 1600px wide. Keep the subject near the centre: " +
+    "homepage cards crop to 16:9.",
   og: "Social share card. Cropped to exactly 1200 × 630 around the point you click.",
   inline: "Inside an article. Resized to at most 1600px wide.",
   icon: "Small graphic. Resized to at most 512px.",

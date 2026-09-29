@@ -14,6 +14,8 @@ export const STUDIO_NAV_LINKS = [
   // HANDOVER-45 — images and search metadata, editable without a deploy.
   { href: "/studio/media", label: "Media" },
   { href: "/studio/seo", label: "SEO" },
+  // HANDOVER-46 — Search Console, synced daily.
+  { href: "/studio/search", label: "Search" },
   { href: "/studio/chat", label: "Chat" },
   { href: "/studio/notifications", label: "Notifications" },
   { href: "/studio/team", label: "Team" },

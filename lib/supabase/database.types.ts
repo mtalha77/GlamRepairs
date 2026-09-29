@@ -877,6 +877,149 @@ export type Database = {
         Relationships: [];
       };
       /** HANDOVER-45 — one row per static path, edited in Studio → SEO. */
+      /**
+       * HANDOVER-46 — Search Console, synced daily by /api/cron/gsc with
+       * the service role. Studio members read (RLS); nothing else writes.
+       * numeric columns cross PostgREST as strings.
+       */
+      gsc_daily: {
+        Row: {
+          date: string;
+          clicks: number;
+          impressions: number;
+          ctr: number | string;
+          position: number | string;
+          synced_at: string;
+        };
+        Insert: {
+          date: string;
+          clicks?: number;
+          impressions?: number;
+          ctr?: number;
+          position?: number;
+          synced_at?: string;
+        };
+        Update: {
+          clicks?: number;
+          impressions?: number;
+          ctr?: number;
+          position?: number;
+          synced_at?: string;
+        };
+        Relationships: [];
+      };
+      gsc_query_daily: {
+        Row: {
+          date: string;
+          query: string;
+          clicks: number;
+          impressions: number;
+          ctr: number | string;
+          position: number | string;
+          synced_at: string;
+        };
+        Insert: {
+          date: string;
+          query: string;
+          clicks?: number;
+          impressions?: number;
+          ctr?: number;
+          position?: number;
+          synced_at?: string;
+        };
+        Update: {
+          clicks?: number;
+          impressions?: number;
+          ctr?: number;
+          position?: number;
+          synced_at?: string;
+        };
+        Relationships: [];
+      };
+      gsc_page_daily: {
+        Row: {
+          date: string;
+          page: string;
+          clicks: number;
+          impressions: number;
+          ctr: number | string;
+          position: number | string;
+          synced_at: string;
+        };
+        Insert: {
+          date: string;
+          page: string;
+          clicks?: number;
+          impressions?: number;
+          ctr?: number;
+          position?: number;
+          synced_at?: string;
+        };
+        Update: {
+          clicks?: number;
+          impressions?: number;
+          ctr?: number;
+          position?: number;
+          synced_at?: string;
+        };
+        Relationships: [];
+      };
+      gsc_index_status: {
+        Row: {
+          url: string;
+          coverage_state: string | null;
+          verdict: string | null;
+          last_crawled: string | null;
+          robots_state: string | null;
+          indexing_state: string | null;
+          checked_at: string;
+        };
+        Insert: {
+          url: string;
+          coverage_state?: string | null;
+          verdict?: string | null;
+          last_crawled?: string | null;
+          robots_state?: string | null;
+          indexing_state?: string | null;
+          checked_at?: string;
+        };
+        Update: {
+          coverage_state?: string | null;
+          verdict?: string | null;
+          last_crawled?: string | null;
+          robots_state?: string | null;
+          indexing_state?: string | null;
+          checked_at?: string;
+        };
+        Relationships: [];
+      };
+      gsc_sync_log: {
+        Row: {
+          id: number;
+          kind: "totals" | "queries" | "pages" | "index";
+          date_from: string | null;
+          date_to: string | null;
+          rows_written: number;
+          ok: boolean;
+          error: string | null;
+          ran_at: string;
+        };
+        Insert: {
+          kind: "totals" | "queries" | "pages" | "index";
+          date_from?: string | null;
+          date_to?: string | null;
+          rows_written?: number;
+          ok?: boolean;
+          error?: string | null;
+          ran_at?: string;
+        };
+        Update: {
+          rows_written?: number;
+          ok?: boolean;
+          error?: string | null;
+        };
+        Relationships: [];
+      };
       page_seo: {
         Row: {
           path: string;
@@ -1121,6 +1264,69 @@ export type Database = {
       };
     };
     Views: {
+      /** HANDOVER-46 — rolling 28-day Search Console views, impression-weighted. */
+      gsc_summary_28d: {
+        Row: {
+          clicks: number | null;
+          impressions: number | null;
+          ctr_pct: number | string | null;
+          avg_position: number | string | null;
+          clicks_delta: number | null;
+          impressions_delta: number | null;
+          /** Positive = improved (the position number fell). */
+          position_delta: number | string | null;
+        };
+        Relationships: [];
+      };
+      gsc_striking_distance: {
+        Row: {
+          query: string | null;
+          impressions: number | null;
+          clicks: number | null;
+          avg_position: number | string | null;
+        };
+        Relationships: [];
+      };
+      gsc_low_ctr_pages: {
+        Row: {
+          page: string | null;
+          impressions: number | null;
+          clicks: number | null;
+          ctr_pct: number | string | null;
+          avg_position: number | string | null;
+        };
+        Relationships: [];
+      };
+      gsc_top_queries_28d: {
+        Row: {
+          query: string | null;
+          clicks: number | null;
+          impressions: number | null;
+          ctr_pct: number | string | null;
+          avg_position: number | string | null;
+        };
+        Relationships: [];
+      };
+      gsc_top_pages_28d: {
+        Row: {
+          page: string | null;
+          clicks: number | null;
+          impressions: number | null;
+          ctr_pct: number | string | null;
+          avg_position: number | string | null;
+        };
+        Relationships: [];
+      };
+      gsc_new_queries: {
+        Row: {
+          query: string | null;
+          impressions: number | null;
+          clicks: number | null;
+          avg_position: number | string | null;
+          first_seen: string | null;
+        };
+        Relationships: [];
+      };
       /**
        * HANDOVER-35 — one row per city with its zone, latest reading,
        * three-day forecast, band advice and PUBLISHED siblings pre-joined.
