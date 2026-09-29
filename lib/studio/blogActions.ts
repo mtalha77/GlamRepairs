@@ -2,6 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { after } from "next/server";
+import { explainPublishRefusal, MIN_PUBLISH_CHARS, placeholderIn } from "@/lib/blog/publishRules";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { requireStudioMember } from "@/lib/studio/member";
 import { readingMinutes } from "@/lib/blog/markdown";
@@ -75,7 +76,6 @@ async function publishBundleFor(slug: string): Promise<PublishBundleMember[]> {
   );
 }
 
-const MIN_PUBLISH_CHARS = 1200;
 
 function slugify(s: string) {
   return s
@@ -332,11 +332,21 @@ export async function publishBlogPost(formData: FormData): Promise<ActionResult>
     };
   }
 
-  // 3 — not thin.
+  // 3 — not an outline. HOTFIX-47: an unfinished post went live with its
+  // placeholder text and `index, follow`.
+  const placeholder = placeholderIn(data.body_markdown ?? "");
+  if (placeholder) {
+    return {
+      ok: false,
+      error: `Cannot publish: the body still contains placeholder text ("${placeholder}").`,
+    };
+  }
+
+  // 4 — not thin.
   if ((data.body_markdown ?? "").trim().length < MIN_PUBLISH_CHARS) {
     return {
       ok: false,
-      error: `This post is too short to publish (needs ~${MIN_PUBLISH_CHARS} characters).`,
+      error: `This post is too short to publish (needs ${MIN_PUBLISH_CHARS.toLocaleString("en-GB")} characters).`,
     };
   }
 
@@ -370,7 +380,7 @@ export async function publishBlogPost(formData: FormData): Promise<ActionResult>
       };
     }
     console.error("[publishBlogPost:update]", upErr.message);
-    return { ok: false, error: upErr.message };
+    return { ok: false, error: explainPublishRefusal(upErr.message) ?? upErr.message };
   }
 
   revalidatePath("/blog");
@@ -419,7 +429,7 @@ export async function publishBlogPostBundle(
 
   if (error) {
     console.error("[publishBlogPostBundle]", error.message);
-    return { ok: false, error: error.message };
+    return { ok: false, error: explainPublishRefusal(error.message) ?? error.message };
   }
 
   revalidatePath("/blog");

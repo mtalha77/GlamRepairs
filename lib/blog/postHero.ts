@@ -27,6 +27,17 @@ export type PostHero = {
 
 export const POST_HERO_TAG = "post-heroes";
 
+/**
+ * HOTFIX-47 §3.1 — the one rule for whether an image area renders at all.
+ * Both a URL and alt text, or nothing: an image without alt fails
+ * accessibility and tells Google nothing, and a broken or empty slot looks
+ * worse than a text-only card. `studio_media` already refuses alt under ten
+ * characters; this is the render-side half of the same rule.
+ */
+export function hasHero(hero: Pick<PostHero, "url" | "alt"> | null | undefined): hero is PostHero {
+  return Boolean(hero?.url?.trim() && hero.alt?.trim());
+}
+
 const loadHeroes = unstable_cache(
   async (): Promise<Record<string, PostHero>> => {
     try {
@@ -55,7 +66,7 @@ const loadHeroes = unstable_cache(
         } | null;
       }[]) {
         if (!row.media || out[row.post_slug]) continue;
-        out[row.post_slug] = {
+        const hero = {
           url: row.media.public_url,
           width: row.media.width,
           height: row.media.height,
@@ -63,6 +74,7 @@ const loadHeroes = unstable_cache(
           caption: row.media.caption,
           credit: row.media.credit,
         };
+        if (hasHero(hero)) out[row.post_slug] = hero;
       }
       return out;
     } catch (error) {
