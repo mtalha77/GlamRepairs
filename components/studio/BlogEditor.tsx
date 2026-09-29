@@ -601,7 +601,11 @@ export default function BlogEditor({
                 />
               </div>
             ) : null}
-            <p className="mt-2 text-xs text-neutral-400">Saved with the post.</p>
+            <p className="mt-2 text-xs text-neutral-500">
+              Best size: landscape <strong>1600 × 900 px</strong> (16:9), at least 1200px
+              wide. PNG, JPEG or WebP; it is converted to WebP under 500 KB.
+            </p>
+            <p className="mt-1 text-xs text-neutral-400">Saved with the post.</p>
           </div>
 
           {/* HANDOVER-45 — FAQ, rendered under the post with FAQPage markup. */}

@@ -1,0 +1,86 @@
+name: Search Console sync
+
+# HANDOVER-46. Calls /api/cron/gsc on GitHub's scheduler, because Vercel
+# cron does not fire on this project (see air-quality-refresh.yml).
+#
+#   daily   04:00 PKT (23:00 UTC): re-fetch the last 5 settled days. The
+#           first run after the key is added also backfills 16 months.
+#   weekly  Monday 05:00 PKT (00:00 UTC Mon): URL Inspection of the sitemap.
+#   manual  Actions tab -> Run workflow -> mode: daily, backfill or inspect.
+#           backfill with no dates fetches all 16 months, in ~3-month calls.
+
+on:
+  schedule:
+    - cron: "3 23 * * *"
+    - cron: "17 0 * * 1"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "daily, backfill or inspect"
+        default: daily
+        required: true
+      from:
+        description: "backfill start, YYYY-MM-DD (blank = 16 months ago)"
+        required: false
+      to:
+        description: "backfill end, YYYY-MM-DD (blank = 2 days ago)"
+        required: false
+
+concurrency:
+  group: gsc-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Sync
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          BASE: https://www.glamrepairs.com/api/cron/gsc
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+          IN_MODE: ${{ github.event.inputs.mode }}
+          IN_FROM: ${{ github.event.inputs.from }}
+          IN_TO: ${{ github.event.inputs.to }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET is not set in this repository's Actions secrets."
+            exit 1
+          fi
+
+          mode="${IN_MODE:-daily}"
+          if [ "${EVENT_SCHEDULE:-}" = "17 0 * * 1" ]; then mode=inspect; fi
+
+          call() {
+            local url="$1"
+            echo "GET ${url}"
+            code=$(curl --silent --show-error --retry 2 --retry-delay 10 --retry-all-errors \
+              --max-time 320 --write-out '%{http_code}' --output response.json \
+              --header "Authorization: Bearer ${CRON_SECRET}" "${url}")
+            echo "HTTP ${code}"; cat response.json; echo
+            jq -r '.results[]? | "- \(.kind) \(.from // "") \(.to // ""): \(.rows) rows \(if .ok then "ok" else "FAILED — \(.error // "unknown")" end)"' \
+              response.json >> "$GITHUB_STEP_SUMMARY" || true
+            [ "${code}" = "200" ] && [ "$(jq -r '.ok' response.json)" = "true" ]
+          }
+
+          echo "### Search Console: ${mode}" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${mode}" = "backfill" ]; then
+            # One call per ~3 months keeps each request well inside the
+            # function time limit.
+            start="${IN_FROM:-$(date -u -d '486 days ago' +%F)}"
+            end="${IN_TO:-$(date -u -d '2 days ago' +%F)}"
+            failed=0
+            cur="${start}"
+            while [ "$(date -u -d "${cur}" +%s)" -le "$(date -u -d "${end}" +%s)" ]; do
+              chunk_end=$(date -u -d "${cur} + 92 days" +%F)
+              if [ "$(date -u -d "${chunk_end}" +%s)" -gt "$(date -u -d "${end}" +%s)" ]; then chunk_end="${end}"; fi
+              call "${BASE}?mode=backfill&from=${cur}&to=${chunk_end}" || failed=1
+              cur=$(date -u -d "${chunk_end} + 1 day" +%F)
+            done
+            [ "${failed}" = "0" ] || { echo "::error::Part of the backfill failed. See the summary."; exit 1; }
+          else
+            call "${BASE}?mode=${mode}" || { echo "::error::Sync failed. See the summary and gsc_sync_log."; exit 1; }
+          fi

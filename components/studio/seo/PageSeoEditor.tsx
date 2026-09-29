@@ -62,7 +62,11 @@ export default function PageSeoEditor({
   };
 
   return (
-    <article className="rounded-2xl border border-neutral-200 bg-white p-5">
+    // The id is what Studio → Search links to from a low-CTR page.
+    <article
+      id={`page-${row.path}`}
+      className="scroll-mt-6 rounded-2xl border border-neutral-200 bg-white p-5 target:ring-2 target:ring-neutral-900"
+    >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-mono text-sm font-semibold">{row.path}</h2>
         <a
