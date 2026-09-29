@@ -14,7 +14,7 @@ import {
   reviewedPageSchema,
 } from "@/lib/seo/schema";
 import Image from "next/image";
-import { getPostHero } from "@/lib/blog/postHero";
+import { getPostHero, hasHero } from "@/lib/blog/postHero";
 import { getPublishedPost } from "@/lib/studio/blog";
 import { extractHeadings, renderMarkdown, slugifyHeading } from "@/lib/blog/markdown";
 
@@ -80,14 +80,12 @@ export async function generateMetadata({
         ? { images: [{ url: hero.url, width: hero.width, height: hero.height, alt: hero.alt }] }
         : {}),
     },
-    // Large-image cards need a genuinely large, post-specific image. That
-    // used to mean `summary` without a hero, because a repeated brand
-    // fallback is not "large image" content, it is just not-blank. The
-    // generated per-post card IS post-specific — it carries that post's
-    // headline and cluster — so `summary_large_image` is now honest for
-    // every post rather than only the ones with a photograph.
+    // HOTFIX-47 §3.4 — a large card only when there is a real photograph.
+    // Without one, `summary` renders a tidy small card (X still picks up
+    // the generated per-post og:image as its thumbnail) instead of
+    // promising a large image the post does not have.
     twitter: {
-      card: "summary_large_image",
+      card: hasHero(hero) ? "summary_large_image" : "summary",
       title,
       description,
       ...(hero ? { images: [hero.url] } : {}),

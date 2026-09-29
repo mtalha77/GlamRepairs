@@ -65,15 +65,28 @@ export default async function RelatedReading({
       <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-black/45">
         Related reading
       </h2>
-      <ul className="mt-4 space-y-4">
+      {/*
+       * HOTFIX-47 §2 — title and excerpt are separate elements, not two
+       * spans inside one link. Anything that reads the text rather than
+       * the styles (reader modes, crawlers, screen readers listing links,
+       * a flattened render) ran them together into one sentence:
+       * "…What Actually Suits Your Skin HereWhich Korean skincare…".
+       * A heading plus a paragraph is separated structurally.
+       */}
+      <ul className="mt-5 grid gap-4">
         {ranked.map((post) => (
           <li key={post.slug}>
-            <Link href={`/blog/${post.slug}`} className="group block">
-              <span className="block font-[family-name:var(--font-playfair)] text-xl text-[#662d91] underline-offset-4 group-hover:underline">
+            <Link
+              href={`/blog/${post.slug}`}
+              className="block rounded-2xl border border-brand-lavender/60 bg-brand-cream-card p-5 shadow-sm transition hover:shadow-md"
+            >
+              <h3 className="font-serif text-xl italic leading-snug text-brand-primary">
                 {post.title}
-              </span>
+              </h3>
               {post.excerpt ? (
-                <span className="mt-1 block text-black/65">{post.excerpt}</span>
+                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-brand-gray">
+                  {post.excerpt}
+                </p>
               ) : null}
             </Link>
           </li>

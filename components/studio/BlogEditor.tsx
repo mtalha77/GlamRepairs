@@ -1,5 +1,6 @@
 "use client";
 
+import { MIN_PUBLISH_CHARS, placeholderIn } from "@/lib/blog/publishRules";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -36,7 +37,6 @@ import MediaUploader from "@/components/studio/media/MediaUploader";
  */
 
 const CLUSTERS = ["diagnostic", "ingredient", "routine", "myth", "pakistan"] as const;
-const MIN_PUBLISH_CHARS = 1200;
 
 /**
  * HANDOVER-22 §8. Three is the cap because the public component shows
@@ -152,7 +152,8 @@ export default function BlogEditor({
   const chars = body.trim().length;
   const words = body.trim() ? body.trim().split(/\s+/).length : 0;
   const longEnough = chars >= MIN_PUBLISH_CHARS;
-  const canPublish = Boolean(reviewer) && longEnough;
+  const placeholder = placeholderIn(body);
+  const canPublish = Boolean(reviewer) && longEnough && !placeholder;
 
   function run(fn: () => Promise<ActionResult>, ok: string) {
     setError(null);
@@ -390,7 +391,11 @@ export default function BlogEditor({
 
           <p className="text-xs text-neutral-500">
             {words.toLocaleString()} words · {chars.toLocaleString()} characters{" "}
-            {longEnough ? (
+            {placeholder ? (
+              <span className="text-red-700">
+                · still contains placeholder text (&ldquo;{placeholder}&rdquo;), cannot publish
+              </span>
+            ) : longEnough ? (
               <span className="text-emerald-700">· long enough to publish</span>
             ) : (
               <span className="text-amber-700">

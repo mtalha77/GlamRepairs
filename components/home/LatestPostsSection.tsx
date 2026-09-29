@@ -58,12 +58,15 @@ export default async function LatestPostsSection() {
                 href={`/blog/${post.slug}`}
                 className="flex h-full flex-col overflow-hidden rounded-[20px] border border-brand-lavender/60 bg-white transition-colors hover:border-brand-lavender"
               >
+                {/* HOTFIX-47 §3.3: no hero, no image area. A text-only card
+                    reads as deliberate; an empty box reads as broken. */}
                 {heroes[post.slug] ? (
                   <span className="relative block aspect-[16/9] w-full overflow-hidden bg-brand-purple-soft">
                     <Image
                       src={heroes[post.slug].url}
-                      alt=""
+                      alt={heroes[post.slug].alt}
                       fill
+                      loading="lazy"
                       sizes="(max-width: 1024px) 100vw, 28rem"
                       className="object-cover"
                     />
