@@ -47,13 +47,26 @@ export function graph(...nodes: object[]) {
 
 /* ── Site-wide entities ──────────────────────────────────────────────────── */
 
-export function organizationSchema() {
+/**
+ * `site` comes from `seo_settings` (Studio → SEO → Site defaults), so the
+ * brand name, @type and social profiles are editable without a deploy.
+ * `seo_settings.organization_type` has a CHECK that rejects MedicalBusiness,
+ * Physician and MedicalClinic, so the HOTFIX-39 error cannot come back
+ * through the studio either.
+ */
+export function organizationSchema(
+  site: { brandName: string; organizationType: string; sameAs: string[] } = {
+    brandName: SITE.name,
+    organizationType: "HealthAndBeautyBusiness",
+    sameAs: [...SITE.sameAs],
+  },
+) {
   return {
     // HOTFIX-39 §3 — was MedicalBusiness. See the note at the top of this
     // file. One line, sitewide, and the highest-value change in that audit.
-    "@type": "HealthAndBeautyBusiness",
+    "@type": site.organizationType,
     "@id": abs("/#organization"),
-    name: SITE.name,
+    name: site.brandName,
     legalName: SITE.legalName,
     url: SITE.url,
     description: SITE.description,
@@ -99,16 +112,16 @@ export function organizationSchema() {
         closes: SITE.hours.closes,
       },
     },
-    ...(SITE.sameAs.length ? { sameAs: SITE.sameAs } : {}),
+    ...(site.sameAs.length ? { sameAs: site.sameAs } : {}),
   };
 }
 
-export function websiteSchema() {
+export function websiteSchema(brandName: string = SITE.name) {
   return {
     "@type": "WebSite",
     "@id": abs("/#website"),
     url: SITE.url,
-    name: SITE.name,
+    name: brandName,
     description: SITE.description,
     inLanguage: SITE.language,
     publisher: { "@id": abs("/#organization") },
@@ -320,6 +333,30 @@ export function faqSchema(
  * available to a small site, and AI engines weigh them heavily when deciding
  * what to cite.
  */
+export type ImageInput = {
+  url: string;
+  width: number;
+  height: number;
+  caption?: string | null;
+  alt?: string | null;
+};
+
+/**
+ * `ImageObject` for a hero image — HANDOVER-45 §4.7. Width, height and a
+ * caption give Google Images what it needs to show the picture against the
+ * article; a bare URL gives it only the URL.
+ */
+export function imageObjectSchema(img: ImageInput) {
+  return {
+    "@type": "ImageObject",
+    url: abs(img.url),
+    contentUrl: abs(img.url),
+    width: img.width,
+    height: img.height,
+    ...(img.caption || img.alt ? { caption: img.caption || img.alt } : {}),
+  };
+}
+
 export function medicalArticleSchema(opts: {
   title: string;
   description: string;
@@ -328,7 +365,7 @@ export function medicalArticleSchema(opts: {
   reviewer?: Author;
   datePublished: string;
   dateModified?: string;
-  image?: string;
+  image?: string | ImageInput;
 }) {
   return {
     "@type": "Article",
@@ -355,7 +392,14 @@ export function medicalArticleSchema(opts: {
       : {}),
     datePublished: opts.datePublished,
     dateModified: opts.dateModified ?? opts.datePublished,
-    ...(opts.image ? { image: abs(opts.image) } : {}),
+    ...(opts.image
+      ? {
+          image:
+            typeof opts.image === "string"
+              ? abs(opts.image)
+              : imageObjectSchema(opts.image),
+        }
+      : {}),
     /*
      * Was `{ "@type": "Patient" }`, which is a MedicalAudience subtype and
      * therefore the same mistake as the one §3 removed, hiding in a

@@ -5,7 +5,13 @@ import { aboutHero, aboutHeroBackground } from "@/components/about/aboutContent"
 
 preload(aboutHeroBackground, { as: "image", fetchPriority: "high" });
 
-export default function AboutHeroSection() {
+/** HANDOVER-45 — the H1 comes from Studio → SEO; the last two words keep the italic accent. */
+export default function AboutHeroSection({
+  h1 = `${aboutHero.headlineLead} ${aboutHero.headlineEmphasis}`,
+}: { h1?: string }) {
+  const words = h1.trim().split(/\s+/);
+  const lead = words.length > 2 ? words.slice(0, -2).join(" ") : "";
+  const emphasis = words.length > 2 ? words.slice(-2).join(" ") : h1;
   return (
     <section className="relative min-h-[80svh] overflow-hidden bg-white lg:min-h-[100svh]">
       <Image
@@ -27,8 +33,8 @@ export default function AboutHeroSection() {
 
       <div className="relative z-10 flex min-h-[80svh] flex-col items-center justify-center px-5 pb-12 pt-[92px] text-center sm:px-6 lg:min-h-[100svh] lg:pb-16 lg:pt-[72px]">
         <h1 className="mx-auto max-w-[46rem] font-sans text-[40px] leading-[1.1] tracking-[-0.72px] text-white sm:text-[56px] lg:text-[72px] lg:leading-[0.95]">
-          {aboutHero.headlineLead}{" "}
-          <span className="font-serif italic">{aboutHero.headlineEmphasis}</span>
+          {lead ? <>{lead}{" "}</> : null}
+          <span className="font-serif italic">{emphasis}</span>
         </h1>
         <p className="mx-auto mt-6 max-w-[34rem] font-sans text-base font-normal leading-[1.4] text-white sm:text-lg lg:mt-7 lg:text-[24px]">
           {aboutHero.subtitle}

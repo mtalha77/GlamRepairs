@@ -3,6 +3,8 @@ import BlogEditor from "@/components/studio/BlogEditor";
 import { requireStudioMember } from "@/lib/studio/member";
 import { getPostById, listAllPosts } from "@/lib/studio/blog";
 import { listAuthors, listReviewers } from "@/lib/seo/authors";
+import { listMedia } from "@/lib/studio/media";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 /**
  * Editor. `/studio/blog/new` is handled by the same route — a literal "new"
@@ -35,8 +37,32 @@ export default async function StudioBlogEditorPage({
       status: other.status,
     }));
 
+  // HANDOVER-45 — the hero picker offers library images uploaded as heroes
+  // (they are sized for it), and shows whichever one is linked now.
+  const heroMedia = await listMedia({ role: "hero" });
+  let currentHeroId: string | null = null;
+  if (post) {
+    const supabase = await createServerSupabaseClient();
+    const { data } = await supabase
+      .from("studio_post_media")
+      .select("media_id")
+      .eq("post_slug", post.slug)
+      .eq("role", "hero")
+      .maybeSingle();
+    currentHeroId = data?.media_id ?? null;
+  }
+
   return (
     <BlogEditor
+      heroOptions={heroMedia.map((m) => ({
+        id: m.id,
+        url: m.publicUrl,
+        alt: m.altText,
+        filename: m.filename,
+        width: m.width,
+        height: m.height,
+      }))}
+      currentHeroId={currentHeroId}
       post={post}
       authors={listAuthors().map((a) => ({ slug: a.slug, name: a.name }))}
       reviewers={listReviewers().map((a) => ({

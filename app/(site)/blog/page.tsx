@@ -6,16 +6,19 @@ import JsonLd from "@/components/seo/JsonLd";
 import { listPublishedPosts } from "@/lib/studio/blog";
 import { AUTHORS } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph } from "@/lib/seo/schema";
-import { SITE, canonicalOg } from "@/lib/seo/site";
+import { SITE } from "@/lib/seo/site";
+import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 
-export const metadata: Metadata = {
-  title: "Skin, explained",
-  description:
-    "Straight answers about skin from a certified practitioner — what is " +
-    "actually happening, what to do about it, and when to see a doctor instead.",
-  // HOTFIX-31 §4.2 — canonical and og:url from one path.
-  ...canonicalOg("/blog"),
-};
+// HANDOVER-45 — from `page_seo` ('/blog'), edited in Studio → SEO. The
+// strings here are only the fallback for a missing row or failed read.
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata("/blog", {
+    title: "Skin Care Advice for Pakistan, Explained",
+    description:
+      "Straight answers about skin from a certified practitioner — what is " +
+      "actually happening, what to do about it, and when to see a doctor instead.",
+  });
+}
 
 // Published posts change rarely; revalidate hourly rather than per request.
 export const revalidate = 3600;
@@ -67,7 +70,7 @@ export default async function BlogIndexPage() {
 
       <header>
         <h1 className="font-[family-name:var(--font-playfair)] text-5xl">
-          Skin, explained
+          {await pageH1("/blog", "Skin, explained")}
         </h1>
         <p className="mt-4 max-w-xl text-lg text-black/65">
           Straight answers about what your skin is actually doing — written and

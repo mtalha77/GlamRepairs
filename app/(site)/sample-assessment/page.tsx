@@ -19,7 +19,8 @@ import {
   medicalArticleSchema,
   personSchema,
 } from "@/lib/seo/schema";
-import { SOCIAL_CARD } from "@/lib/seo/site";
+import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
+import { splitAccent } from "@/lib/seo/headingAccent";
 
 /**
  * /sample-assessment — HANDOVER-22 §3, rebuilt to HANDOVER-23's design.
@@ -68,48 +69,26 @@ const DESCRIPTION =
   "length and wording a certified practitioner writes for every client. " +
   "Ingredients and percentages, never product brands.";
 
-export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
-  alternates: { canonical: "/sample-assessment" },
-  /*
-   * HOTFIX-25 §2.4 — `images` and the whole `twitter` block are new here.
-   *
-   * §2.4 asked for the Twitter tags, and they were genuinely missing: with
-   * no page-level `twitter`, this page inherited the root layout's, so
-   * anyone sharing it on X got a card titled "GlamRepairs — Online skin
-   * assessment, read by a certified practitioner" rather than "See a real
-   * assessment". The page that exists to answer "what do I actually get"
-   * was advertising itself as the homepage.
-   *
-   * The worse half was not in §2.4. Declaring `openGraph` below without
-   * `images` REPLACED the inherited object, and with it the `og:image` that
-   * `app/opengraph-image.tsx` injects everywhere else — so this page had no
-   * social image at all, while still claiming
-   * `twitter:card=summary_large_image`. Measured on production: this and
-   * /compare were the only two public pages with no `og:image`, and the only
-   * two declaring `openGraph` without `images`. See SOCIAL_CARD in
-   * lib/seo/site.ts.
-   *
-   * ⚠️ If you add a key to `openGraph` here, keep `images`. Dropping it does
-   * not fall back to the generated card — that is the whole bug.
-   */
-  openGraph: {
-    title: `${TITLE} | GlamRepairs`,
-    description: DESCRIPTION,
-    url: "/sample-assessment",
-    type: "article",
-    images: [SOCIAL_CARD],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${TITLE} | GlamRepairs`,
-    description: DESCRIPTION,
-    images: [SOCIAL_CARD.url],
-  },
-};
+/*
+ * HANDOVER-45 — title, description, H1 and social image from `page_seo`
+ * ('/sample-assessment'), edited in Studio → SEO. `pageMetadata` always sets
+ * `openGraph.images` and an explicit `twitter` block, which is the defect
+ * HOTFIX-25 §2.4 fixed on this page by hand. TITLE and DESCRIPTION remain
+ * as the fallback, the eyebrow, and the page's own JSON-LD.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata(
+    "/sample-assessment",
+    { title: "See a Real Skin Assessment Before You Pay", description: DESCRIPTION },
+    { type: "article" },
+  );
+}
 
 export default async function SampleAssessmentPage() {
+  const sampleH1 = splitAccent(
+    await pageH1("/sample-assessment", "This is exactly what you receive"),
+    2,
+  );
   const author = AUTHORS[DEFAULT_AUTHOR_SLUG];
   const [plans, region] = await Promise.all([
     getPlanSettings(),
@@ -165,8 +144,8 @@ export default async function SampleAssessmentPage() {
           <div className="mx-auto max-w-[1180px]">
             <p className="gr-eyebrow gr-eyebrow--center">{TITLE}</p>
             <h1 className="mx-auto mt-3.5 font-serif text-[2rem] font-semibold leading-[1.14] tracking-[-0.02em] text-brand-ink sm:text-[2.5rem]">
-              This is exactly what{" "}
-              <em className="italic text-brand-primary">you receive</em>
+              {sampleH1.lead ? <>{sampleH1.lead}{" "}</> : null}
+              <em className="italic text-brand-primary">{sampleH1.accent}</em>
             </h1>
             <p className="mx-auto mt-3 max-w-[560px] text-[0.9688rem] leading-[1.7] text-brand-gray">
               A complete assessment, written by hand for one person. Read it in

@@ -13,6 +13,8 @@ import type {
   PublishBundleMember,
 } from "@/lib/studio/blogActions";
 import type { BlogPost } from "@/lib/studio/blog";
+import CharCounter from "@/components/studio/seo/CharCounter";
+import MediaUploader from "@/components/studio/media/MediaUploader";
 
 /**
  * Blog editor.
@@ -55,6 +57,19 @@ type Props = {
    * than rendering a dead link.
    */
   otherPosts: { slug: string; title: string; status: string }[];
+  /** HANDOVER-45 — library images uploaded as heroes, for the picker. */
+  heroOptions: HeroOption[];
+  /** The media id currently linked as this post's hero, if any. */
+  currentHeroId: string | null;
+};
+
+type HeroOption = {
+  id: string;
+  url: string;
+  alt: string;
+  filename: string;
+  width: number;
+  height: number;
 };
 
 function Field({
@@ -85,6 +100,8 @@ export default function BlogEditor({
   authors,
   reviewers,
   otherPosts,
+  heroOptions,
+  currentHeroId,
 }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -105,6 +122,18 @@ export default function BlogEditor({
   const [body, setBody] = useState(post?.bodyMarkdown ?? "");
   const [reviewer, setReviewer] = useState(post?.reviewerSlug ?? "");
   const [metaDesc, setMetaDesc] = useState(post?.metaDescription ?? "");
+  // HANDOVER-45 §3.3 — the rest of the SEO panel is controlled so its
+  // counters update as you type.
+  const [metaTitle, setMetaTitle] = useState(post?.metaTitle ?? "");
+  const [titleText, setTitleText] = useState(post?.title ?? "");
+  const [faq, setFaq] = useState<{ q: string; a: string }[]>(post?.faq ?? []);
+  const [heroes, setHeroes] = useState<HeroOption[]>(heroOptions);
+  const [heroId, setHeroId] = useState<string | null>(currentHeroId);
+  const [showHeroUpload, setShowHeroUpload] = useState(false);
+  const hero = heroes.find((h) => h.id === heroId) ?? null;
+  // Posts render their meta title with no suffix (HOTFIX-31 §4.3), so the
+  // whole 60 is available to it.
+  const effectiveTitle = metaTitle.trim() || titleText.trim();
   const [related, setRelated] = useState<string[]>(
     (post?.relatedSlugs ?? []).slice(0, MAX_RELATED),
   );
@@ -190,6 +219,8 @@ export default function BlogEditor({
       className="px-6 py-8"
     >
       <input type="hidden" name="id" defaultValue={post?.id ?? ""} />
+      <input type="hidden" name="hero_media_id" value={heroId ?? ""} />
+      <input type="hidden" name="faq_json" value={JSON.stringify(faq)} />
 
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -247,6 +278,18 @@ export default function BlogEditor({
           ) : null}
         </div>
       </header>
+
+      {post && post.status !== "published" && !heroId ? (
+        /*
+         * HANDOVER-45 §4.1 — a soft warning, not a block. Without a hero
+         * the post shares with its generated typographic card, which is
+         * acceptable; a real photograph is better.
+         */
+        <p className="mt-5 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          No hero image yet. The post can still be published and will share with
+          its generated title card, but a real photograph does better.
+        </p>
+      ) : null}
 
       {error ? (
         <p className="mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -310,7 +353,13 @@ export default function BlogEditor({
         {/* ── Content ── */}
         <div className="space-y-5">
           <Field label="Title">
-            <input name="title" defaultValue={post?.title ?? ""} className={input} required />
+            <input
+              name="title"
+              value={titleText}
+              onChange={(e) => setTitleText(e.target.value)}
+              className={input}
+              required
+            />
           </Field>
 
           <Field label="Slug" hint="Leave blank to generate from the title.">
@@ -425,12 +474,20 @@ export default function BlogEditor({
                 </select>
               </Field>
 
-              <Field label="Meta title" hint="Falls back to the post title.">
+              <Field label="Meta title" hint="Falls back to the post title. Shown as-is, no suffix.">
                 <input
                   name="meta_title"
-                  defaultValue={post?.metaTitle ?? ""}
+                  value={metaTitle}
+                  onChange={(e) => setMetaTitle(e.target.value)}
+                  placeholder={titleText}
                   className={input}
                 />
+                <span className="mt-1 flex justify-between">
+                  <span className="text-xs text-neutral-400">
+                    {metaTitle.trim() ? "" : "Using the post title"}
+                  </span>
+                  <CharCounter length={effectiveTitle.length} min={30} max={60} />
+                </span>
               </Field>
 
               <Field label="Meta description">
@@ -441,17 +498,170 @@ export default function BlogEditor({
                   rows={3}
                   className={input}
                 />
-                <span
-                  className={`mt-1 block text-xs ${
-                    metaDesc.length >= 150 && metaDesc.length <= 160
-                      ? "text-emerald-700"
-                      : "text-amber-700"
-                  }`}
-                >
-                  {metaDesc.length} / 150–160 characters
+                <span className="mt-1 flex justify-end">
+                  <CharCounter length={metaDesc.trim().length} min={140} max={160} />
                 </span>
               </Field>
+
+              <Field
+                label="Secondary keywords"
+                hint="Comma or one per line. For your planning; not shown on the page."
+              >
+                <textarea
+                  name="secondary_keywords"
+                  defaultValue={(post?.secondaryKeywords ?? []).join(", ")}
+                  rows={2}
+                  className={input}
+                />
+              </Field>
             </div>
+          </div>
+
+          {/* HANDOVER-45 — hero image from the media library. */}
+          <div className="rounded-xl border border-neutral-200 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Hero image
+            </p>
+            {hero ? (
+              <div className="mt-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={hero.url}
+                  alt={hero.alt}
+                  width={hero.width}
+                  height={hero.height}
+                  className="h-auto w-full rounded-lg"
+                />
+                <p className="mt-1.5 text-xs text-neutral-500">{hero.alt}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeroId(null);
+                    setDirty(true);
+                  }}
+                  className="mt-2 text-xs text-red-700 underline"
+                >
+                  Remove hero
+                </button>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-neutral-500">None chosen.</p>
+            )}
+
+            {heroes.length ? (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {heroes.map((h) => (
+                  <button
+                    key={h.id}
+                    type="button"
+                    title={h.alt}
+                    onClick={() => {
+                      setHeroId(h.id);
+                      setDirty(true);
+                    }}
+                    className={`overflow-hidden rounded-md border-2 ${
+                      h.id === heroId ? "border-[#662d91]" : "border-transparent"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={h.url}
+                      alt=""
+                      width={h.width}
+                      height={h.height}
+                      loading="lazy"
+                      className="aspect-[4/3] w-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => setShowHeroUpload((v) => !v)}
+              className="mt-3 text-xs font-medium text-[#662d91] underline"
+            >
+              {showHeroUpload ? "Close upload" : "Upload a new hero"}
+            </button>
+            {showHeroUpload ? (
+              <div className="mt-3">
+                <MediaUploader
+                  defaultRole="hero"
+                  lockRole
+                  onUploaded={(m) => {
+                    setHeroes((list) => [
+                      { id: m.id, url: m.publicUrl, alt: m.altText, filename: m.filename, width: m.width, height: m.height },
+                      ...list,
+                    ]);
+                    setHeroId(m.id);
+                    setDirty(true);
+                    setShowHeroUpload(false);
+                  }}
+                />
+              </div>
+            ) : null}
+            <p className="mt-2 text-xs text-neutral-400">Saved with the post.</p>
+          </div>
+
+          {/* HANDOVER-45 — FAQ, rendered under the post with FAQPage markup. */}
+          <div className="rounded-xl border border-neutral-200 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              FAQ
+            </p>
+            <p className="mt-1 text-xs text-neutral-400">
+              Shown at the end of the post and marked up for search. Only add
+              questions the article really answers.
+            </p>
+            <div className="mt-3 space-y-3">
+              {faq.map((f, i) => (
+                <div key={i} className="space-y-1.5 rounded-lg bg-neutral-50 p-2.5">
+                  <input
+                    value={f.q}
+                    placeholder="Question"
+                    onChange={(e) => {
+                      const next = [...faq];
+                      next[i] = { ...f, q: e.target.value };
+                      setFaq(next);
+                      setDirty(true);
+                    }}
+                    className={input}
+                  />
+                  <textarea
+                    value={f.a}
+                    placeholder="Answer"
+                    rows={3}
+                    onChange={(e) => {
+                      const next = [...faq];
+                      next[i] = { ...f, a: e.target.value };
+                      setFaq(next);
+                      setDirty(true);
+                    }}
+                    className={input}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFaq(faq.filter((_, j) => j !== i));
+                      setDirty(true);
+                    }}
+                    className="text-xs text-red-700 underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFaq([...faq, { q: "", a: "" }]);
+                setDirty(true);
+              }}
+              className="mt-3 text-xs font-medium text-[#662d91] underline"
+            >
+              Add a question
+            </button>
           </div>
 
           {/*

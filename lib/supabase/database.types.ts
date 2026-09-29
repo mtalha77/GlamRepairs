@@ -876,6 +876,167 @@ export type Database = {
         };
         Relationships: [];
       };
+      /** HANDOVER-45 — one row per static path, edited in Studio → SEO. */
+      page_seo: {
+        Row: {
+          path: string;
+          title: string;
+          meta_description: string;
+          h1: string | null;
+          og_image_media_id: string | null;
+          noindex: boolean;
+          canonical_override: string | null;
+          updated_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          path: string;
+          title: string;
+          meta_description: string;
+          h1?: string | null;
+          og_image_media_id?: string | null;
+          noindex?: boolean;
+          canonical_override?: string | null;
+          updated_by?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          title?: string;
+          meta_description?: string;
+          h1?: string | null;
+          og_image_media_id?: string | null;
+          noindex?: boolean;
+          canonical_override?: string | null;
+          updated_by?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "page_seo_og_image_media_id_fkey";
+            columns: ["og_image_media_id"];
+            isOneToOne: false;
+            referencedRelation: "studio_media";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      /** HANDOVER-45 — single row (id = 1). */
+      seo_settings: {
+        Row: {
+          id: number;
+          brand_name: string;
+          title_suffix: string;
+          default_og_media_id: string | null;
+          twitter_handle: string | null;
+          organization_type: string;
+          same_as: string[];
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          brand_name?: string;
+          title_suffix?: string;
+          default_og_media_id?: string | null;
+          twitter_handle?: string | null;
+          organization_type?: string;
+          same_as?: string[];
+          updated_at?: string;
+        };
+        Update: {
+          brand_name?: string;
+          title_suffix?: string;
+          default_og_media_id?: string | null;
+          twitter_handle?: string | null;
+          organization_type?: string;
+          same_as?: string[];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "seo_settings_default_og_media_id_fkey";
+            columns: ["default_og_media_id"];
+            isOneToOne: false;
+            referencedRelation: "studio_media";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      /** HANDOVER-45 — the media library. Alt, size and dimensions are CHECKed. */
+      studio_media: {
+        Row: {
+          id: string;
+          storage_path: string;
+          public_url: string;
+          filename: string;
+          alt_text: string;
+          caption: string | null;
+          credit: string | null;
+          mime_type: string;
+          width: number;
+          height: number;
+          bytes: number;
+          role: "hero" | "og" | "inline" | "icon";
+          focal_x: number;
+          focal_y: number;
+          uploaded_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          storage_path: string;
+          public_url: string;
+          filename: string;
+          alt_text: string;
+          caption?: string | null;
+          credit?: string | null;
+          mime_type: string;
+          width: number;
+          height: number;
+          bytes: number;
+          role?: "hero" | "og" | "inline" | "icon";
+          focal_x?: number;
+          focal_y?: number;
+          uploaded_by?: string | null;
+        };
+        Update: {
+          alt_text?: string;
+          caption?: string | null;
+          credit?: string | null;
+          role?: "hero" | "og" | "inline" | "icon";
+          focal_x?: number;
+          focal_y?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      studio_post_media: {
+        Row: {
+          post_slug: string;
+          media_id: string;
+          role: "hero" | "og" | "inline";
+          sort_order: number;
+        };
+        Insert: {
+          post_slug: string;
+          media_id: string;
+          role?: "hero" | "og" | "inline";
+          sort_order?: number;
+        };
+        Update: {
+          role?: "hero" | "og" | "inline";
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "studio_post_media_media_id_fkey";
+            columns: ["media_id"];
+            isOneToOne: false;
+            referencedRelation: "studio_media";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       studio_blog_posts: {
         Row: {
           id: string;
@@ -890,6 +1051,9 @@ export type Database = {
           /** HANDOVER-22 §8 — up to 3 slugs, chosen in the studio. Never null. */
           related_slugs: string[];
           hero_image_url: string | null;
+          hero_image_alt: string | null;
+          secondary_keywords: string[];
+          faq: { q: string; a: string }[];
           reading_minutes: number | null;
           author_slug: string;
           reviewer_slug: string | null;
@@ -913,6 +1077,9 @@ export type Database = {
           cluster?: string | null;
           related_slugs?: string[];
           hero_image_url?: string | null;
+          hero_image_alt?: string | null;
+          secondary_keywords?: string[];
+          faq?: { q: string; a: string }[];
           reading_minutes?: number | null;
           author_slug?: string;
           reviewer_slug?: string | null;
@@ -936,6 +1103,9 @@ export type Database = {
           cluster?: string | null;
           related_slugs?: string[];
           hero_image_url?: string | null;
+          hero_image_alt?: string | null;
+          secondary_keywords?: string[];
+          faq?: { q: string; a: string }[];
           reading_minutes?: number | null;
           author_slug?: string;
           reviewer_slug?: string | null;

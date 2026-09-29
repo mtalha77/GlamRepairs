@@ -18,9 +18,32 @@ import type { NextConfig } from "next";
  * accumulated. A 308 hands it to the replacement page instead, which is free
  * link equity you have already earned.
  */
+const SUPABASE_HOST = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname;
+  } catch {
+    return "";
+  }
+})();
+
 const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
+    /*
+     * HANDOVER-45 — media-library images are served from Supabase Storage.
+     * Only the public `blog-images` bucket is allowed, by path, so the image
+     * optimiser cannot be pointed at anything else on that host (the
+     * private assessment-photos bucket in particular).
+     */
+    remotePatterns: SUPABASE_HOST
+      ? [
+          {
+            protocol: "https",
+            hostname: SUPABASE_HOST,
+            pathname: "/storage/v1/object/public/blog-images/**",
+          },
+        ]
+      : [],
   },
   serverExternalPackages: ["pdf-lib"],
   turbopack: {

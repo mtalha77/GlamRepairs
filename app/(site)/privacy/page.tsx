@@ -1,24 +1,23 @@
 import type { Metadata } from "next";
 import LegalPage from "@/components/legal/LegalPage";
 import { INTRO, LAST_UPDATED, PRIVACY_MARKDOWN } from "@/lib/legal/privacy";
-import { canonicalOg } from "@/lib/seo/site";
+import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description:
-    "What Glam Repairs collects, who sees your photographs, how WhatsApp is " +
+// HANDOVER-45 — from `page_seo` ('/privacy'), edited in Studio → SEO. The
+// strings here are only the fallback for a missing row or failed read.
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata("/privacy", {
+    title: "Privacy Policy and Your Photographs",
+    description:
+      "What Glam Repairs collects, who sees your photographs, how WhatsApp is " +
     "used, how long we keep your information, and how to have it deleted.",
-  // HOTFIX-31 §4.2 — canonical and og:url from one path.
-  ...canonicalOg("/privacy"),
-  // Legal pages should be indexable — they are a trust signal Google reads
-  // when assessing a YMYL site — but they should never outrank real content.
-  robots: { index: true, follow: true },
-};
+  });
+}
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
   return (
     <LegalPage
-      title="Privacy Policy"
+      title={await pageH1("/privacy", "Privacy Policy")}
       intro={INTRO}
       lastUpdated={LAST_UPDATED}
       markdown={PRIVACY_MARKDOWN}

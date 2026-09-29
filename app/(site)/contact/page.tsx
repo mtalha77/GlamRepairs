@@ -16,18 +16,20 @@ import FaqSection from "@/components/faq/FaqSection";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
 import { faqSchema, graph } from "@/lib/seo/schema";
-import { canonicalOg } from "@/lib/seo/site";
+import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 
-export const metadata: Metadata = {
-  title: "Contact Us",
-  description:
-    "Questions about a skin assessment, your report, or how Glam Repairs " +
+// HANDOVER-45 — from `page_seo` ('/contact'), edited in Studio → SEO. The
+// strings here are only the fallback for a missing row or failed read.
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata("/contact", {
+    title: "Contact Glam Repairs, Skin Advice in Lahore",
+    description:
+      "Questions about a skin assessment, your report, or how Glam Repairs " +
     "works? Get in touch and someone from our team will reply within one working day.",
-  // HOTFIX-31 §4.2 — canonical and og:url from one path.
-  ...canonicalOg("/contact"),
-};
+  });
+}
 
-export default function ContactPage() {
+export default async function ContactPage() {
   // HANDOVER-13 §1/§2 — one array, filtered by tag, rendered and marked up
   // from the same value. No pricing context passed, so the price question is
   // omitted rather than guessed, and this page stays static.
@@ -40,7 +42,7 @@ export default function ContactPage() {
         "/contact",
       ))} />
       <main>
-        <ContactHeroSection />
+        <ContactHeroSection h1={await pageH1("/contact", "Get in Touch")} />
         <ContactSection />
         <FaqSection faqs={faqs} />
       </main>

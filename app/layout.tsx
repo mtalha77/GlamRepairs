@@ -24,6 +24,7 @@ import StickyGetStartedTab from "@/components/cta/StickyGetStartedTab";
 import JsonLd from "@/components/seo/JsonLd";
 import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
 import { graph, organizationSchema, personSchema, websiteSchema } from "@/lib/seo/schema";
+import { getSeoSettings } from "@/lib/seo/pageSeo";
 import { SITE } from "@/lib/seo/site";
 import "./globals.css";
 
@@ -94,13 +95,20 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
-export const metadata: Metadata = {
+/*
+ * HANDOVER-45 — the title template's suffix and the site name come from
+ * `seo_settings`, so every page (including the ones not in `page_seo`)
+ * carries the same brand, and Studio → SEO can change it without a deploy.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSeoSettings();
+  return {
   // Makes every relative canonical/OG URL resolve against the www host.
   metadataBase: new URL(SITE.url),
   title: {
     default: `${SITE.name} — ${SITE.tagline}`,
     // Page-level titles render as "Pricing | GlamRepairs".
-    template: `%s | ${SITE.name}`,
+    template: `%s${settings.titleSuffix}`,
   },
   description: SITE.description,
   applicationName: SITE.name,
@@ -111,7 +119,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
-    siteName: SITE.name,
+    siteName: settings.brandName,
     locale: SITE.locale,
     url: SITE.url,
     title: `${SITE.name} — ${SITE.tagline}`,
@@ -152,6 +160,7 @@ export const metadata: Metadata = {
    */
   manifest: "/site.webmanifest",
 };
+}
 
 /**
  * HOTFIX-26 Part 2 — the brand colours the browser chrome uses.
@@ -165,12 +174,13 @@ export const viewport: Viewport = {
   themeColor: "#662d91",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const practitioner = AUTHORS[DEFAULT_AUTHOR_SLUG];
+  const seoSettings = await getSeoSettings();
 
   return (
     <html
@@ -185,8 +195,8 @@ export default function RootLayout({
             earns E-E-A-T credit on every YMYL page that references it. */}
         <JsonLd
           data={graph(
-            organizationSchema(),
-            websiteSchema(),
+            organizationSchema(seoSettings),
+            websiteSchema(seoSettings.brandName),
             personSchema(practitioner),
           )}
         />

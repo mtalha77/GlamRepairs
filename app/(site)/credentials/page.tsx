@@ -9,6 +9,7 @@ import {
   type Credential,
   canonicalOg,
 } from "@/lib/seo/site";
+import { getTitleSuffix } from "@/lib/seo/pageSeo";
 
 /**
  * HOTFIX-6 §2, rebuilt to HOTFIX-36's design — verifiable qualifications.
@@ -372,14 +373,16 @@ const DESCRIPTION =
   "including her HEC attestation, so you can verify every claim on this " +
   "site for yourself.";
 
-export const metadata: Metadata = {
+export async function generateMetadata(): Promise<Metadata> {
+  // HANDOVER-45 — the suffix is `seo_settings.title_suffix`.
+  const suffix = await getTitleSuffix();
+  return {
   /*
-   * §3.3 — `absolute`, because the root template appends " | GlamRepairs"
-   * and the point of this title is that it fits. "Credentials" carried
-   * neither the practitioner's name nor any intent, and people search the
-   * name.
+   * §3.3 — `absolute`, so the root template cannot append the suffix a
+   * second time. "Credentials" carried neither the practitioner's name nor
+   * any intent, and people search the name.
    */
-  title: { absolute: `${TITLE} | GlamRepairs` },
+  title: { absolute: `${TITLE}${suffix}` },
   description: DESCRIPTION,
   /*
    * §3.1/§3.2 — canonical, og:url, og:image AND the twitter block, all from
@@ -387,11 +390,12 @@ export const metadata: Metadata = {
    * `twitter:` falling back to the homepage's, which is what it was doing.
    */
   ...canonicalOg("/credentials", {
-    title: `${TITLE} | GlamRepairs`,
+    title: `${TITLE}${suffix}`,
     description: DESCRIPTION,
     type: "profile",
   }),
-};
+  };
+}
 
 export default function CredentialsPage() {
   const degrees = CREDENTIALS.filter((c) => c.kind === "degree");

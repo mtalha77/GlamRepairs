@@ -1,12 +1,13 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { after } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { requireStudioMember } from "@/lib/studio/member";
 import { readingMinutes } from "@/lib/blog/markdown";
 import { AUTHORS } from "@/lib/seo/authors";
 import { submitToIndexNow } from "@/lib/seo/indexnow";
+import { POST_HERO_TAG } from "@/lib/blog/postHero";
 
 /**
  * Server actions for the blog admin.
@@ -139,9 +140,92 @@ function payloadFrom(formData: FormData, userId: string) {
       reviewer_slug: String(formData.get("reviewer_slug") ?? "").trim() || null,
       author_slug: String(formData.get("author_slug") ?? "ayma-arif").trim(),
       reading_minutes: readingMinutes(body),
+      // HANDOVER-45 §3.3 — the rest of the SEO panel.
+      secondary_keywords: secondaryKeywordsFrom(formData),
+      faq: faqFrom(formData),
       updated_by: userId,
     },
   };
+}
+
+/** Comma- or line-separated, trimmed, de-duplicated, at most 12. */
+function secondaryKeywordsFrom(formData: FormData): string[] {
+  const raw = String(formData.get("secondary_keywords") ?? "");
+  const seen = new Set<string>();
+  return raw
+    .split(/[\n,]+/)
+    .map((k) => k.trim().toLowerCase())
+    .filter((k) => k && !seen.has(k) && (seen.add(k), true))
+    .slice(0, 12);
+}
+
+/**
+ * The FAQ travels as one JSON field built by the editor. Anything that does
+ * not parse, or pairs with an empty side, is dropped rather than saved: the
+ * page renders these and marks them up as FAQPage, and an empty answer in
+ * structured data is worse than no entry.
+ */
+function faqFrom(formData: FormData): { q: string; a: string }[] {
+  try {
+    const parsed = JSON.parse(String(formData.get("faq_json") ?? "[]"));
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((f) => ({ q: String(f?.q ?? "").trim(), a: String(f?.a ?? "").trim() }))
+      .filter((f) => f.q && f.a)
+      .slice(0, 12);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Link (or unlink) the post's hero from the media library — HANDOVER-45.
+ *
+ * `hero_media_id` is sent by the editor on every save: an id to set, or an
+ * empty string to remove. The `studio_post_media` link is what the public
+ * page renders from (it carries width, height and alt text); the
+ * `hero_image_url` / `hero_image_alt` columns are kept in step so anything
+ * still reading them sees the same image.
+ */
+async function syncHero(
+  formData: FormData,
+  slug: string,
+  previousSlug: string | null,
+): Promise<string | null> {
+  if (!formData.has("hero_media_id")) return null;
+  const mediaId = String(formData.get("hero_media_id") ?? "").trim();
+  const supabase = await createServerSupabaseClient();
+
+  const clear = [slug, ...(previousSlug && previousSlug !== slug ? [previousSlug] : [])];
+  const { error: delErr } = await supabase
+    .from("studio_post_media")
+    .delete()
+    .in("post_slug", clear)
+    .eq("role", "hero");
+  if (delErr) return delErr.message;
+
+  if (!mediaId) {
+    await supabase.from("studio_blog_posts").update({ hero_image_url: null, hero_image_alt: null }).eq("slug", slug);
+    return null;
+  }
+
+  const { data: media, error: mErr } = await supabase
+    .from("studio_media")
+    .select("id, public_url, alt_text")
+    .eq("id", mediaId)
+    .maybeSingle();
+  if (mErr || !media) return mErr?.message ?? "That image is no longer in the library.";
+
+  const { error: insErr } = await supabase
+    .from("studio_post_media")
+    .insert({ post_slug: slug, media_id: media.id, role: "hero", sort_order: 0 });
+  if (insErr) return insErr.message;
+
+  await supabase
+    .from("studio_blog_posts")
+    .update({ hero_image_url: media.public_url, hero_image_alt: media.alt_text })
+    .eq("slug", slug);
+  return null;
 }
 
 /** Writes the row and returns its id, creating it when there is no id yet. */
@@ -157,6 +241,18 @@ async function persist(
   const supabase = await createServerSupabaseClient();
 
   if (id) {
+    // A slug change would be refused while media links point at the old
+    // slug, so they are cleared first and the hero is re-linked below.
+    const { data: before } = await supabase
+      .from("studio_blog_posts")
+      .select("slug")
+      .eq("id", id)
+      .maybeSingle();
+    const previousSlug = before?.slug ?? null;
+    if (previousSlug && previousSlug !== slug) {
+      await supabase.from("studio_post_media").delete().eq("post_slug", previousSlug);
+    }
+
     const { error } = await supabase
       .from("studio_blog_posts")
       .update(row)
@@ -165,6 +261,9 @@ async function persist(
       console.error("[persist:update]", error.message);
       return { ok: false, error: error.message };
     }
+    const heroError = await syncHero(formData, slug, previousSlug);
+    if (heroError) return { ok: false, error: `Saved, but the hero image was not: ${heroError}` };
+    updateTag(POST_HERO_TAG);
     return { ok: true, id, slug };
   }
 
@@ -178,6 +277,9 @@ async function persist(
     console.error("[persist:insert]", error?.message);
     return { ok: false, error: error?.message ?? "Could not create the post." };
   }
+  const heroError = await syncHero(formData, slug, null);
+  if (heroError) return { ok: false, error: `Saved, but the hero image was not: ${heroError}` };
+  updateTag(POST_HERO_TAG);
   return { ok: true, id: data.id, slug };
 }
 
