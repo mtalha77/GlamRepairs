@@ -17,7 +17,8 @@ import { renderMarkdown } from "@/lib/blog/markdown";
 import { barChart } from "@/lib/charts/render";
 import { PRACTITIONER } from "@/lib/seo/authors";
 import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
-import { SITE, SOCIAL_CARD, abs, canonicalOg } from "@/lib/seo/site";
+import { SOCIAL_CARD, abs, canonicalOg } from "@/lib/seo/site";
+import { getTitleSuffix } from "@/lib/seo/pageSeo";
 
 /**
  * A city page whose content updates itself — HANDOVER-22 §6, rebuilt on the
@@ -82,7 +83,7 @@ export async function generateMetadata({
      * og:image.
      */
     ...canonicalOg(path, {
-      title: `${page.title} | ${SITE.name}`,
+      title: `${page.title}${await getTitleSuffix()}`,
       description: page.metaDescription,
       type: "article",
     }),

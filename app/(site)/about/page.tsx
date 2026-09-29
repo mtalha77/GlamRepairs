@@ -37,19 +37,21 @@ import FaqSection from "@/components/faq/FaqSection";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
 import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
-import { canonicalOg } from "@/lib/seo/site";
+import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 
-export const metadata: Metadata = {
-  title: "About",
-  description:
-    "Glam Repairs provides online skin consultations in Pakistan — a personalised " +
+// HANDOVER-45 — from `page_seo` ('/about'), edited in Studio → SEO. The
+// strings here are only the fallback for a missing row or failed read.
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata("/about", {
+    title: "About Glam Repairs, Skin Care for Pakistan",
+    description:
+      "Glam Repairs provides online skin consultations in Pakistan — a personalised " +
     "skincare routine built for your skin, your climate and your budget, reviewed " +
     "by a certified aesthetics professional. No brand bias, no AI-generated advice.",
-  // HOTFIX-31 §4.2 — canonical and og:url from one path.
-  ...canonicalOg("/about"),
-};
+  });
+}
 
-export default function AboutPage() {
+export default async function AboutPage() {
   const faqs = resolveFaqs("about");
 
   return (
@@ -69,7 +71,7 @@ export default function AboutPage() {
         )}
       />
       <main>
-        <AboutHeroSection />
+        <AboutHeroSection h1={await pageH1("/about", "Online skin consultations, built for Pakistani skin")} />
         <WhatWeAreSection />
         <OurStorySection />
         <HowItWorksSection />

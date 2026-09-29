@@ -8,10 +8,13 @@ import JsonLd from "@/components/seo/JsonLd";
 import { getAuthor } from "@/lib/seo/authors";
 import {
   breadcrumbSchema,
+  faqSchema,
   graph,
   medicalArticleSchema,
   reviewedPageSchema,
 } from "@/lib/seo/schema";
+import Image from "next/image";
+import { getPostHero } from "@/lib/blog/postHero";
 import { getPublishedPost } from "@/lib/studio/blog";
 import { extractHeadings, renderMarkdown, slugifyHeading } from "@/lib/blog/markdown";
 
@@ -37,6 +40,7 @@ export async function generateMetadata({
 
   const title = post.metaTitle || post.title;
   const description = post.metaDescription || post.excerpt || undefined;
+  const hero = await getPostHero(post.slug);
 
   return {
     /*
@@ -67,10 +71,14 @@ export async function generateMetadata({
       publishedTime: post.publishedAt ?? undefined,
       modifiedTime: post.updatedAt,
       // HANDOVER-23 §1.1 — `opengraph-image.tsx` in this same route segment
-      // now generates a per-post typographic card, so Next attaches a
-      // distinct image to every post automatically. A real `hero_image_url`
-      // still wins when one is set.
-      ...(post.heroImageUrl ? { images: [post.heroImageUrl] } : {}),
+      // generates a per-post typographic card, which Next attaches when no
+      // image is given here. HANDOVER-45: a hero from the media library
+      // wins, with its real dimensions. `hero_image_url` on its own does
+      // not: every post carried one pointing at an undeployed file, which
+      // made every post's og:image a 404.
+      ...(hero
+        ? { images: [{ url: hero.url, width: hero.width, height: hero.height, alt: hero.alt }] }
+        : {}),
     },
     // Large-image cards need a genuinely large, post-specific image. That
     // used to mean `summary` without a hero, because a repeated brand
@@ -82,6 +90,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
+      ...(hero ? { images: [hero.url] } : {}),
     },
   };
 }
@@ -97,6 +106,7 @@ export default async function BlogPostPage({
 
   const author = getAuthor(post.authorSlug);
   const reviewer = post.reviewerSlug ? getAuthor(post.reviewerSlug) : undefined;
+  const hero = await getPostHero(post.slug);
 
   // The registry is the source of truth for credentials. If a slug no longer
   // resolves, fail loudly rather than rendering YMYL content with no byline.
@@ -140,7 +150,15 @@ export default async function BlogPostPage({
             reviewer,
             datePublished: post.publishedAt ?? post.createdAt,
             dateModified: post.updatedAt,
-            image: post.heroImageUrl ?? undefined,
+            image: hero
+              ? {
+                  url: hero.url,
+                  width: hero.width,
+                  height: hero.height,
+                  caption: hero.caption,
+                  alt: hero.alt,
+                }
+              : undefined,
           }),
           ...(reviewer
             ? [
@@ -156,6 +174,11 @@ export default async function BlogPostPage({
               ]
             : []),
           breadcrumbSchema(trail),
+          // FAQPage only when the questions are on the page — they render
+          // below, from the same array.
+          ...(post.faq.length
+            ? [faqSchema(post.faq.map((f) => ({ question: f.q, answer: f.a })), `/blog/${post.slug}`)]
+            : []),
         )}
       />
 
@@ -176,6 +199,33 @@ export default async function BlogPostPage({
         <p className="mt-4 text-lg leading-relaxed text-black/65">
           {post.excerpt}
         </p>
+      ) : null}
+
+      {hero ? (
+        /*
+         * HANDOVER-45 §4.5 — the hero is the likely Largest Contentful Paint
+         * element, so it loads eagerly at high priority (`priority`), and its
+         * stored width and height reserve the space before it arrives.
+         * Every other image on the site stays lazy.
+         */
+        <figure className="mt-8">
+          <Image
+            src={hero.url}
+            alt={hero.alt}
+            width={hero.width}
+            height={hero.height}
+            priority
+            sizes="(max-width: 700px) 100vw, 672px"
+            className="h-auto w-full rounded-2xl"
+          />
+          {hero.caption || hero.credit ? (
+            <figcaption className="mt-2 text-xs text-black/55">
+              {hero.caption}
+              {hero.caption && hero.credit ? " " : ""}
+              {hero.credit ? <span className="text-black/40">{hero.credit}</span> : null}
+            </figcaption>
+          ) : null}
+        </figure>
       ) : null}
 
       <div className="mt-8">
@@ -209,6 +259,22 @@ export default async function BlogPostPage({
         className="prose-gr mt-10"
         dangerouslySetInnerHTML={{ __html: html }}
       />
+
+      {post.faq.length ? (
+        <section className="mt-14" aria-labelledby="post-faq">
+          <h2 id="post-faq" className="font-[family-name:var(--font-playfair)] text-2xl">
+            Questions people ask
+          </h2>
+          <div className="mt-5 space-y-5">
+            {post.faq.map((f) => (
+              <div key={f.q}>
+                <h3 className="font-semibold">{f.q}</h3>
+                <p className="mt-1.5 leading-relaxed text-black/75">{f.a}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <RelatedReading
         currentSlug={post.slug}

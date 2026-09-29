@@ -6,7 +6,8 @@ import CredentialsBlock from "@/components/seo/CredentialsBlock";
 import JsonLd from "@/components/seo/JsonLd";
 import { getAuthor, listAuthors } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph, personSchema } from "@/lib/seo/schema";
-import { SITE } from "@/lib/seo/site";
+import { SITE, canonicalOg } from "@/lib/seo/site";
+import { getTitleSuffix } from "@/lib/seo/pageSeo";
 
 /**
  * Author bio page.
@@ -35,16 +36,18 @@ export async function generateMetadata({
   // this person's name and title appear together; punctuating it one way
   // there and another way on the page is the drift the stack exists to stop.
   const title = `${author.name}, ${author.title}`;
+  // HANDOVER-45 — through canonicalOg, which also builds `twitter`. This
+  // page declared `openGraph` with no `images` and no `twitter`, so it
+  // shared with no image and inherited the homepage's Twitter card.
+  const suffix = await getTitleSuffix();
   return {
     title,
     description: author.bio,
-    alternates: { canonical: `/authors/${author.slug}` },
-    openGraph: {
+    ...canonicalOg(`/authors/${author.slug}`, {
       type: "profile",
-      title: `${title} | ${SITE.name}`,
+      title: `${title}${suffix}`,
       description: author.bio,
-      url: `/authors/${author.slug}`,
-    },
+    }),
   };
 }
 

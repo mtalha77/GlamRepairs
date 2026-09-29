@@ -10,7 +10,8 @@ import { compareSource } from "@/lib/compare/sources";
 import { getPlanSettings } from "@/lib/plans/planSettings";
 import { formatRegionPrice } from "@/lib/pricing/regions";
 import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
-import { SOCIAL_CARD } from "@/lib/seo/site";
+import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
+import { splitAccent } from "@/lib/seo/headingAccent";
 
 /**
  * HANDOVER-22 §5b — /compare.
@@ -56,43 +57,25 @@ import { SOCIAL_CARD } from "@/lib/seo/site";
 
 export const dynamic = "force-dynamic";
 
-const TITLE = "Glam Repairs compared with the alternatives";
 const DESCRIPTION =
   "An honest comparison of an online skin assessment against a clinic visit, " +
   "an online doctor, buying products, and free advice — with sources, and " +
   "including the two things a doctor does that we cannot.";
 
-export const metadata: Metadata = {
-  title: "Compared with the alternatives",
-  description: DESCRIPTION,
-  alternates: { canonical: "/compare" },
-  /*
-   * HOTFIX-25 §2.4 — same defect as /sample-assessment, same fix.
-   *
-   * §2.4 named only that page; this one had it too, and it was found by
-   * checking every public route rather than the one the brief mentioned.
-   * Declaring `openGraph` without `images` replaced the inherited object
-   * and dropped the `og:image` that app/opengraph-image.tsx supplies
-   * everywhere else, so the "why us and not a clinic" page shared with no
-   * thumbnail on WhatsApp, X and Facebook. See SOCIAL_CARD in
-   * lib/seo/site.ts.
-   *
-   * ⚠️ Keep `images` if you edit `openGraph`. It does not fall back.
-   */
-  openGraph: {
-    title: `${TITLE} | GlamRepairs`,
-    description: DESCRIPTION,
-    url: "/compare",
-    type: "article",
-    images: [SOCIAL_CARD],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${TITLE} | GlamRepairs`,
-    description: DESCRIPTION,
-    images: [SOCIAL_CARD.url],
-  },
-};
+/*
+ * HANDOVER-45 — title, description, H1 and social image from `page_seo`
+ * ('/compare'), edited in Studio → SEO. `pageMetadata` always sets
+ * `openGraph.images` and an explicit `twitter` block, which is the defect
+ * HOTFIX-25 §2.4 fixed on this page by hand. TITLE and DESCRIPTION remain
+ * as the fallback and for the page's own JSON-LD.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata(
+    "/compare",
+    { title: "Skin Assessment vs Clinic vs Free Advice", description: DESCRIPTION },
+    { type: "article" },
+  );
+}
 
 /** Ends the page, and feeds FAQPage schema from the same array. */
 const FAQS = [
@@ -159,6 +142,10 @@ function Cite({ id }: { id: string }) {
 }
 
 export default async function ComparePage() {
+  const compareH1 = splitAccent(
+    await pageH1("/compare", "Everyone pays. The question is what you get a receipt for."),
+    6,
+  );
   const [matrix, plans] = await Promise.all([
     buildCompareMatrix(),
     getPlanSettings(),
@@ -215,10 +202,8 @@ export default async function ComparePage() {
             or anything — reading the page rather than the head.
           */}
           <h1 className="font-serif text-[1.85rem] leading-tight text-brand-ink sm:text-[2.3rem]">
-            Everyone pays. The question is{" "}
-            <em className="italic text-brand-primary">
-              what you get a receipt for.
-            </em>
+            {compareH1.lead ? <>{compareH1.lead}{" "}</> : null}
+            <em className="italic text-brand-primary">{compareH1.accent}</em>
           </h1>
           <p className="mx-auto mt-3.5 max-w-xl text-[0.9375rem] leading-[1.75] text-brand-gray">
             These are the three ways people deal with a skin problem in

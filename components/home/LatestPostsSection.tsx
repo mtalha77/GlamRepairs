@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getPostHeroes } from "@/lib/blog/postHero";
 import { listPublishedPosts } from "@/lib/studio/blog";
 
 /**
@@ -26,6 +27,10 @@ function formatDate(value: string | null) {
 
 export default async function LatestPostsSection() {
   const posts = (await listPublishedPosts()).slice(0, 3);
+  // HANDOVER-45 — only media-library heroes, which have real dimensions.
+  // The raw hero_image_url pointed at undeployed files and rendered as
+  // empty boxes on all three cards.
+  const heroes = await getPostHeroes();
   if (posts.length === 0) return null;
 
   return (
@@ -53,10 +58,10 @@ export default async function LatestPostsSection() {
                 href={`/blog/${post.slug}`}
                 className="flex h-full flex-col overflow-hidden rounded-[20px] border border-brand-lavender/60 bg-white transition-colors hover:border-brand-lavender"
               >
-                {post.heroImageUrl ? (
+                {heroes[post.slug] ? (
                   <span className="relative block aspect-[16/9] w-full overflow-hidden bg-brand-purple-soft">
                     <Image
-                      src={post.heroImageUrl}
+                      src={heroes[post.slug].url}
                       alt=""
                       fill
                       sizes="(max-width: 1024px) 100vw, 28rem"

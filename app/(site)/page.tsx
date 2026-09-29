@@ -24,17 +24,22 @@ import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 import { formatPlanPrice, getPaidPlan } from "@/lib/plans/plansPublic";
+import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 import { faqSchema, graph } from "@/lib/seo/schema";
 
-export const metadata: Metadata = {
-  // No `title` here on purpose — the layout's `default` already renders
-  // "GlamRepairs — Online skin assessment, read by a certified practitioner".
-  // Setting one here would replace that with a worse version.
-  description:
-    "Answer a few questions, send a few photos, and a certified practitioner " +
-    "reads your skin and writes you a plan you keep. No clinic, no waiting room.",
-  alternates: { canonical: "/" },
-};
+/*
+ * HANDOVER-45 — title, description and H1 come from `page_seo` ('/'), edited
+ * in Studio → SEO. The strings below are only the fallback for a missing
+ * row or a failed read.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata("/", {
+    title: "Online Skin Assessment Pakistan, Read by Hand",
+    description:
+      "Answer a few questions, send a few photos, and a certified practitioner " +
+      "reads your skin and writes you a plan you keep. No clinic, no waiting room.",
+  });
+}
 
 export default async function Home() {
   // HANDOVER-13 §1/§2 — the FAQ list, the FAQPage markup and the price in
@@ -56,7 +61,7 @@ export default async function Home() {
         faqs.map((faq) => ({ question: faq.q, answer: faq.a })),
         "/",
       ))} />
-      <Hero />
+      <Hero h1={await pageH1("/", "Everyone Deserves Healthy Skin")} />
       <SkinAssessment />
       <ProblemSection />
       <WhatWeDoSection />

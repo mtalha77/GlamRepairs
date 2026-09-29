@@ -47,6 +47,11 @@ export type BlogPost = {
    */
   relatedSlugs: string[];
   heroImageUrl: string | null;
+  heroImageAlt: string | null;
+  /** HANDOVER-45 — shown in the editor's SEO panel; not rendered publicly. */
+  secondaryKeywords: string[];
+  /** HANDOVER-45 — rendered under the post, with FAQPage markup, when non-empty. */
+  faq: { q: string; a: string }[];
   readingMinutes: number | null;
   authorSlug: string;
   reviewerSlug: string | null;
@@ -59,7 +64,7 @@ export type BlogPost = {
 
 const COLUMNS =
   "id, slug, title, excerpt, body_markdown, meta_title, meta_description, " +
-  "target_keyword, cluster, related_slugs, hero_image_url, reading_minutes, author_slug, " +
+  "target_keyword, cluster, related_slugs, hero_image_url, hero_image_alt, secondary_keywords, faq, reading_minutes, author_slug, " +
   "reviewer_slug, reviewed_at, status, published_at, updated_at, created_at";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -79,6 +84,13 @@ function mapRow(row: any): BlogPost {
     // and every `.length` downstream would throw.
     relatedSlugs: Array.isArray(row.related_slugs) ? row.related_slugs : [],
     heroImageUrl: siteRelativeImage(row.hero_image_url),
+    heroImageAlt: row.hero_image_alt ?? null,
+    secondaryKeywords: Array.isArray(row.secondary_keywords) ? row.secondary_keywords : [],
+    faq: Array.isArray(row.faq)
+      ? (row.faq as { q?: unknown; a?: unknown }[])
+          .filter((f) => typeof f?.q === "string" && typeof f?.a === "string" && f.q.trim() && f.a.trim())
+          .map((f) => ({ q: String(f.q).trim(), a: String(f.a).trim() }))
+      : [],
     readingMinutes: row.reading_minutes,
     authorSlug: row.author_slug,
     reviewerSlug: row.reviewer_slug,

@@ -6,7 +6,35 @@ import { BOOKING_START_HREF } from "@/components/booking/bookingConfig";
 
 const heroBackground = "/images,svgs/hero_skin.webp";
 
-export default function Hero() {
+/**
+ * The two-line headline, from whatever H1 text Studio → SEO holds.
+ *
+ * The design sets the last two words as the second line, with the first of
+ * them in sans. Any H1 wording keeps that shape, so an edit in the studio
+ * never needs a code change.
+ *
+ * The space between the lines is a real text node. The previous markup put
+ * the two lines in adjacent block spans with nothing between them, so the
+ * heading's actual text, the thing a crawler and a screen reader get, was
+ * "Everyone DeservesHealthy Skin".
+ */
+function HeroHeading({ text }: { text: string }) {
+  const words = text.trim().split(/\s+/);
+  if (words.length < 3) return <>{text}</>;
+  const lead = words.slice(0, -2).join(" ");
+  const [plain, accent] = words.slice(-2);
+  return (
+    <>
+      <span className="block">{lead}</span>{" "}
+      <span className="block">
+        <span className="font-sans font-medium not-italic">{plain}</span>{" "}
+        {accent}
+      </span>
+    </>
+  );
+}
+
+export default function Hero({ h1 = "Everyone Deserves Healthy Skin" }: { h1?: string }) {
   return (
     /*
      * HOTFIX-41 §1 — no full-bleed scrim.
@@ -50,11 +78,7 @@ export default function Hero() {
 
       <div className="relative z-10 flex flex-col items-center px-6 pb-10 pt-8 text-center sm:min-h-[60svh] sm:justify-center sm:pb-12 sm:pt-[92px] lg:min-h-[100svh] lg:pb-16 lg:pt-[72px]">
         <h1 className="font-serif text-[40px] italic leading-[1.05] tracking-[-0.32px] text-brand-primary sm:text-[56px] sm:text-white lg:text-[72px]">
-          <span className="block">Everyone Deserves</span>
-          <span className="block">
-            <span className="font-sans font-medium not-italic">Healthy</span>{" "}
-            Skin
-          </span>
+          <HeroHeading text={h1} />
         </h1>
 
         <p className="mt-5 max-w-[659px] font-sans text-base font-normal leading-[1.35] text-brand-ink sm:mt-6 sm:text-lg sm:text-white lg:mt-[54px] lg:text-[24px]">

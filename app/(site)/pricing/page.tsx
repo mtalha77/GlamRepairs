@@ -25,16 +25,18 @@ import { resolveFaqs } from "@/lib/faq";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 import { formatPlanPrice, getPaidPlan } from "@/lib/plans/plansPublic";
 import { faqSchema, graph } from "@/lib/seo/schema";
-import { canonicalOg } from "@/lib/seo/site";
+import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 
-export const metadata: Metadata = {
-  title: "Pricing",
-  description:
-    "Compare our skin assessment plans. Each paid plan is read by a certified " +
-    "practitioner and delivered as a written report you keep. One-time, no subscription.",
-  // HOTFIX-31 §4.2 — canonical and og:url from one path.
-  ...canonicalOg("/pricing"),
-};
+// HANDOVER-45 — from `page_seo` ('/pricing'), edited in Studio → SEO. The
+// strings here are only the fallback for a missing row or failed read.
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata("/pricing", {
+    title: "Skin Assessment Pricing in Pakistan",
+    description:
+      "Compare our skin assessment plans. Each paid plan is read by a certified " +
+      "practitioner and delivered as a written report you keep. One-time, no subscription.",
+  });
+}
 
 export default async function PricingPage() {
   // HANDOVER-13 §1/§2 — the FAQ list, the FAQPage markup and the price in
@@ -60,7 +62,7 @@ export default async function PricingPage() {
         {/* Page H1. Sits above PricingSection, whose own heading is an h2. */}
         <header className="mx-auto max-w-3xl px-6 pt-10 text-center">
           <h1 className="font-[family-name:var(--font-playfair)] text-4xl leading-tight text-[#2a1140] md:text-5xl">
-            Skin assessment plans
+            {await pageH1("/pricing", "Skin assessment plans")}
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-black/65">
             Skin Transform is read by a certified practitioner and comes back
