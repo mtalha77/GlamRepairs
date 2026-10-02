@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/air-quality",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/gsc?mode=daily",
+      "schedule": "0 23 * * *"
     }
   ]
 }

@@ -11,7 +11,11 @@ import { syncBackfill, syncDaily, syncIndexStatus } from "@/lib/gsc/sync";
  *   ?mode=inspect            URL Inspection for every sitemap URL
  *
  * Called by .github/workflows/gsc-sync.yml, because Vercel cron does not
- * fire on this project (see air-quality-refresh.yml). Same gate as the
+ * fire on this project: air_quality_cron_runs shows every run arriving with
+ * the bearer secret and none from Vercel (checked again for HOTFIX-49). The
+ * vercel.json entry is a free backup should that ever change; a second run
+ * on the same day is harmless because the sync overwrites its window.
+ * POST is accepted as well as GET, for running it by hand with curl. Same gate as the
  * other cron routes: a CRON_SECRET bearer, or Vercel's unforgeable
  * x-vercel-cron header. Every run is written to gsc_sync_log by the sync
  * itself, so the response is a convenience, not the record.
@@ -57,3 +61,5 @@ export async function GET(request: Request) {
     results,
   });
 }
+
+export const POST = GET;

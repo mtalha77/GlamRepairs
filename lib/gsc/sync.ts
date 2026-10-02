@@ -141,7 +141,7 @@ async function hasBackfilled(): Promise<boolean> {
 
 /** The daily job: re-fetch today-6 … today-2, and backfill once. */
 export async function syncDaily(): Promise<SyncResult[]> {
-  if (!gscConfigured()) return [notConfigured()];
+  if (!gscConfigured()) return [await notConfigured("totals")];
   const results = await syncRange(isoDate(daysAgo(6)), isoDate(daysAgo(2)));
   if (results.every((r) => r.ok) && !(await hasBackfilled())) {
     results.push(...(await syncBackfill()));
@@ -151,7 +151,7 @@ export async function syncDaily(): Promise<SyncResult[]> {
 
 /** Oldest first, in chunks, up to where the daily window takes over. */
 export async function syncBackfill(from?: string, to?: string): Promise<SyncResult[]> {
-  if (!gscConfigured()) return [notConfigured()];
+  if (!gscConfigured()) return [await notConfigured("totals")];
   const start = from ? new Date(`${from}T00:00:00Z`) : daysAgo(HISTORY_DAYS);
   const end = to ? new Date(`${to}T00:00:00Z`) : daysAgo(2);
   const results: SyncResult[] = [];
@@ -169,7 +169,7 @@ export async function syncBackfill(from?: string, to?: string): Promise<SyncResu
  * is nothing to gain from parallel calls and a rate-limit error to lose.
  */
 export async function syncIndexStatus(): Promise<SyncResult> {
-  if (!gscConfigured()) return notConfigured();
+  if (!gscConfigured()) return notConfigured("index");
   const supabase = createAdminSupabaseClient();
   const urls = [...new Set((await sitemap()).map((e) => e.url))].slice(0, 1500);
   let written = 0;
@@ -206,6 +206,14 @@ export async function syncIndexStatus(): Promise<SyncResult> {
   return { kind: "index", rows: written, ok, ...(error ? { error } : {}) };
 }
 
-function notConfigured(): SyncResult {
-  return { kind: "config", rows: 0, ok: false, error: "GSC_SERVICE_ACCOUNT_KEY is not set." };
+/**
+ * HOTFIX-49: a run without the key is still a run, so it is logged. It used
+ * to return early with no row, which made "the job ran but has no key"
+ * indistinguishable from "nothing ever calls the job" in gsc_sync_log and
+ * on the Search page, and sent the diagnosis looking for a missing cron.
+ */
+async function notConfigured(kind: "totals" | "index"): Promise<SyncResult> {
+  const error = "GSC_SERVICE_ACCOUNT_KEY is not set in this deployment.";
+  await log({ kind, rows_written: 0, ok: false, error });
+  return { kind: "config", rows: 0, ok: false, error };
 }
