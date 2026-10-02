@@ -6,8 +6,9 @@
  * `suppressHydrationWarning`, and the Google Analytics gtag block.
  *
  * ⚠️ Do NOT add a second analytics tag anywhere. GA (G-5B70X63TRH) is wired
- * here via next/script and is confirmed firing. A duplicate would double-count
- * every session and quietly corrupt the funnel data the ad spend depends on.
+ * here through <GoogleTag />, on every page except the internal /studio.
+ * A duplicate would double-count every session and quietly corrupt the
+ * funnel data the ad spend depends on.
  *
  * What is new:
  *   • metadataBase + canonical  → fixes "Duplicate pages without canonical" (4 errors)
@@ -18,8 +19,8 @@
  */
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
-import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
+import GoogleTag from "@/components/analytics/GoogleTag";
 import StickyGetStartedTab from "@/components/cta/StickyGetStartedTab";
 import JsonLd from "@/components/seo/JsonLd";
 import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
@@ -201,19 +202,9 @@ export default async function RootLayout({
           )}
         />
 
-        {/* Google tag (gtag.js) — once in root layout covers every page */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
-          `}
-        </Script>
+        {/* Google tag (gtag.js) — every public page; skipped on /studio,
+            which is internal. See components/analytics/GoogleTag.tsx. */}
+        <GoogleTag id={GA_MEASUREMENT_ID} />
         {children}
         {/* HANDOVER-22 §2 — mounted site-wide; it suppresses itself across
             /onboarding/* and while the plans are on screen. */}
