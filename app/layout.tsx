@@ -173,6 +173,9 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export const viewport: Viewport = {
   themeColor: "#662d91",
+  // The site is designed light-only; tells the browser not to render it in
+  // dark. Pairs with `color-scheme: light` in globals.css.
+  colorScheme: "light",
 };
 
 export default async function RootLayout({

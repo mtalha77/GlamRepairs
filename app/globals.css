@@ -120,15 +120,16 @@
   --font-serif: var(--font-playfair);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #f8fafc;
-    --muted: #94a3b8;
-    --border: #1e293b;
-    --primary: #f8fafc;
-    --primary-foreground: #020617;
-  }
+/*
+ * The site is light-only. The create-next-app starter shipped a
+ * prefers-color-scheme: dark block here that turned the page background
+ * near-black on phones in dark mode, while every component is styled for a
+ * light page (text-black/65 and friends): dark text on a dark page, the
+ * blog lead and byline unreadable. `color-scheme: light` also stops the
+ * browser drawing form controls and scrollbars in dark.
+ */
+:root {
+  color-scheme: light;
 }
 
 html {
