@@ -7,6 +7,7 @@ import OnboardingShell from "@/components/onboarding/OnboardingShell";
 import { ONBOARDING_TOTAL_STEPS } from "@/components/onboarding/onboardingConfig";
 import { getOnboardingFirstName } from "@/components/onboarding/onboardingStorage";
 import PaymentDetails from "@/components/onboarding/PaymentDetails";
+import ConsultationAfterSubmit from "@/components/consultation/ConsultationAfterSubmit";
 import { StepHeader } from "@/components/steps";
 import { ONBOARDING_COMPLETE_UNLOCK } from "@/lib/funnel/funnelProgress";
 import type { PricingRegion } from "@/lib/pricing/regions";
@@ -103,11 +104,14 @@ type ThankYouStepProps = {
    * region rather than a hardcoded number.
    */
   region: PricingRegion;
+  /** HANDOVER-50 — plans with a video call (plan → minutes) and the guidelines. */
+  consultation?: { videoPlans: Record<string, number>; guidelinesHtml: string };
 };
 
 export default function ThankYouStep({
   currentStep = ONBOARDING_TOTAL_STEPS,
   region,
+  consultation,
 }: ThankYouStepProps) {
   // The name lives in sessionStorage, which does not exist on the server.
   // useSyncExternalStore renders the empty server snapshot first and swaps
@@ -150,6 +154,13 @@ export default function ThankYouStep({
             do, so it sits directly under the header, above the reassurance
             copy, rather than below it. */}
         <PaymentDetails region={region} />
+
+        {consultation ? (
+          <ConsultationAfterSubmit
+            videoPlans={consultation.videoPlans}
+            guidelinesHtml={consultation.guidelinesHtml}
+          />
+        ) : null}
 
         <p className="mx-auto mt-5 max-w-[20rem] text-sm leading-relaxed text-brand-gray sm:mt-6 sm:max-w-none sm:text-[0.9375rem]">
           Our certified expert will review your skin assessment and deliver your

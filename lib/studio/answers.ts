@@ -18,6 +18,7 @@ const ANSWER_QUESTIONS: Record<string, string> = {
   "booking.journeyFeel": "During my Glam skincare journey, I want to feel…",
   "booking.specialEvent": "Do you have a special event coming up?",
   "booking.eventDate": "When is your event?",
+  "onboarding.consultationTime": "Consultation time picked (held until payment)",
   "onboarding.firstName": "What is your name?",
   "onboarding.email": "What is your email?",
   "onboarding.age": "How old are you?",
@@ -64,6 +65,7 @@ const QUESTION_ORDER = [
   "booking.journeyFeel",
   "booking.specialEvent",
   "booking.eventDate",
+  "onboarding.consultationTime",
   "onboarding.consentPrivateReview",
   "onboarding.photoMarketingRestriction",
 ];

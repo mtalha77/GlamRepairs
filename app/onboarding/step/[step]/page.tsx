@@ -17,6 +17,9 @@ import {
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 import { listActivePricingRegions } from "@/lib/pricing/regions";
 import { listOfferedPlans } from "@/lib/plans/plansPublic";
+import { getPlanSettings } from "@/lib/plans/planSettings";
+import { getConsultationSettings } from "@/lib/consultation/slots";
+import { renderMarkdown } from "@/lib/blog/markdown";
 
 const TOTAL_STEPS = ONBOARDING_TOTAL_STEPS;
 
@@ -221,12 +224,31 @@ export default async function OnboardingStepPage({ params }: StepPageProps) {
   }
 
   if (stepNumber === ONBOARDING_FORM.consent) {
-    const region = await getServerPricingRegion();
+    // HANDOVER-50 §5 — plans with a video call choose their consultation
+    // time here, the last step before submission (never skipped, unlike the
+    // plan steps, which a pricing CTA jumps over). Submission then re-arms
+    // the hold, so the payment window runs from the bank details.
+    const [region, planSettings, consultation] = await Promise.all([
+      getServerPricingRegion(),
+      getPlanSettings(),
+      getConsultationSettings(),
+    ]);
+    const videoPlans = Object.fromEntries(
+      Object.values(planSettings)
+        .filter((plan) => plan.includesVideoCall)
+        .map((plan) => [plan.planKey, plan.videoMinutes ?? 15]),
+    );
     return (
       <ConsentStep
         backHref={backHref}
         nextHref="/onboarding/complete"
         region={region}
+        consultation={{
+          videoPlans,
+          guidelinesHtml: consultation.guidelinesMarkdown
+            ? renderMarkdown(consultation.guidelinesMarkdown)
+            : "",
+        }}
       />
     );
   }

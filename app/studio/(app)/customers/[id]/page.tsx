@@ -48,12 +48,25 @@ import {
   reviewToReportDefaults,
 } from "@/lib/studio/reviews";
 
+/** HANDOVER-50 — what verifying payment did to the client's consultation. */
+const BOOKING_NOTICE: Record<string, string> = {
+  booked: "Their consultation is booked and the confirmation with the video link has been emailed.",
+  booked_no_link:
+    "Their consultation is booked, but no video room could be created. Add a link in Studio → Consultations; they have been told it will follow.",
+  lost: "Their held consultation time had been taken, so they have been emailed a link to choose again.",
+  no_time: "They have not chosen a consultation time, so they have been emailed a link to choose one.",
+  already_booked: "Their consultation was already booked.",
+  test_lead: "Test lead: no consultation was booked.",
+  error: "The consultation could not be booked automatically. Check Studio → Consultations and book it by hand.",
+};
+
 type CustomerDetailPageProps = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{
     saved?: string;
     emailed?: string;
     paid?: string;
+    booking?: string;
     assigned?: string;
     reported?: string;
     reviewed?: string;
@@ -164,6 +177,7 @@ export default async function CustomerDetailPage({
       {query.paid ? (
         <p className="rounded-xl bg-brand-success/15 px-4 py-3 text-sm text-brand-success-strong">
           Payment verified.
+          {query.booking && BOOKING_NOTICE[query.booking] ? ` ${BOOKING_NOTICE[query.booking]}` : ""}
         </p>
       ) : null}
       {query.assigned ? (

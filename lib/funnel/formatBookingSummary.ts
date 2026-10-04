@@ -14,6 +14,8 @@ export const BOOKING_ANSWER_LABELS: Record<string, string> = {
   "booking.journeyFeel": "Journey feel",
   "booking.specialEvent": "Special event",
   "booking.eventDate": "Event date",
+  // HANDOVER-50 — held, not booked: confirmed when payment is verified.
+  "onboarding.consultationTime": "Consultation time (held)",
   "onboarding.firstName": "Name",
   "onboarding.email": "Email",
   "onboarding.age": "Age",

@@ -17,11 +17,276 @@ export type StudioNotificationType =
   | "chat_message"
   | "review_submitted"
   | "payment_verified"
-  | "customer_assigned";
+  | "customer_assigned"
+  | "consultation_alert";
 
 export type Database = {
   public: {
     Tables: {
+      /**
+       * HANDOVER-50 — consultation booking. Slots are held while a client
+       * pays and booked when payment is verified; the booking functions are
+       * service-role only (lib/consultation/*). `appointments.host_url` is
+       * the practitioner's link and must never be sent to a client.
+       */
+      practitioner_profiles: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          slug: string;
+          full_name: string;
+          title: string;
+          credentials: string;
+          reg_no: string | null;
+          photo_url: string | null;
+          bio: string;
+          profiles: unknown;
+          can_review: boolean;
+          accepting_clients: boolean;
+          status: string;
+          timezone: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          slug: string;
+          full_name: string;
+          title: string;
+          credentials: string;
+          reg_no?: string | null;
+          photo_url?: string | null;
+          bio?: string;
+          profiles?: unknown;
+          can_review?: boolean;
+          accepting_clients?: boolean;
+          status?: string;
+          timezone?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string | null;
+          slug?: string;
+          full_name?: string;
+          title?: string;
+          credentials?: string;
+          reg_no?: string | null;
+          photo_url?: string | null;
+          bio?: string;
+          profiles?: unknown;
+          can_review?: boolean;
+          accepting_clients?: boolean;
+          status?: string;
+          timezone?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      practitioner_availability: {
+        Row: {
+          id: string;
+          practitioner_id: string;
+          weekday: number;
+          starts_time: string;
+          ends_time: string;
+          slot_minutes: number;
+          stride_minutes: number;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          practitioner_id: string;
+          weekday: number;
+          starts_time: string;
+          ends_time: string;
+          slot_minutes?: number;
+          stride_minutes?: number;
+          active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          practitioner_id?: string;
+          weekday?: number;
+          starts_time?: string;
+          ends_time?: string;
+          slot_minutes?: number;
+          stride_minutes?: number;
+          active?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      practitioner_blackouts: {
+        Row: {
+          id: string;
+          practitioner_id: string;
+          starts_at: string;
+          ends_at: string;
+          reason: string | null;
+        };
+        Insert: {
+          id?: string;
+          practitioner_id: string;
+          starts_at: string;
+          ends_at: string;
+          reason?: string | null;
+        };
+        Update: {
+          practitioner_id?: string;
+          starts_at?: string;
+          ends_at?: string;
+          reason?: string | null;
+        };
+        Relationships: [];
+      };
+      availability_slots: {
+        Row: {
+          id: string;
+          practitioner_id: string | null;
+          starts_at: string;
+          ends_at: string;
+          status: "open" | "held" | "booked" | "cancelled";
+          lead_id: string | null;
+          appointment_id: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+          held_until: string | null;
+          hold_token: string | null;
+        };
+        Insert: {
+          id?: string;
+          practitioner_id?: string | null;
+          starts_at: string;
+          ends_at: string;
+          status?: "open" | "held" | "booked" | "cancelled";
+          lead_id?: string | null;
+          appointment_id?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          held_until?: string | null;
+          hold_token?: string | null;
+        };
+        Update: {
+          practitioner_id?: string | null;
+          starts_at?: string;
+          ends_at?: string;
+          status?: "open" | "held" | "booked" | "cancelled";
+          lead_id?: string | null;
+          appointment_id?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          held_until?: string | null;
+          hold_token?: string | null;
+        };
+        Relationships: [];
+      };
+      appointments: {
+        Row: {
+          id: string;
+          client_account_id: string | null;
+          lead_id: string | null;
+          practitioner_id: string;
+          starts_at: string;
+          ends_at: string;
+          mode: "video" | "chat" | "whatsapp";
+          status: "scheduled" | "completed" | "cancelled" | "no_show";
+          join_url: string | null;
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+          provider: string;
+          provider_ref: string | null;
+          host_url: string | null;
+          slot_id: string | null;
+          client_timezone: string | null;
+          reminder_24h_at: string | null;
+          reminder_1h_at: string | null;
+          bridge_deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          client_account_id?: string | null;
+          lead_id?: string | null;
+          practitioner_id: string;
+          starts_at: string;
+          ends_at: string;
+          mode?: "video" | "chat" | "whatsapp";
+          status?: "scheduled" | "completed" | "cancelled" | "no_show";
+          join_url?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          provider?: string;
+          provider_ref?: string | null;
+          host_url?: string | null;
+          slot_id?: string | null;
+          client_timezone?: string | null;
+          reminder_24h_at?: string | null;
+          reminder_1h_at?: string | null;
+          bridge_deleted_at?: string | null;
+        };
+        Update: {
+          client_account_id?: string | null;
+          lead_id?: string | null;
+          practitioner_id?: string;
+          starts_at?: string;
+          ends_at?: string;
+          mode?: "video" | "chat" | "whatsapp";
+          status?: "scheduled" | "completed" | "cancelled" | "no_show";
+          join_url?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          provider?: string;
+          provider_ref?: string | null;
+          host_url?: string | null;
+          slot_id?: string | null;
+          client_timezone?: string | null;
+          reminder_24h_at?: string | null;
+          reminder_1h_at?: string | null;
+          bridge_deleted_at?: string | null;
+        };
+        Relationships: [];
+      };
+      consultation_settings: {
+        Row: {
+          id: number;
+          lead_time_hours: number;
+          horizon_days: number;
+          hold_minutes: number;
+          reschedule_hours: number;
+          guidelines_markdown: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          lead_time_hours?: number;
+          horizon_days?: number;
+          hold_minutes?: number;
+          reschedule_hours?: number;
+          guidelines_markdown?: string;
+          updated_at?: string;
+        };
+        Update: {
+          lead_time_hours?: number;
+          horizon_days?: number;
+          hold_minutes?: number;
+          reschedule_hours?: number;
+          guidelines_markdown?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       studio_members: {
         Row: {
           user_id: string;
@@ -534,6 +799,9 @@ export type Database = {
           pricing_region: string | null;
           currency: string | null;
           list_price: number | null;
+          // HANDOVER-50 — set from plan_settings by trigger; client account if linked.
+          includes_video_call: boolean | null;
+          client_account_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -1549,6 +1817,32 @@ export type Database = {
       };
     };
     Functions: {
+      /** HANDOVER-50 — service role only. Returns the hold token, or null when the slot is gone. */
+      hold_slot: {
+        Args: { p_slot: string; p_lead: string; p_minutes?: number };
+        Returns: string | null;
+      };
+      /** False when the slot was lost (taken by someone else, or in the past). */
+      confirm_slot: {
+        Args: { p_slot: string; p_lead: string };
+        Returns: boolean;
+      };
+      extend_hold: {
+        Args: { p_lead: string; p_minutes: number };
+        Returns: string | null;
+      };
+      release_expired_holds: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      generate_slots: {
+        Args: { p_days?: number };
+        Returns: number;
+      };
+      refresh_open_slots: {
+        Args: { p_days?: number };
+        Returns: number;
+      };
       /**
        * HANDOVER-20 Part 2. The same function the redemption trigger
        * consults, so a message shown while typing cannot disagree with what

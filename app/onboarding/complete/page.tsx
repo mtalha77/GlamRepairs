@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 
 import ThankYouStep from "@/components/onboarding/steps/ThankYouStep";
+import { renderMarkdown } from "@/lib/blog/markdown";
+import { getConsultationSettings } from "@/lib/consultation/slots";
+import { getPlanSettings } from "@/lib/plans/planSettings";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 
 // Suffix-free: the root layout template appends "| GlamRepairs", so the
@@ -18,6 +21,23 @@ export const metadata: Metadata = {
  * cache, same as /pricing (see PricingSection.tsx).
  */
 export default async function OnboardingCompletePage() {
-  const region = await getServerPricingRegion();
-  return <ThankYouStep region={region} />;
+  const [region, planSettings, consultation] = await Promise.all([
+    getServerPricingRegion(),
+    getPlanSettings(),
+    getConsultationSettings(),
+  ]);
+  const videoPlans = Object.fromEntries(
+    Object.values(planSettings)
+      .filter((plan) => plan.includesVideoCall)
+      .map((plan) => [plan.planKey, plan.videoMinutes ?? 15]),
+  );
+  return (
+    <ThankYouStep
+      region={region}
+      consultation={{
+        videoPlans,
+        guidelinesHtml: consultation.guidelinesMarkdown ? renderMarkdown(consultation.guidelinesMarkdown) : "",
+      }}
+    />
+  );
 }
