@@ -1,0 +1,45 @@
+name: Consultations
+
+# HANDOVER-50. Calls /api/cron/consultations every hour on GitHub's
+# scheduler, because Vercel cron does not fire on this project (see
+# gsc-sync.yml). Each run releases lapsed holds, keeps the bookable window
+# filled, sends the 24-hour and 1-hour reminders, and deletes RingCentral
+# rooms the day after their call. Safe to run twice.
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: consultations
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          URL: https://www.glamrepairs.com/api/cron/consultations
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET is not set in this repository's Actions secrets."
+            exit 1
+          fi
+          code=$(curl --silent --show-error --retry 2 --retry-delay 10 --retry-all-errors \
+            --max-time 130 --write-out '%{http_code}' --output response.json \
+            --header "Authorization: Bearer ${CRON_SECRET}" "${URL}")
+          echo "HTTP ${code}"; cat response.json; echo
+          {
+            echo "### Consultations"
+            jq -r '"- released \(.released), generated \(.generated)\n- reminders: 24h \(.reminders.sent24h), 1h \(.reminders.sent1h), failed \(.reminders.failed)\n- rooms: deleted \(.bridges.deleted), failed \(.bridges.failed), skipped \(.bridges.skipped)"' response.json
+            jq -r '.errors[]? | "- ⚠️ \(.)"' response.json
+          } >> "$GITHUB_STEP_SUMMARY" || true
+          [ "${code}" = "200" ] || { echo "::error::Consultations run failed (HTTP ${code})."; exit 1; }
+          if [ "$(jq -r '.ok' response.json)" != "true" ]; then
+            echo "::warning::Consultations run finished with errors. See the summary."
+          fi

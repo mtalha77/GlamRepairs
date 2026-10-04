@@ -16,6 +16,8 @@ const TYPE_CLASS: Record<StudioNotificationType, string> = {
   review_submitted: "bg-brand-cream-light text-brand-primary-dark",
   payment_verified: "bg-brand-success/15 text-brand-success-strong",
   customer_assigned: "bg-brand-purple-soft text-brand-primary",
+  // HANDOVER-50 — needs action: a slot lost after payment, a missing call link.
+  consultation_alert: "bg-red-100 text-red-800",
 };
 
 export default function NotificationList() {

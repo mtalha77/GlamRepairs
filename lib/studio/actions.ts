@@ -49,6 +49,8 @@ import {
   failedChecks,
 } from "@/lib/studio/reportQuality";
 import { buildSkinReportPdf } from "@/lib/studio/reportPdf";
+import { bookConsultationForLead } from "@/lib/consultation/booking";
+import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 
 function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "";
@@ -527,9 +529,34 @@ export async function verifyCustomerPaymentAction(formData: FormData) {
     redirect(`/studio/customers/${id}?error=save`);
   }
 
+  /*
+   * HANDOVER-50 §6 — payment verified turns a held consultation time into
+   * a booking. Every outcome is surfaced: booked, booked without a video
+   * link (studio told to add one), lost after the hold lapsed (client
+   * emailed to choose again), or no time chosen. A failure here never
+   * undoes the payment verification above.
+   */
+  let booking = "";
+  try {
+    const outcome = await bookConsultationForLead(id, {
+      appBase: getPublicAppUrl(),
+      actorId: member.userId,
+    });
+    booking =
+      outcome.kind === "booked"
+        ? outcome.linkMissing
+          ? "booked_no_link"
+          : "booked"
+        : outcome.kind;
+  } catch (err) {
+    console.error("[verifyCustomerPaymentAction] booking", (err as Error).message);
+    booking = "error";
+  }
+
   revalidatePath(`/studio/customers/${id}`);
   revalidatePath("/studio/customers");
-  redirect(`/studio/customers/${id}?paid=1`);
+  revalidatePath("/studio/consultations");
+  redirect(`/studio/customers/${id}?paid=1&booking=${booking}`);
 }
 
 export async function sendCustomerEmailAction(formData: FormData) {

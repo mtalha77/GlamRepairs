@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
+import ConsultationPicker, { type PickerState } from "@/components/consultation/ConsultationPicker";
+import { formatSlot } from "@/lib/consultation/format";
 import {
   ONBOARDING_FORM,
   ONBOARDING_PROGRESS,
@@ -51,6 +53,17 @@ type ConsentContextValue = {
   canSubmit: boolean;
   isSubmitting: boolean;
   onSubmit: () => void;
+  /** HANDOVER-50 — null when the selected plan has no video call. */
+  consultation: {
+    minutes: number;
+    guidelinesHtml: string;
+    sessionId: string;
+    fullName: string;
+    email: string;
+    selectedPlan: string | null;
+    onStateChange: (state: PickerState) => void;
+    error: string | undefined;
+  } | null;
 };
 
 const ConsentContext = createContext<ConsentContextValue | null>(null);
@@ -172,6 +185,7 @@ function ConsentContent() {
     photoMarketingRestriction,
     setPrivateReview,
     setPhotoMarketingRestriction,
+    consultation,
   } = useConsent();
   const privateReviewError = useStepRequiredError(
     !privateReview,
@@ -184,6 +198,21 @@ function ConsentContent() {
 
   return (
     <div>
+      {consultation ? (
+        <div className="mb-8">
+          <ConsultationPicker
+            mode="funnel"
+            sessionId={consultation.sessionId}
+            fullName={consultation.fullName}
+            email={consultation.email}
+            selectedPlan={consultation.selectedPlan}
+            minutes={consultation.minutes}
+            guidelinesHtml={consultation.guidelinesHtml}
+            onStateChange={consultation.onStateChange}
+          />
+          <StepRequiredError id="consultation-time-error" message={consultation.error} />
+        </div>
+      ) : null}
       <StepHeader
         title="Consent and trust"
         subtitle="Your privacy matters. You're in control of your photos and data."
@@ -227,12 +256,15 @@ type ConsentStepProps = {
   backHref?: string;
   nextHref?: string;
   region: PricingRegion;
+  /** HANDOVER-50 — plans with a video call (plan → minutes) and the guidelines. */
+  consultation?: { videoPlans: Record<string, number>; guidelinesHtml: string };
 };
 
 export default function ConsentStep({
   backHref = `/onboarding/step/${ONBOARDING_FORM.consent - 1}`,
   nextHref = "/onboarding/complete",
   region,
+  consultation,
 }: ConsentStepProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -242,9 +274,31 @@ export default function ConsentStep({
   );
   const [photoMarketingRestriction, setPhotoMarketingRestriction] =
     useStepAnswer<boolean>("onboarding.photoMarketingRestriction", false);
-  const canSubmit = privateReview && photoMarketingRestriction;
-
   const ensureSessionId = useFunnelStore((state) => state.ensureSessionId);
+  const sessionId = useFunnelStore((state) => state.sessionId);
+  const selectedPlan = useFunnelStore((state) => state.selectedPlan);
+  const storeName = useFunnelStore((state) => state.fullName);
+  const storeEmail = useFunnelStore((state) => state.email);
+  const setAnswer = useFunnelStore((state) => state.setAnswer);
+  const [picker, setPicker] = useState<PickerState>({ required: false, held: null });
+  const videoMinutes = selectedPlan ? consultation?.videoPlans[selectedPlan] : undefined;
+  const needsTime = videoMinutes !== undefined && picker.required && !picker.held;
+  const timeError = useStepRequiredError(needsTime, "Please choose a consultation time.");
+  const canSubmit = privateReview && photoMarketingRestriction && !needsTime;
+
+  // A session id must exist before the picker can hold anything.
+  useEffect(() => {
+    if (videoMinutes !== undefined) ensureSessionId();
+  }, [videoMinutes, ensureSessionId]);
+
+  const onPickerState = useCallback(
+    (state: PickerState) => {
+      setPicker(state);
+      // Carried into the WhatsApp summary and the studio's answer list.
+      setAnswer("onboarding.consultationTime", state.held ? formatSlot(state.held.startsAt) : null);
+    },
+    [setAnswer],
+  );
   const unlockFlowStep = useFunnelStore((state) => state.unlockFlowStep);
 
   const onSubmit = async () => {
@@ -350,6 +404,19 @@ export default function ConsentStep({
         canSubmit,
         isSubmitting,
         onSubmit,
+        consultation:
+          videoMinutes !== undefined && sessionId
+            ? {
+                minutes: videoMinutes,
+                guidelinesHtml: consultation?.guidelinesHtml ?? "",
+                sessionId,
+                fullName: storeName || String(useFunnelStore.getState().answers["onboarding.firstName"] ?? ""),
+                email: storeEmail || String(useFunnelStore.getState().answers["onboarding.email"] ?? ""),
+                selectedPlan,
+                onStateChange: onPickerState,
+                error: timeError,
+              }
+            : null,
       }}
     >
       <OnboardingShell

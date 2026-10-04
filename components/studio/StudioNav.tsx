@@ -9,6 +9,8 @@ import { cn } from "@/lib/cn";
 export const STUDIO_NAV_LINKS = [
   { href: "/studio", label: "Home", exact: true },
   { href: "/studio/customers", label: "Customers" },
+  // HANDOVER-50 — video consultation hours and bookings.
+  { href: "/studio/consultations", label: "Consultations" },
   { href: "/studio/broadcast", label: "Broadcast" },
   { href: "/studio/blog", label: "Blog" },
   // HANDOVER-45 — images and search metadata, editable without a deploy.

@@ -14,6 +14,7 @@ import {
   showBankDetails as computeShowBankDetails,
 } from "@/lib/leads/paymentVisibility";
 import { deleteUnreferencedPhotos } from "@/lib/leads/deleteLeadPhotos";
+import { extendHoldOnSubmit } from "@/lib/consultation/slots";
 
 function isConfigured() {
   return Boolean(
@@ -208,6 +209,13 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  // HANDOVER-50 §1 — a consultation time held mid-funnel is re-armed now,
+  // so the payment window runs from when the bank details are shown. A
+  // no-op when nothing is held; never fails the submission.
+  await extendHoldOnSubmit(lead.leadId).catch((err) =>
+    console.error("[api/leads] extend hold", (err as Error).message),
+  );
 
   const paymentFacts = {
     paymentStatus: lead?.paymentStatus,
