@@ -7,6 +7,7 @@ import { formInputClassName } from "@/components/ui/fieldStyles";
 import type { Blackout, ConsultationAdminData, StudioAppointment, WeeklyWindow } from "@/lib/consultation/admin";
 import {
   addBlackout,
+  createVideoRoom,
   removeBlackout,
   saveConsultationSettings,
   saveWeeklyAvailability,
@@ -358,7 +359,15 @@ function Settings({ initial, readOnly }: { initial: ConsultationAdminData["setti
 
 // ── Appointments ────────────────────────────────────────────────────────
 
-function AppointmentRow({ a, readOnly }: { a: StudioAppointment; readOnly: boolean }) {
+function AppointmentRow({
+  a,
+  readOnly,
+  ringCentralReady,
+}: {
+  a: StudioAppointment;
+  readOnly: boolean;
+  ringCentralReady: boolean;
+}) {
   const router = useRouter();
   const [link, setLink] = useState(a.joinUrl ?? "");
   const [notify, setNotify] = useState(!a.joinUrl);
@@ -375,6 +384,13 @@ function AppointmentRow({ a, readOnly }: { a: StudioAppointment; readOnly: boole
   const saveLink = () =>
     start(async () => {
       const res = await setAppointmentLink({ id: a.id, joinUrl: link, notify });
+      setResult(res);
+      if (res.ok) router.refresh();
+    });
+
+  const makeRoom = () =>
+    start(async () => {
+      const res = await createVideoRoom({ id: a.id, notify });
       setResult(res);
       if (res.ok) router.refresh();
     });
@@ -421,7 +437,7 @@ function AppointmentRow({ a, readOnly }: { a: StudioAppointment; readOnly: boole
             </a>
           </p>
         ) : (
-          <p className="text-brand-error-strong">No video link yet. Paste one below.</p>
+          <p className="text-brand-error-strong">No video link yet. Create a room or paste a link below.</p>
         )}
         {a.notes ? <p className="mt-1 text-brand-gray">{a.notes}</p> : null}
         <p className="mt-1 text-xs text-brand-gray">
@@ -431,6 +447,11 @@ function AppointmentRow({ a, readOnly }: { a: StudioAppointment; readOnly: boole
 
       {!readOnly ? (
         <div className="mt-3 space-y-3">
+          {!a.hasBridge && ringCentralReady && !past ? (
+            <button type="button" className={primaryButton} disabled={pending} onClick={makeRoom}>
+              {pending ? "Creating…" : "Create RingCentral room"}
+            </button>
+          ) : null}
           <div className="flex flex-wrap items-center gap-2">
             <input
               type="url"
@@ -513,7 +534,7 @@ export default function ConsultationsAdmin({
         {data.appointments.length ? (
           <ul className="mt-4 space-y-3">
             {data.appointments.map((a) => (
-              <AppointmentRow key={a.id} a={a} readOnly={readOnly} />
+              <AppointmentRow key={a.id} a={a} readOnly={readOnly} ringCentralReady={ringCentralReady} />
             ))}
           </ul>
         ) : (
