@@ -17,6 +17,8 @@ import "server-only";
  * Requires RingCentral Video Pro; the free developer tier excludes RCV.
  */
 
+import { randomInt } from "node:crypto";
+
 const SERVER = process.env.RC_SERVER_URL?.replace(/\/$/, "") || "https://platform.ringcentral.com";
 
 export function ringCentralConfigured(): boolean {
@@ -68,9 +70,19 @@ export type Bridge = {
  * sensitive than the photographs, and turning that on is a separate
  * decision with explicit consent and a privacy policy change (§7.4).
  */
+const PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+
+/** RingCentral requires the password itself when a room is created protected. */
+function roomPassword(): string {
+  let out = "";
+  for (let i = 0; i < 10; i++) out += PASSWORD_CHARS[randomInt(PASSWORD_CHARS.length)];
+  return out;
+}
+
 export async function createBridge(name: string): Promise<Bridge | null> {
   const token = await accessToken();
   if (!token) return null;
+  const password = roomPassword();
   try {
     const res = await fetch(`${SERVER}/rcvideo/v2/account/~/extension/~/bridges`, {
       method: "POST",
@@ -78,7 +90,9 @@ export async function createBridge(name: string): Promise<Bridge | null> {
       body: JSON.stringify({
         name,
         type: "Scheduled",
-        security: { passwordProtected: true, noGuests: false, sameAccount: false },
+        // `passwordProtected: true` without `password` is a 400: RingCentral
+        // only generates one for PMI rooms, never for Scheduled ones.
+        security: { passwordProtected: true, password, noGuests: false, sameAccount: false },
         preferences: {
           join: { waitingRoomRequired: "GuestsOnly" },
           joinBeforeHost: false,
@@ -90,19 +104,22 @@ export async function createBridge(name: string): Promise<Bridge | null> {
     const body = (await res.json().catch(() => ({}))) as {
       id?: string;
       discovery?: { web?: string };
-      security?: { password?: string };
+      message?: string;
+      errors?: { message?: string }[];
     };
     if (!res.ok || !body.id || !body.discovery?.web) {
-      console.error("[ringcentral] create bridge failed", res.status);
+      // RingCentral's own reason, so a rejection can be diagnosed from the logs.
+      const reason = body.errors?.map((e) => e.message).join("; ") || body.message || "";
+      console.error("[ringcentral] create bridge failed", res.status, reason.slice(0, 300));
       return null;
     }
     const joinUrl = body.discovery.web;
-    const password = body.security?.password ?? null;
     return {
       bridgeId: body.id,
       joinUrl,
-      // Only worth telling the client if the link does not already carry it.
-      password: password && !joinUrl.includes(password) ? password : null,
+      // The owner's join link carries the password (`?pw=`); only say it
+      // separately when it does not.
+      password: /[?&]pw=/.test(joinUrl) ? null : password,
     };
   } catch (err) {
     console.error("[ringcentral] create bridge error", (err as Error).message);

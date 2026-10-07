@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getConsultingPractitioner } from "@/lib/consultation/admin";
 import { callMinutes } from "@/lib/consultation/booking";
 import { formatSlot } from "@/lib/consultation/format";
+import { createBridge } from "@/lib/consultation/ringcentral";
 import { getConsultationSettings } from "@/lib/consultation/slots";
 import { sendConsultationEmail } from "@/lib/email/sendConsultationEmail";
 import { requireStudioMember } from "@/lib/studio/member";
@@ -359,4 +360,64 @@ export async function setAppointmentStatus(input: {
     ok: true,
     message: cancelling ? "Cancelled. The time is open again if it is still ahead." : "Saved.",
   };
+}
+
+/**
+ * Create the RingCentral room for an appointment booked without one (the
+ * room could not be made at booking time). Emails the client the link
+ * when `notify` is set, as they were told it would follow.
+ */
+export async function createVideoRoom(input: { id: string; notify: boolean }): Promise<ConsultationActionResult> {
+  const g = await guard();
+  if ("error" in g) return { ok: false, error: g.error as string };
+
+  const admin = createAdminSupabaseClient();
+  const { data: appt } = await admin
+    .from("appointments")
+    .select("lead_id, starts_at, status, join_url, provider_ref")
+    .eq("id", input.id)
+    .maybeSingle();
+  if (!appt) return { ok: false, error: "Appointment not found." };
+  if (appt.status !== "scheduled") return { ok: false, error: "Only a scheduled consultation can get a room." };
+  if (appt.provider_ref) return { ok: false, error: "This consultation already has a RingCentral room." };
+
+  const bridge = await createBridge("Skin assessment call");
+  if (!bridge) {
+    return { ok: false, error: "RingCentral did not create a room. Try again shortly, or paste a link by hand." };
+  }
+
+  const { error } = await admin
+    .from("appointments")
+    .update({
+      join_url: bridge.joinUrl,
+      provider_ref: bridge.bridgeId,
+      notes: bridge.password ? `Meeting password: ${bridge.password}` : null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.id)
+    .is("provider_ref", null);
+  if (error) return { ok: false, error: error.message };
+
+  if (!input.notify) {
+    revalidatePath(PATH);
+    return { ok: true, message: "Room created." };
+  }
+  const { data: lead } = appt.lead_id
+    ? await admin.from("leads").select("full_name, email").eq("id", appt.lead_id).maybeSingle()
+    : { data: null };
+  const settings = await getConsultationSettings();
+  const sent = await sendConsultationEmail({
+    kind: "confirmed",
+    toEmail: lead?.email ?? null,
+    name: lead?.full_name ?? null,
+    startsAt: appt.starts_at,
+    joinUrl: bridge.joinUrl,
+    password: bridge.password,
+    minutes: await callMinutes(appt.lead_id),
+    guidelinesMarkdown: settings.guidelinesMarkdown,
+  });
+  revalidatePath(PATH);
+  return sent.ok
+    ? { ok: true, message: `Room created and the link emailed for ${formatSlot(appt.starts_at)}.` }
+    : { ok: true, message: `Room created, but the email failed (${sent.message}). Send the link on WhatsApp.` };
 }
