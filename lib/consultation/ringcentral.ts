@@ -63,9 +63,15 @@ export type Bridge = {
 };
 
 /**
- * One scheduled room. Guests wait until Ayma admits them
- * (waitingRoomRequired: GuestsOnly, joinBeforeHost: false), which is the
- * "no one can rejoin" requirement enforced live. Recording is "User", never
+ * One scheduled room with no host to wait for: whoever is taking the call
+ * (Ayma or another practitioner) opens the same link as the client and
+ * joins by typing a name, without signing in to RingCentral. A waiting
+ * room or join-before-host: false would make the account owner the only
+ * person who can start the call, so every consultation would need that
+ * one login. Privacy rests instead on one room per appointment, the
+ * password inside the link, and deletion the day after the call.
+ *
+ * Recording is "User", never
  * "Auto": a recorded consultation of someone's face and skin is more
  * sensitive than the photographs, and turning that on is a separate
  * decision with explicit consent and a privacy policy change (§7.4).
@@ -94,8 +100,8 @@ export async function createBridge(name: string): Promise<Bridge | null> {
         // only generates one for PMI rooms, never for Scheduled ones.
         security: { passwordProtected: true, password, noGuests: false, sameAccount: false },
         preferences: {
-          join: { waitingRoomRequired: "GuestsOnly" },
-          joinBeforeHost: false,
+          join: { waitingRoomRequired: "Nobody" },
+          joinBeforeHost: true,
           recordingsMode: "User",
         },
       }),

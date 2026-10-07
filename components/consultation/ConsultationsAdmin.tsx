@@ -431,7 +431,7 @@ function AppointmentRow({
       <div className="mt-3 text-sm">
         {a.joinUrl ? (
           <p>
-            Client link:{" "}
+            Video link (practitioner and client, no sign-in):{" "}
             <a href={a.joinUrl} target="_blank" rel="noopener noreferrer" className="break-all text-brand-primary underline underline-offset-2">
               {a.joinUrl}
             </a>

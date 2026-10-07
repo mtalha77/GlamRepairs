@@ -51,7 +51,7 @@ function compose(e: ConsultationEmail): { subject: string; html: string; text: s
     case "confirmed": {
       const when = formatSlot(e.startsAt);
       const link = e.joinUrl
-        ? `${button(e.joinUrl, "Join your consultation")}<p style="margin: 0 0 12px; font-size: 14px; color: #4a4a4a;">Use this link at the time above. You will wait briefly until Ayma lets you in. The link is yours alone and stops working after your call.${e.password ? ` Meeting password: <strong>${escapeHtml(e.password)}</strong>.` : ""}</p>`
+        ? `${button(e.joinUrl, "Join your consultation")}<p style="margin: 0 0 12px; font-size: 14px; color: #4a4a4a;">Open this link at the time above and type your name to join; there is nothing to install or sign in to. Your practitioner joins you in the same room. The link is for you alone and stops working after your call.${e.password ? ` Meeting password: <strong>${escapeHtml(e.password)}</strong>.` : ""}</p>`
         : `<p style="margin: 0 0 12px;">Your video link will follow before the call.</p>`;
       return {
         subject: `Your consultation is booked: ${when}`,
