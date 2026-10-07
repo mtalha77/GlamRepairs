@@ -86,7 +86,7 @@ export default function ConsultationBanner({ consultation }: { consultation: Lea
         <p className="mt-2 text-sm text-brand-ink">
           {consultation.joinUrl ? (
             <>
-              Client link:{" "}
+              Video link (practitioner and client, no sign-in):{" "}
               <a
                 href={consultation.joinUrl}
                 target="_blank"
