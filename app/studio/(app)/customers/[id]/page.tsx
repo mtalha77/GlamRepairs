@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import ConsultationBanner from "@/components/consultation/ConsultationBanner";
 import AssignCustomerForm from "@/components/studio/AssignCustomerForm";
 import AnswerList from "@/components/studio/AnswerList";
 import ClientNotesCard from "@/components/studio/ClientNotesCard";
@@ -18,6 +19,7 @@ import ReportHistory from "@/components/studio/ReportHistory";
 import ReviewForm from "@/components/studio/ReviewForm";
 import ReviewList from "@/components/studio/ReviewList";
 import VerifyPaymentButton from "@/components/studio/VerifyPaymentButton";
+import { getLeadConsultation } from "@/lib/consultation/forLead";
 import { formatBookingWhatsAppMessage } from "@/lib/funnel/formatBookingSummary";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
 import { getGiftCapacity } from "@/lib/gifts/giftSettings";
@@ -116,12 +118,15 @@ export default async function CustomerDetailPage({
     previousReports,
     outstandingGiftCode,
     giftCapacity,
+    consultation,
   ] = await Promise.all([
     getPersonHistory(customer.personKey),
     listSiblingSubmissions(customer.personKey, customer.id),
     listPreviousReportsForPerson(customer.personKey, customer.id),
     getOutstandingGiftCode(customer.personKey),
     getGiftCapacity(),
+    // HANDOVER-50 — shown first on the page; null for plans without a call.
+    getLeadConsultation(customer.id),
   ]);
 
   // Only fetched for non-super-admins: the redacted copy comes from the
@@ -143,6 +148,7 @@ export default async function CustomerDetailPage({
 
   return (
     <div className="space-y-8">
+      {consultation ? <ConsultationBanner consultation={consultation} /> : null}
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.12em] text-brand-accent">
           {customer.source === "manual" ? "Added in Studio" : "Funnel lead"}
