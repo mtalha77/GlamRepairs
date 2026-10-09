@@ -10,6 +10,7 @@ import { getConsultationSettings } from "@/lib/consultation/slots";
 import { sendConsultationEmail } from "@/lib/email/sendConsultationEmail";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import type { AppointmentOutcome } from "@/lib/supabase/database.types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 /**
@@ -309,58 +310,51 @@ export async function setAppointmentLink(input: {
 }
 
 /**
- * Close an appointment. Cancelling a future one gives its time back to the
- * calendar; the room is deleted by the hourly job either way.
+ * Record how a consultation went — HANDOVER-52 §2.3.
+ *
+ * Always through settle_appointment, the single settlement path: it sets
+ * the status, creates the earning when someone is paid (attended, client
+ * no-show, late client cancellation), and gives the slot back to the
+ * calendar when nobody is charged. Settling twice is refused by the
+ * database. The hourly job deletes the room either way.
  */
-export async function setAppointmentStatus(input: {
+export async function settleAppointment(input: {
   id: string;
-  status: "completed" | "no_show" | "cancelled";
+  outcome: AppointmentOutcome;
+  note: string;
 }): Promise<ConsultationActionResult> {
   const g = await guard();
   if ("error" in g) return { ok: false, error: g.error as string };
-  if (!["completed", "no_show", "cancelled"].includes(input.status)) return { ok: false, error: "Unknown status." };
+  if (!OUTCOMES.includes(input.outcome)) return { ok: false, error: "Unknown outcome." };
 
-  const supabase = await createServerSupabaseClient();
-  const { data: appt, error: readError } = await supabase
-    .from("appointments")
-    .select("slot_id, starts_at")
-    .eq("id", input.id)
-    .maybeSingle();
-  if (readError || !appt) return { ok: false, error: readError?.message ?? "Appointment not found." };
-
-  const cancelling = input.status === "cancelled";
-  const { error } = await supabase
-    .from("appointments")
-    .update({
-      status: input.status,
-      updated_at: new Date().toISOString(),
-      // Released so the time can be booked again (one appointment per slot).
-      ...(cancelling ? { slot_id: null } : {}),
-    })
-    .eq("id", input.id);
-  if (error) return { ok: false, error: error.message };
-
-  if (cancelling && appt.slot_id) {
-    const future = new Date(appt.starts_at).getTime() > Date.now();
-    await createAdminSupabaseClient()
-      .from("availability_slots")
-      .update({
-        status: future ? "open" : "cancelled",
-        lead_id: null,
-        appointment_id: null,
-        held_until: null,
-        hold_token: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", appt.slot_id);
+  const { data: earningId, error } = await createAdminSupabaseClient().rpc("settle_appointment", {
+    p_appt: input.id,
+    p_outcome: input.outcome,
+    p_by: g.user.id,
+    p_note: input.note.trim() || null,
+  });
+  if (error) {
+    if (error.message.includes("already settled")) return { ok: false, error: "This consultation is already settled." };
+    return { ok: false, error: error.message };
   }
 
   revalidatePath(PATH);
   return {
     ok: true,
-    message: cancelling ? "Cancelled. The time is open again if it is still ahead." : "Saved.",
+    message: earningId
+      ? "Saved. The practitioner's fee is recorded; it becomes payable once the consultation note is written."
+      : "Saved. Nobody is charged, and the time is open again if it is still ahead.",
   };
 }
+
+const OUTCOMES: AppointmentOutcome[] = [
+  "attended",
+  "client_no_show",
+  "cancelled_by_client",
+  "cancelled_by_practitioner",
+  "practitioner_no_show",
+  "technical_failure",
+];
 
 /**
  * Create the RingCentral room for an appointment booked without one (the

@@ -37,7 +37,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
   const { id } = await params;
   const data = await getApplication(id);
   if (!data) notFound();
-  const { app, documents, profile } = data;
+  const { app, documents, profile, revisions } = data;
   const open = OPEN_STATUSES.includes(app.status);
 
   return (
@@ -115,6 +115,26 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
           </ul>
         )}
       </section>
+
+      {revisions.length ? (
+        <section className={card} aria-labelledby="revisions-heading">
+          <h2 id="revisions-heading" className="font-serif text-xl text-brand-primary">
+            Changes requested
+          </h2>
+          <ul className="mt-3 space-y-3 text-sm">
+            {revisions.map((r) => (
+              <li key={r.id} className="rounded-xl bg-brand-cream-card/60 px-3 py-2">
+                <p className="whitespace-pre-line text-brand-ink">{r.message}</p>
+                <p className="mt-1 text-xs text-brand-gray">
+                  {formatStudioDateTime(r.requested_at)}
+                  {r.fields.length ? ` · ${r.fields.join(", ")}` : ""} ·{" "}
+                  {r.resolved_at ? `updated by them ${formatStudioDateTime(r.resolved_at)}` : "waiting for them"}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {open ? (
         <section className={card} aria-labelledby="decide-heading">

@@ -107,7 +107,13 @@ export async function getApplication(id: string) {
         .maybeSingle()
     : { data: null };
 
-  return { app, documents, profile };
+  const { data: revisions } = await supabase
+    .from("practitioner_revision_requests")
+    .select("id, fields, message, requested_at, resolved_at")
+    .eq("application_id", app.id)
+    .order("requested_at", { ascending: false });
+
+  return { app, documents, profile, revisions: revisions ?? [] };
 }
 
 export async function countOpenApplications(): Promise<number> {

@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 
 import { formInputClassName } from "@/components/ui/fieldStyles";
 import type { Blackout, ConsultationAdminData, StudioAppointment, WeeklyWindow } from "@/lib/consultation/admin";
+import type { AppointmentOutcome } from "@/lib/supabase/database.types";
 import {
   addBlackout,
   createVideoRoom,
@@ -12,7 +13,7 @@ import {
   saveConsultationSettings,
   saveWeeklyAvailability,
   setAppointmentLink,
-  setAppointmentStatus,
+  settleAppointment,
   type ConsultationActionResult,
 } from "@/lib/consultation/adminActions";
 import { formatDay, formatSlot, formatTime, TZ_LABEL } from "@/lib/consultation/format";
@@ -25,6 +26,19 @@ import { formatDay, formatSlot, formatTime, TZ_LABEL } from "@/lib/consultation/
  * time out without touching anyone already booked. Appointments are listed
  * with what she needs on the day: the time, the link, a WhatsApp button.
  */
+
+const OUTCOME_OPTIONS: { value: AppointmentOutcome; label: string; help: string }[] = [
+  { value: "attended", label: "Attended", help: "The practitioner is paid in full once the consultation note is written." },
+  { value: "client_no_show", label: "Client did not show", help: "The practitioner is still paid in full. No refund to the client." },
+  {
+    value: "cancelled_by_client",
+    label: "Client cancelled",
+    help: "Inside the cancellation window the practitioner is paid and there is no refund; with notice, nobody is charged and the time reopens.",
+  },
+  { value: "cancelled_by_practitioner", label: "Practitioner cancelled", help: "Nobody is paid; refund or rebook the client. The time reopens." },
+  { value: "practitioner_no_show", label: "Practitioner did not show", help: "Nobody is paid; refund the client." },
+  { value: "technical_failure", label: "Technical failure", help: "Nobody is paid; rebook the client." },
+];
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 // Week as Pakistan works it, Monday first. Values stay Postgres dow (0 = Sunday).
@@ -55,6 +69,10 @@ function Feedback({ result }: { result: ConsultationActionResult | null }) {
     );
   }
   return null;
+}
+
+function formatRupees(minor: number): string {
+  return `Rs ${(minor / 100).toLocaleString("en-PK", { maximumFractionDigits: 0 })}`;
 }
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
@@ -247,7 +265,7 @@ function Blackouts({ items, readOnly }: { items: Blackout[]; readOnly: boolean }
 
       {!readOnly ? (
         <div className="mt-5 space-y-3">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-brand-gray">From ({TZ_LABEL})</span>
               <input type="datetime-local" value={startsLocal} onChange={(e) => { setStarts(e.target.value); setResult(null); }} className={formInputClassName} />
@@ -395,10 +413,14 @@ function AppointmentRow({
       if (res.ok) router.refresh();
     });
 
-  const close = (status: "completed" | "no_show" | "cancelled") => {
-    if (status === "cancelled" && !window.confirm(`Cancel ${a.clientName}'s consultation on ${formatSlot(a.startsAt)}? Tell them first.`)) return;
+  const [outcome, setOutcome] = useState<AppointmentOutcome | "">("");
+  const [outcomeNote, setOutcomeNote] = useState("");
+  const settle = () => {
+    if (!outcome) return;
+    const label = OUTCOME_OPTIONS.find((o) => o.value === outcome)?.label ?? outcome;
+    if (!window.confirm(`Record "${label}" for ${a.clientName} on ${formatSlot(a.startsAt)}? This cannot be changed afterwards.`)) return;
     start(async () => {
-      const res = await setAppointmentStatus({ id: a.id, status });
+      const res = await settleAppointment({ id: a.id, outcome, note: outcomeNote });
       setResult(res);
       if (res.ok) router.refresh();
     });
@@ -443,6 +465,16 @@ function AppointmentRow({
         <p className="mt-1 text-xs text-brand-gray">
           Reminders: 24 hours {a.reminder24hAt ? "sent" : "not sent"} · 1 hour {a.reminder1hAt ? "sent" : "not sent"}
         </p>
+        <p className="mt-2">
+          <a
+            href={`/studio/consultations/${a.id}/note`}
+            className={`inline-flex min-h-10 items-center text-sm underline underline-offset-2 ${
+              a.hasNote ? "text-brand-primary" : past ? "font-medium text-brand-error-strong" : "text-brand-primary"
+            }`}
+          >
+            {a.hasNote ? "View consultation note" : past ? "Consultation note due: write it now" : "Write consultation note"}
+          </a>
+        </p>
       </div>
 
       {!readOnly ? (
@@ -470,17 +502,33 @@ function AppointmentRow({
               Save link
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className={ghostButton} disabled={pending} onClick={() => close("completed")}>
-              Completed
-            </button>
-            <button type="button" className={ghostButton} disabled={pending} onClick={() => close("no_show")}>
-              No-show
-            </button>
-            <button type="button" className={ghostButton} disabled={pending} onClick={() => close("cancelled")}>
-              Cancel
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={outcome}
+              onChange={(e) => setOutcome(e.target.value as AppointmentOutcome | "")}
+              className={`${smallInput} min-h-10`}
+              aria-label="How did this consultation go?"
+            >
+              <option value="">How did it go?</option>
+              {OUTCOME_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <input
+              value={outcomeNote}
+              onChange={(e) => setOutcomeNote(e.target.value)}
+              placeholder="Note (optional)"
+              maxLength={300}
+              className={`${smallInput} min-h-10 w-full sm:w-auto sm:min-w-0 sm:flex-1`}
+              aria-label="Outcome note"
+            />
+            <button type="button" className={ghostButton} disabled={pending || !outcome} onClick={settle}>
+              Record outcome
             </button>
           </div>
+          {outcome ? <p className="text-xs text-brand-gray">{OUTCOME_OPTIONS.find((o) => o.value === outcome)?.help}</p> : null}
           <Feedback result={result} />
         </div>
       ) : null}
@@ -493,10 +541,13 @@ function AppointmentRow({
 export default function ConsultationsAdmin({
   data,
   readOnly,
+  practitionerView = false,
   ringCentralReady,
 }: {
   data: ConsultationAdminData;
   readOnly: boolean;
+  /** A practitioner's own view: her consultations only, no calendar admin. */
+  practitionerView?: boolean;
   ringCentralReady: boolean;
 }) {
   return (
@@ -518,9 +569,42 @@ export default function ConsultationsAdmin({
               : "RingCentral not connected. Bookings still go through; paste a link for each one below."}
           </p>
         </div>
+        <div className={card}>
+          <p className="text-xs text-brand-gray">Referred to a doctor, last 90 days</p>
+          <p className="mt-1 text-2xl text-brand-ink">{data.escalations90d}</p>
+        </div>
       </div>
 
-      {data.windows.length === 0 ? (
+      {data.notesDue.length ? (
+        <section role="alert" className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-5" aria-labelledby="notes-due-heading">
+          <h2 id="notes-due-heading" className="font-serif text-xl text-brand-ink">
+            {data.notesDue.length} consultation {data.notesDue.length === 1 ? "note" : "notes"} outstanding
+          </h2>
+          {(() => {
+            const held = data.notesDue.reduce((n, d) => n + (d.heldMinor ?? 0), 0);
+            return held > 0 ? (
+              <p className="mt-1 text-sm text-amber-950">
+                {formatRupees(held)} is held until {data.notesDue.length === 1 ? "it is" : "they are"} written.
+              </p>
+            ) : null;
+          })()}
+          <ul className="mt-3 space-y-2 text-sm">
+            {data.notesDue.map((d) => (
+              <li key={d.appointmentId} className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  {formatSlot(d.startsAt)} · {d.clientLabel}
+                  {d.heldMinor ? <span className="text-amber-950"> · {formatRupees(d.heldMinor)} held</span> : null}
+                </span>
+                <a href={`/studio/consultations/${d.appointmentId}/note`} className="inline-flex min-h-10 items-center font-medium text-brand-primary underline underline-offset-2">
+                  Write note
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {data.windows.length === 0 && !practitionerView ? (
         <p role="alert" className="rounded-xl bg-brand-lavender/25 px-4 py-3 text-sm leading-relaxed text-brand-ink">
           No weekly hours are set, so clients on a plan with a video call cannot pick a time. They are told it will be
           arranged on WhatsApp once they pay.
@@ -541,7 +625,7 @@ export default function ConsultationsAdmin({
           <p className="mt-2 text-sm text-brand-gray">Nothing booked yet.</p>
         )}
 
-        {data.holds.length ? (
+        {data.holds.length && !practitionerView ? (
           <div className="mt-6">
             <h3 className="text-sm font-medium text-brand-ink">Held, waiting for payment</h3>
             <ul className="mt-2 space-y-1 text-sm text-brand-gray">
@@ -563,9 +647,13 @@ export default function ConsultationsAdmin({
         ) : null}
       </section>
 
-      <WeeklyHours initial={data.windows} defaultSlot={data.defaultSlotMinutes} readOnly={readOnly} />
-      <Blackouts items={data.blackouts} readOnly={readOnly} />
-      <Settings initial={data.settings} readOnly={readOnly} />
+      {practitionerView ? null : (
+        <>
+          <WeeklyHours initial={data.windows} defaultSlot={data.defaultSlotMinutes} readOnly={readOnly} />
+          <Blackouts items={data.blackouts} readOnly={readOnly} />
+          <Settings initial={data.settings} readOnly={readOnly} />
+        </>
+      )}
     </div>
   );
 }

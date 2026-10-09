@@ -8,6 +8,7 @@ import {
   approvePractitionerApplication,
   issuePractitionerInvite,
   rejectPractitionerApplication,
+  requestApplicationChanges,
   resendPractitionerSignIn,
   revokePractitionerInvite,
   setApplicationStage,
@@ -122,6 +123,18 @@ export function DocumentVerifyToggle({ id, applicationId, verified }: { id: stri
   );
 }
 
+const REVISION_FIELD_LABELS: Record<string, string> = {
+  fullName: "Full name",
+  phone: "Phone",
+  city: "City",
+  qualification: "Qualification",
+  years: "Years of practice",
+  clinics: "Clinics",
+  about: "About",
+  portfolioUrl: "Portfolio link",
+  documents: "Documents",
+};
+
 const STAGES: { status: PractitionerApplicationStatus; label: string }[] = [
   { status: "new", label: "New" },
   { status: "screening", label: "Screening" },
@@ -141,7 +154,8 @@ export function ApplicationDecision({
   verifiedCount: number;
 }) {
   const [note, setNote] = useState("");
-  const [rejecting, setRejecting] = useState(false);
+  const [mode, setMode] = useState<"decide" | "reject" | "changes">("decide");
+  const [flagged, setFlagged] = useState<string[]>([]);
   const { result, pending, run } = useAction();
   const unverified = documentCount - verifiedCount;
 
@@ -166,9 +180,33 @@ export function ApplicationDecision({
       </div>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-brand-ink">{rejecting ? "Reason (emailed to the applicant)" : "Note (optional for approval)"}</span>
+        <span className="text-brand-ink">
+          {mode === "reject"
+            ? "Reason (emailed to the applicant)"
+            : mode === "changes"
+              ? "What needs changing (emailed to the applicant)"
+              : "Note (optional for approval)"}
+        </span>
         <textarea value={note} rows={3} maxLength={1000} onChange={(e) => setNote(e.target.value)} className={formInputClassName} />
       </label>
+
+      {mode === "changes" ? (
+        <fieldset>
+          <legend className="text-sm text-brand-ink">Highlight for them</legend>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+            {Object.entries(REVISION_FIELD_LABELS).map(([key, label]) => (
+              <label key={key} className="inline-flex min-h-10 items-center gap-2 text-sm text-brand-ink">
+                <input
+                  type="checkbox"
+                  checked={flagged.includes(key)}
+                  onChange={(e) => setFlagged((list) => (e.target.checked ? [...list, key] : list.filter((k) => k !== key)))}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
 
       {unverified > 0 ? (
         <p className="text-sm text-brand-gray">
@@ -179,7 +217,7 @@ export function ApplicationDecision({
       <Feedback result={result} />
 
       <div className="flex flex-wrap gap-2">
-        {!rejecting ? (
+        {mode === "decide" ? (
           <>
             <button
               type="button"
@@ -192,8 +230,25 @@ export function ApplicationDecision({
             >
               {pending ? "Working…" : "Approve"}
             </button>
-            <button type="button" className={danger} disabled={pending} onClick={() => setRejecting(true)}>
+            <button type="button" className={ghost} disabled={pending} onClick={() => setMode("changes")}>
+              Request changes…
+            </button>
+            <button type="button" className={danger} disabled={pending} onClick={() => setMode("reject")}>
               Reject…
+            </button>
+          </>
+        ) : mode === "changes" ? (
+          <>
+            <button
+              type="button"
+              className={primary}
+              disabled={pending || note.trim().length < 15}
+              onClick={() => run(() => requestApplicationChanges({ id, fields: flagged, message: note }), () => setMode("decide"))}
+            >
+              {pending ? "Working…" : "Send request"}
+            </button>
+            <button type="button" className={ghost} onClick={() => setMode("decide")}>
+              Cancel
             </button>
           </>
         ) : (
@@ -206,7 +261,7 @@ export function ApplicationDecision({
             >
               {pending ? "Working…" : "Reject and email them"}
             </button>
-            <button type="button" className={ghost} onClick={() => setRejecting(false)}>
+            <button type="button" className={ghost} onClick={() => setMode("decide")}>
               Cancel
             </button>
           </>

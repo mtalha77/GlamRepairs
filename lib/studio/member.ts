@@ -18,6 +18,8 @@ export type StudioMember = {
    * cannot be trusted to enforce it everywhere.
    */
   isSuperAdmin: boolean;
+  /** HANDOVER-51: "practitioner" for an approved practitioner's staff seat. */
+  memberKind: string | null;
   createdAt: string;
 };
 
@@ -76,7 +78,7 @@ export async function getStudioMember(userId: string) {
   const { data, error } = await supabase
     .from("studio_members")
     .select(
-      "user_id, role, display_name, can_verify_payment, can_send_report, is_super_admin, created_at",
+      "user_id, role, display_name, can_verify_payment, can_send_report, is_super_admin, member_kind, created_at",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -96,6 +98,7 @@ export async function getStudioMember(userId: string) {
     canSendReport: data.role === "owner" || Boolean(data.can_send_report),
     // Literal, no `role === "owner"` fallback — see the type's doc comment.
     isSuperAdmin: Boolean(data.is_super_admin),
+    memberKind: data.member_kind ?? null,
     createdAt: data.created_at,
   } satisfies StudioMember;
 }
@@ -114,7 +117,7 @@ export async function listStudioMembers() {
   const { data, error } = await supabase
     .from("studio_members")
     .select(
-      "user_id, role, display_name, can_verify_payment, can_send_report, is_super_admin, created_at",
+      "user_id, role, display_name, can_verify_payment, can_send_report, is_super_admin, member_kind, created_at",
     )
     .order("created_at", { ascending: true });
 
@@ -132,6 +135,7 @@ export async function listStudioMembers() {
         canVerifyPayment: row.role === "owner" || Boolean(row.can_verify_payment),
         canSendReport: row.role === "owner" || Boolean(row.can_send_report),
         isSuperAdmin: Boolean(row.is_super_admin),
+        memberKind: row.member_kind ?? null,
         createdAt: row.created_at,
       }) satisfies StudioMember,
   );

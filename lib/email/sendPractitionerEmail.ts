@@ -21,6 +21,7 @@ export type PractitionerEmail =
   | (Base & { kind: "invite"; joinUrl: string; expiresAt: string; note: string | null })
   | (Base & { kind: "received" })
   | (Base & { kind: "rejected"; note: string })
+  | (Base & { kind: "changes"; message: string; fields: string[]; editUrl: string })
   | (Base & { kind: "sign_in"; signInUrl: string });
 
 const BRAND = "#662d91";
@@ -75,6 +76,15 @@ function compose(e: PractitionerEmail): { subject: string; html: string; text: s
         subject: "Your GlamRepairs application",
         html: shell(name, `${lines.map(p).join("")}${p(e.note)}${p("The documents you uploaded will be deleted within 30 days.")}`),
         text: [`Hi ${name},`, "", ...lines, "", e.note, "", "The documents you uploaded will be deleted within 30 days."].join("\n"),
+      };
+    }
+    case "changes": {
+      const lines = ["Thank you for your application to join GlamRepairs. Before we can go further, we need a few changes."];
+      const list = e.fields.length ? `Please look at: ${e.fields.join(", ")}.` : "";
+      return {
+        subject: "A few changes to your GlamRepairs application",
+        html: shell(name, `${lines.map(p).join("")}${p(e.message)}${list ? p(list) : ""}${button(e.editUrl, "Update your application")}`),
+        text: [`Hi ${name},`, "", ...lines, "", e.message, list, "", `Update it here: ${e.editUrl}`].join("\n"),
       };
     }
     case "sign_in": {
