@@ -32,7 +32,7 @@ const defaultSubtitle =
   "Skincare consultations built around your skin — not a one-size-fits-all routine.";
 
 const trustLine =
-  "Every paid assessment is manually reviewed by a certified aesthetics professional with a degree in Cosmetology & Dermatology Science.";
+  "Every paid assessment is manually reviewed by a certified aesthetics practitioner with a degree in Cosmetology & Dermatology Science.";
 
 /**
  * HOTFIX-7 §1 — regional pricing.

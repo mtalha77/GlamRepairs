@@ -107,7 +107,7 @@ export async function generateMetadata(): Promise<Metadata> {
   // Makes every relative canonical/OG URL resolve against the www host.
   metadataBase: new URL(SITE.url),
   title: {
-    default: `${SITE.name} — ${SITE.tagline}`,
+    default: `${SITE.name}: ${SITE.tagline}`,
     // Page-level titles render as "Pricing | GlamRepairs".
     template: `%s${settings.titleSuffix}`,
   },
@@ -123,12 +123,12 @@ export async function generateMetadata(): Promise<Metadata> {
     siteName: settings.brandName,
     locale: SITE.locale,
     url: SITE.url,
-    title: `${SITE.name} — ${SITE.tagline}`,
+    title: `${SITE.name}: ${SITE.tagline}`,
     description: SITE.description,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE.name} — ${SITE.tagline}`,
+    title: `${SITE.name}: ${SITE.tagline}`,
     description: SITE.description,
   },
   robots: {

@@ -22,7 +22,7 @@ export const aboutHero = {
   subtitle:
     "Healthy skin starts with the right information, not the most expensive " +
     "products. Glam Repairs gives you a personalised skincare routine — " +
-    "assessed by a certified aesthetics professional, written for the skin " +
+    "assessed by a certified aesthetics practitioner, written for the skin " +
     "you actually have, the climate you actually live in, and the products " +
     "you can actually buy in Pakistan.",
 };

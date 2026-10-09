@@ -96,7 +96,7 @@ export const SITE = {
   // are the same organisation. Only includes profiles that are live, public and
   // actually branded GlamRepairs — a 404 or an abandoned handle here is a
   // negative signal, not a neutral one. URLs match the ones already live in
-  // Footer.tsx and CeoSection.tsx; no TikTok entry because no TikTok handle
+  // Footer.tsx; no TikTok entry because no TikTok handle
   // exists elsewhere in the codebase — add one here only once it does.
   sameAs: [
     "https://www.instagram.com/glam.repairs/",
@@ -365,7 +365,7 @@ export const SOCIAL_CARD = {
   url: abs("/opengraph-image"),
   width: 1200,
   height: 630,
-  alt: `${SITE.name} — ${SITE.tagline}`,
+  alt: `${SITE.name}: ${SITE.tagline}`,
 } as const;
 
 /**

@@ -47,7 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "Glam Repairs provides online skin consultations in Pakistan — a personalised " +
     "skincare routine built for your skin, your climate and your budget, reviewed " +
-    "by a certified aesthetics professional. No brand bias, no AI-generated advice.",
+    "by a certified aesthetics practitioner. No brand bias, no AI-generated advice.",
   });
 }
 
