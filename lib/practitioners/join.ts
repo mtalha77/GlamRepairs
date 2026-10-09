@@ -121,3 +121,27 @@ export function parseFields(body: Record<string, unknown>, kind: "practitioner" 
     regNo,
   };
 }
+
+/** A longer-lived link that lets an applicant reopen their own application. */
+export function signApplicationEdit(applicationId: string): string {
+  return createHmac("sha256", key()).update(`application-edit:${applicationId}`).digest("base64url");
+}
+
+export function verifyApplicationEdit(applicationId: string, signature: string): boolean {
+  const expected = Buffer.from(signApplicationEdit(applicationId));
+  const given = Buffer.from(signature);
+  return expected.length === given.length && timingSafeEqual(expected, given);
+}
+
+/** Fields a reviewer can flag, and how the applicant sees them. */
+export const REVISION_FIELDS: Record<string, string> = {
+  fullName: "Full name",
+  phone: "Phone",
+  city: "City",
+  qualification: "Qualification",
+  years: "Years of practice",
+  clinics: "Clinics",
+  about: "About your practice",
+  portfolioUrl: "Portfolio link",
+  documents: "Documents",
+};

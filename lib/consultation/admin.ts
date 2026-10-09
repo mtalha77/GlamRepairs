@@ -39,11 +39,18 @@ export type StudioAppointment = {
   reminder1hAt: string | null;
   /** Worked out on the server, at render time. */
   ended: boolean;
+  hasNote: boolean;
 };
 
 export type HeldSlotRow = { slotId: string; startsAt: string; heldUntil: string | null; clientName: string; leadId: string | null };
 
+export type NoteDue = { appointmentId: string; startsAt: string; clientLabel: string; heldMinor: number | null };
+
 export type ConsultationAdminData = {
+  /** Consultations that ended without a note; the fee stays held until one is written. */
+  notesDue: NoteDue[];
+  /** Escalations to a doctor in the last 90 days (HANDOVER-52 §2.5). */
+  escalations90d: number;
   practitioner: { id: string; fullName: string; timezone: string } | null;
   windows: WeeklyWindow[];
   blackouts: Blackout[];
@@ -75,7 +82,12 @@ function digitsOnly(phone: string | null | undefined): string | null {
   return d;
 }
 
-export async function loadConsultationAdmin(): Promise<ConsultationAdminData> {
+/**
+ * `practitionerId` scopes the view to one practitioner's own consultations
+ * and hides client contact details: a practitioner reads the photographs,
+ * she does not need the client's name or phone number (HANDOVER-52 §4.4).
+ */
+export async function loadConsultationAdmin(scope?: { practitionerId: string }): Promise<ConsultationAdminData> {
   const supabase = createAdminSupabaseClient();
   await supabase.rpc("release_expired_holds");
 
@@ -105,6 +117,7 @@ export async function loadConsultationAdmin(): Promise<ConsultationAdminData> {
         "id, lead_id, starts_at, ends_at, status, join_url, provider_ref, notes, reminder_24h_at, reminder_1h_at",
       )
       .eq("status", "scheduled")
+      .eq(scope ? "practitioner_id" : "status", scope ? scope.practitionerId : "scheduled")
       .gte("ends_at", new Date(now.getTime() - 7 * 86_400_000).toISOString())
       .order("starts_at")
       .limit(100),
@@ -136,12 +149,61 @@ export async function loadConsultationAdmin(): Promise<ConsultationAdminData> {
       ),
     ),
   ];
+  const apptIds = (apptRes.data ?? []).map((a) => a.id);
+  const { data: notes } = apptIds.length
+    ? await supabase.from("consultation_notes").select("appointment_id").in("appointment_id", apptIds)
+    : { data: [] };
+  const noted = new Set((notes ?? []).map((n) => n.appointment_id));
+
   const { data: leads } = leadIds.length
     ? await supabase.from("leads").select("id, full_name, email, phone, phone_e164").in("id", leadIds)
     : { data: [] };
   const byId = new Map((leads ?? []).map((l) => [l.id, l]));
 
+  // Notes outstanding: ended consultations (not ones cancelled with nobody
+  // charged) from the last 60 days with no note yet.
+  let dueQuery = supabase
+    .from("appointments")
+    .select("id, lead_id, starts_at, status, practitioner_id")
+    .in("status", ["scheduled", "completed", "no_show"])
+    .lt("ends_at", now.toISOString())
+    .gte("ends_at", new Date(now.getTime() - 60 * 86_400_000).toISOString())
+    .order("starts_at", { ascending: false })
+    .limit(100);
+  if (scope) dueQuery = dueQuery.eq("practitioner_id", scope.practitionerId);
+  const { data: ended } = await dueQuery;
+  const endedIds = (ended ?? []).map((a) => a.id);
+  const [{ data: endedNotes }, { data: held }] = endedIds.length
+    ? await Promise.all([
+        supabase.from("consultation_notes").select("appointment_id").in("appointment_id", endedIds),
+        supabase.from("practitioner_earnings").select("appointment_id, practitioner_minor").in("appointment_id", endedIds).eq("status", "pending"),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const missingLeads = [...new Set((ended ?? []).map((a) => a.lead_id).filter((id): id is string => Boolean(id) && !byId.has(id!)))];
+  if (missingLeads.length && !scope) {
+    const { data: more } = await supabase.from("leads").select("id, full_name, email, phone, phone_e164").in("id", missingLeads);
+    for (const l of more ?? []) byId.set(l.id, l);
+  }
+  const hasNoteSet = new Set((endedNotes ?? []).map((n) => n.appointment_id));
+  const heldBy = new Map((held ?? []).map((h) => [h.appointment_id, h.practitioner_minor]));
+  const notesDue: NoteDue[] = (ended ?? [])
+    .filter((a) => !hasNoteSet.has(a.id))
+    .map((a) => ({
+      appointmentId: a.id,
+      startsAt: a.starts_at,
+      clientLabel: scope ? `Client ${a.id.slice(0, 4).toUpperCase()}` : (a.lead_id && byId.get(a.lead_id)?.full_name?.trim()) || "Client",
+      heldMinor: heldBy.get(a.id) ?? null,
+    }));
+
+  const { count: escalations90d } = await supabase
+    .from("consultation_notes")
+    .select("appointment_id", { count: "exact", head: true })
+    .eq("escalated", true)
+    .gte("escalated_at", new Date(now.getTime() - 90 * 86_400_000).toISOString());
+
   return {
+    notesDue,
+    escalations90d: escalations90d ?? 0,
     practitioner,
     windows: (windowsRes.data ?? []).map((w) => ({
       weekday: w.weekday,
@@ -158,9 +220,9 @@ export async function loadConsultationAdmin(): Promise<ConsultationAdminData> {
       return {
         id: a.id,
         leadId: a.lead_id,
-        clientName: lead?.full_name?.trim() || "Client",
-        phoneDigits: digitsOnly(lead?.phone_e164 ?? lead?.phone),
-        email: lead?.email ?? null,
+        clientName: scope ? `Client ${a.id.slice(0, 4).toUpperCase()}` : lead?.full_name?.trim() || "Client",
+        phoneDigits: scope ? null : digitsOnly(lead?.phone_e164 ?? lead?.phone),
+        email: scope ? null : (lead?.email ?? null),
         startsAt: a.starts_at,
         endsAt: a.ends_at,
         status: a.status,
@@ -170,6 +232,7 @@ export async function loadConsultationAdmin(): Promise<ConsultationAdminData> {
         reminder24hAt: a.reminder_24h_at,
         reminder1hAt: a.reminder_1h_at,
         ended: new Date(a.ends_at).getTime() < now.getTime(),
+        hasNote: noted.has(a.id),
       };
     }),
     holds: (holdsRes.data ?? []).map((h) => ({
@@ -177,7 +240,7 @@ export async function loadConsultationAdmin(): Promise<ConsultationAdminData> {
       startsAt: h.starts_at,
       heldUntil: h.held_until,
       leadId: h.lead_id,
-      clientName: (h.lead_id && byId.get(h.lead_id)?.full_name?.trim()) || "Client",
+      clientName: scope ? "Client" : (h.lead_id && byId.get(h.lead_id)?.full_name?.trim()) || "Client",
     })),
     openNext7: next7Res.count ?? 0,
     openInHorizon: horizonRes.count ?? 0,

@@ -133,6 +133,24 @@ export async function bookConsultationForLead(
   const practitionerId = slotRow?.practitioner_id;
   if (!practitionerId) return { kind: "error", message: "The slot has no practitioner." };
 
+  // HANDOVER-52 §2.2 — the fee in force now is copied onto the appointment,
+  // so a later rate change never reprices work already agreed, and
+  // settle_appointment refuses an appointment without it.
+  const { data: rates, error: rateError } = await supabase.rpc("rate_for", {
+    p_practitioner: practitionerId,
+    p_at: new Date().toISOString(),
+  });
+  const rate = rates?.[0];
+  if (rateError || !rate) {
+    await notifyStudio({
+      title: "Consultation could not be booked",
+      body: `The time was confirmed for ${lead.full_name ?? "a client"} but no fee could be found for the practitioner (${rateError?.message ?? "no rate"}). Please book it by hand.`,
+      leadId,
+      href: customerHref,
+    });
+    return { kind: "error", message: rateError?.message ?? "No rate for the practitioner." };
+  }
+
   // §6 — never let a RingCentral outage block the booking.
   const bridge = await createBridge("Skin assessment call").catch(() => null);
 
@@ -152,6 +170,10 @@ export async function bookConsultationForLead(
       notes: bridge?.password ? `Meeting password: ${bridge.password}` : null,
       client_timezone: CONSULTATION_TZ,
       created_by: opts.actorId ?? null,
+      practitioner_fee_minor: rate.practitioner_fee_minor,
+      platform_fee_minor: rate.platform_fee_minor,
+      fee_currency: rate.currency,
+      rate_id: rate.rate_id,
     })
     .select("id")
     .single();

@@ -22,6 +22,13 @@ export type PractitionerApplicationStatus =
   | "rejected"
   | "withdrawn";
 export type PractitionerDocumentKind = "degree" | "certificate" | "attestation" | "registration" | "id" | "other";
+export type AppointmentOutcome =
+  | "attended"
+  | "client_no_show"
+  | "practitioner_no_show"
+  | "cancelled_by_client"
+  | "cancelled_by_practitioner"
+  | "technical_failure";
 export type StudioNotificationType =
   | "chat_message"
   | "review_submitted"
@@ -220,6 +227,14 @@ export type Database = {
           reminder_24h_at: string | null;
           reminder_1h_at: string | null;
           bridge_deleted_at: string | null;
+          practitioner_fee_minor: number | null;
+          platform_fee_minor: number | null;
+          fee_currency: string | null;
+          rate_id: string | null;
+          outcome: AppointmentOutcome | null;
+          outcome_at: string | null;
+          outcome_by: string | null;
+          outcome_note: string | null;
         };
         Insert: {
           id?: string;
@@ -243,6 +258,10 @@ export type Database = {
           reminder_24h_at?: string | null;
           reminder_1h_at?: string | null;
           bridge_deleted_at?: string | null;
+          practitioner_fee_minor?: number | null;
+          platform_fee_minor?: number | null;
+          fee_currency?: string | null;
+          rate_id?: string | null;
         };
         Update: {
           client_account_id?: string | null;
@@ -265,6 +284,10 @@ export type Database = {
           reminder_24h_at?: string | null;
           reminder_1h_at?: string | null;
           bridge_deleted_at?: string | null;
+          practitioner_fee_minor?: number | null;
+          platform_fee_minor?: number | null;
+          fee_currency?: string | null;
+          rate_id?: string | null;
         };
         Relationships: [];
       };
@@ -352,6 +375,16 @@ export type Database = {
           updated_at?: string;
           decision_note?: string | null;
           deleted_at?: string | null;
+          full_name?: string;
+          phone?: string | null;
+          city?: string | null;
+          qualification?: string;
+          years_experience?: number | null;
+          clinics?: string | null;
+          about?: string;
+          portfolio_url?: string | null;
+          reg_body?: string | null;
+          reg_no?: string | null;
         };
         Relationships: [];
       };
@@ -410,6 +443,103 @@ export type Database = {
           verified_at?: string | null;
           deleted_at?: string | null;
         };
+        Relationships: [];
+      };
+      /** HANDOVER-52. The consultation record: retained, never purged. */
+      consultation_notes: {
+        Row: {
+          appointment_id: string;
+          practitioner_id: string;
+          lead_id: string | null;
+          presenting: string;
+          observed: string;
+          guidance: string;
+          products_discussed: string | null;
+          follow_up: string | null;
+          escalated: boolean;
+          escalation_reason: string | null;
+          escalation_advice: string | null;
+          escalated_at: string | null;
+          submitted_at: string;
+          updated_at: string;
+          locked_at: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          review_rating: number | null;
+          review_note: string | null;
+        };
+        Insert: {
+          appointment_id: string;
+          practitioner_id: string;
+          lead_id?: string | null;
+          presenting: string;
+          observed: string;
+          guidance: string;
+          products_discussed?: string | null;
+          follow_up?: string | null;
+          escalated?: boolean;
+          escalation_reason?: string | null;
+          escalation_advice?: string | null;
+          escalated_at?: string | null;
+        };
+        Update: {
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          review_rating?: number | null;
+          review_note?: string | null;
+        };
+        Relationships: [];
+      };
+      consultation_access_log: {
+        Row: { id: string; appointment_id: string; user_id: string | null; action: string; at: string };
+        Insert: {
+          appointment_id: string;
+          user_id?: string | null;
+          action: "view_transcript" | "download_transcript" | "view_note" | "edit_note" | "purge";
+        };
+        Update: never;
+        Relationships: [];
+      };
+      practitioner_earnings: {
+        Row: {
+          id: string;
+          appointment_id: string;
+          practitioner_id: string;
+          earned_at: string;
+          currency: string;
+          gross_minor: number;
+          practitioner_minor: number;
+          platform_minor: number;
+          reason: string;
+          status: "pending" | "payable" | "paid" | "void";
+          payout_id: string | null;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      practitioner_revision_requests: {
+        Row: {
+          id: string;
+          practitioner_id: string | null;
+          application_id: string | null;
+          fields: string[];
+          message: string;
+          requested_by: string | null;
+          requested_at: string;
+          resolved_at: string | null;
+          resolution_note: string | null;
+        };
+        Insert: {
+          practitioner_id?: string | null;
+          application_id?: string | null;
+          fields?: string[];
+          message: string;
+          requested_by?: string | null;
+        };
+        Update: { resolved_at?: string | null; resolution_note?: string | null };
         Relationships: [];
       };
       studio_members: {
@@ -1968,6 +2098,16 @@ export type Database = {
       };
     };
     Functions: {
+      /** HANDOVER-52 — service role only. Rate in force at a moment, else the platform default. */
+      rate_for: {
+        Args: { p_practitioner: string; p_at?: string };
+        Returns: { practitioner_fee_minor: number; platform_fee_minor: number; currency: string; rate_id: string | null }[];
+      };
+      /** The single settlement path. Returns the earning id, or null when nothing is owed. */
+      settle_appointment: {
+        Args: { p_appt: string; p_outcome: AppointmentOutcome; p_by: string; p_note?: string | null };
+        Returns: string | null;
+      };
       /** HANDOVER-51 — all four are service role only. */
       issue_practitioner_invite: {
         Args: { p_email: string; p_kind?: string; p_by?: string | null; p_note?: string | null; p_days?: number };

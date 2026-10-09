@@ -4,6 +4,7 @@ import ConsultationsAdmin from "@/components/consultation/ConsultationsAdmin";
 import { loadConsultationAdmin } from "@/lib/consultation/admin";
 import { ringCentralConfigured } from "@/lib/consultation/ringcentral";
 import { requireStudioMember } from "@/lib/studio/member";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /**
  * Studio → Consultations — HANDOVER-50 §3.
@@ -19,7 +20,19 @@ export default async function ConsultationsPage() {
   const { member } = await requireStudioMember();
   if (!member) redirect("/studio/login");
 
-  const data = await loadConsultationAdmin();
+  // A practitioner's seat sees only her own consultations, without client
+  // contact details (HANDOVER-52 §4.4).
+  let scope: { practitionerId: string } | undefined;
+  if (member.memberKind === "practitioner" && !member.isSuperAdmin) {
+    const { data: own } = await createAdminSupabaseClient()
+      .from("practitioner_profiles")
+      .select("id")
+      .eq("user_id", member.userId)
+      .maybeSingle();
+    if (!own) redirect("/studio");
+    scope = { practitionerId: own.id };
+  }
+  const data = await loadConsultationAdmin(scope);
 
   return (
     <div className="space-y-6">
@@ -32,7 +45,12 @@ export default async function ConsultationsPage() {
         </p>
       </div>
       {data.practitioner ? (
-        <ConsultationsAdmin data={data} readOnly={!member.isSuperAdmin} ringCentralReady={ringCentralConfigured()} />
+        <ConsultationsAdmin
+          data={data}
+          readOnly={!member.isSuperAdmin}
+          practitionerView={Boolean(scope)}
+          ringCentralReady={ringCentralConfigured()}
+        />
       ) : (
         <p role="alert" className="rounded-xl bg-brand-error/10 px-4 py-3 text-sm text-brand-error-strong">
           No approved practitioner profile exists, so no times can be offered.

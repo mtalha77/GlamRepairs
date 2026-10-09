@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { sendPractitionerEmail } from "@/lib/email/sendPractitionerEmail";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 import { OPEN_STATUSES } from "@/lib/practitioners/applications";
+import { REVISION_FIELDS, signApplicationEdit } from "@/lib/practitioners/join";
 import { requireStudioMember } from "@/lib/studio/member";
 import type { PractitionerApplicationStatus } from "@/lib/supabase/database.types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -168,6 +169,56 @@ export async function rejectPractitionerApplication(input: {
   return sent.ok
     ? { ok: true, message: "Rejected and emailed. Their documents will be deleted in 30 days." }
     : { ok: true, message: `Rejected, but the email failed (${sent.message}). Their documents will be deleted in 30 days.` };
+}
+
+/**
+ * Send an application back for changes — HANDOVER-52 §4.2. Records what
+ * was asked in practitioner_revision_requests (so "we let them know" has an
+ * audit trail) and emails the applicant a signed link to reopen their own
+ * application with the flagged fields highlighted.
+ */
+export async function requestApplicationChanges(input: {
+  id: string;
+  fields: string[];
+  message: string;
+}): Promise<ApplicationActionResult> {
+  const g = await guard();
+  if ("error" in g) return { ok: false, error: g.error as string };
+  const message = input.message.trim();
+  if (message.length < 15) return { ok: false, error: "Say what needs changing in at least 15 characters; it is emailed to them." };
+  const fields = input.fields.filter((f) => f in REVISION_FIELDS);
+
+  const admin = createAdminSupabaseClient();
+  const { data: app } = await admin
+    .from("practitioner_applications")
+    .select("id, full_name, email, status")
+    .eq("id", input.id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!app) return { ok: false, error: "Application not found." };
+  if (!OPEN_STATUSES.includes(app.status)) return { ok: false, error: `This application is ${app.status}.` };
+
+  const { error } = await admin.from("practitioner_revision_requests").insert({
+    application_id: app.id,
+    fields,
+    message,
+    requested_by: g.userId,
+  });
+  if (error) return { ok: false, error: error.message };
+
+  const editUrl = `${getPublicAppUrl()}/join/edit?a=${app.id}&s=${signApplicationEdit(app.id)}`;
+  const sent = await sendPractitionerEmail({
+    kind: "changes",
+    toEmail: app.email,
+    name: app.full_name,
+    message,
+    fields: fields.map((f) => REVISION_FIELDS[f]),
+    editUrl,
+  });
+  revalidatePath(`${PATH}/${app.id}`);
+  return sent.ok
+    ? { ok: true, message: "Changes requested and emailed." }
+    : { ok: true, message: `Changes recorded, but the email failed (${sent.message}). Send them this link: ${editUrl}` };
 }
 
 export async function approvePractitionerApplication(input: {

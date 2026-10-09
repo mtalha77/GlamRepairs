@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { sendPractitionerEmail } from "@/lib/email/sendPractitionerEmail";
-import { DOCS_BUCKET } from "@/lib/practitioners/applications";
+import { DOCS_BUCKET, OPEN_STATUSES } from "@/lib/practitioners/applications";
 import { DOCUMENT_KINDS, verifyApplicationSignature } from "@/lib/practitioners/join";
 import type { PractitionerDocumentKind } from "@/lib/supabase/database.types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     .select("id, full_name, email, status")
     .eq("id", applicationId)
     .maybeSingle();
-  if (!app || app.status !== "new") return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 403 });
+  if (!app || !OPEN_STATUSES.includes(app.status)) return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 403 });
 
   const folder = `applications/${applicationId}`;
   const { data: listing } = await admin.storage.from(DOCS_BUCKET).list(folder, { limit: 100 });

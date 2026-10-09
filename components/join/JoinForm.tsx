@@ -29,26 +29,57 @@ const MAX_FILES = 6;
 
 type Picked = { file: File; kind: string };
 
-export default function JoinForm({ token, email, kind }: { token: string; email: string; kind: "practitioner" | "doctor" }) {
-  const [fields, setFields] = useState({
-    fullName: "",
-    phone: "",
-    city: "",
-    qualification: "",
-    years: "",
-    clinics: "",
-    about: "",
-    portfolioUrl: "",
-    regBody: "",
-    regNo: "",
-  });
+type Fields = {
+  fullName: string;
+  phone: string;
+  city: string;
+  qualification: string;
+  years: string;
+  clinics: string;
+  about: string;
+  portfolioUrl: string;
+  regBody: string;
+  regNo: string;
+};
+
+type Props =
+  | { mode?: "new"; token: string; email: string; kind: "practitioner" | "doctor" }
+  | {
+      mode: "edit";
+      applicationId: string;
+      editKey: string;
+      email: string;
+      kind: "practitioner" | "doctor";
+      initial: Fields;
+      /** Fields the reviewer flagged, highlighted in the form. */
+      flagged: string[];
+    };
+
+const EMPTY: Fields = {
+  fullName: "",
+  phone: "",
+  city: "",
+  qualification: "",
+  years: "",
+  clinics: "",
+  about: "",
+  portfolioUrl: "",
+  regBody: "",
+  regNo: "",
+};
+
+export default function JoinForm(props: Props) {
+  const { email, kind } = props;
+  const editing = props.mode === "edit";
+  const flagged = new Set(props.mode === "edit" ? props.flagged : []);
+  const [fields, setFields] = useState<Fields>(props.mode === "edit" ? props.initial : EMPTY);
   const [files, setFiles] = useState<Picked[]>([]);
   const [terms, setTerms] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  const set = (k: keyof typeof fields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const set = (k: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setFields((f) => ({ ...f, [k]: e.target.value }));
 
   function addFiles(list: FileList | null) {
@@ -77,14 +108,14 @@ export default function JoinForm({ token, email, kind }: { token: string; email:
     e.preventDefault();
     setError(null);
     if (!terms) return setError("Please agree to the terms to continue.");
-    if (files.length === 0) return setError("Please attach at least your degree.");
+    if (files.length === 0 && !editing) return setError("Please attach at least your degree.");
     setBusy(true);
     try {
-      const start = await fetch("/api/join", {
+      const start = await fetch(props.mode === "edit" ? "/api/join/update" : "/api/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          token,
+          ...(props.mode === "edit" ? { applicationId: props.applicationId, editKey: props.editKey } : { token: props.token }),
           terms,
           ...fields,
           files: files.map((f) => ({ kind: f.kind, name: f.file.name, size: f.file.size, type: f.file.type })),
@@ -140,17 +171,23 @@ export default function JoinForm({ token, email, kind }: { token: string; email:
       <div role="status" className="rounded-2xl border border-brand-lavender/70 bg-white p-5">
         <h2 className="font-serif text-2xl text-brand-primary">Thank you</h2>
         <p className="mt-2 text-sm leading-relaxed text-brand-ink">
-          Your application has arrived. We read every one ourselves and will reply by email to {email}.
+          {editing
+            ? `Your changes are saved. We will look at them and reply by email to ${email}.`
+            : `Your application has arrived. We read every one ourselves and will reply by email to ${email}.`}
         </p>
         {error ? <p className="mt-2 text-sm text-brand-error-strong">{error}</p> : null}
       </div>
     );
   }
 
-  const field = (k: keyof typeof fields, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
-    <label className="block">
-      <span className={formLabelClassName}>{label}</span>
-      <input value={fields[k]} onChange={set(k)} className={formInputClassName} {...props} />
+  const flag = (k: string) => (flagged.has(k) ? " ring-2 ring-amber-400 rounded-xl" : "");
+  const field = (k: keyof Fields, label: string, attrs: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
+    <label className={`block${flag(k)}`}>
+      <span className={formLabelClassName}>
+        {label}
+        {flagged.has(k) ? <span className="ml-2 text-xs font-medium text-amber-700">Please check</span> : null}
+      </span>
+      <input value={fields[k]} onChange={set(k)} className={formInputClassName} {...attrs} />
     </label>
   );
 
@@ -166,11 +203,11 @@ export default function JoinForm({ token, email, kind }: { token: string; email:
         {field("years", "Years of practice", { inputMode: "numeric", required: true })}
       </div>
       {field("qualification", "Qualification", { placeholder: "e.g. BS Cosmetology & Dermatology Science", required: true })}
-      <label className="block">
+      <label className={`block${flag("clinics")}`}>
         <span className={formLabelClassName}>Clinics you have worked at</span>
         <textarea value={fields.clinics} onChange={set("clinics")} rows={2} maxLength={600} className={formInputClassName} />
       </label>
-      <label className="block">
+      <label className={`block${flag("about")}`}>
         <span className={formLabelClassName}>About your practice</span>
         <textarea value={fields.about} onChange={set("about")} rows={4} maxLength={2000} required className={formInputClassName} />
       </label>
@@ -182,8 +219,11 @@ export default function JoinForm({ token, email, kind }: { token: string; email:
         </div>
       ) : null}
 
-      <fieldset>
-        <legend className={formLabelClassName}>Documents (PDF, JPG, PNG or WebP, up to 10 MB each)</legend>
+      <fieldset className={flag("documents")}>
+        <legend className={formLabelClassName}>
+          {editing ? "Add documents (optional)" : "Documents (PDF, JPG, PNG or WebP, up to 10 MB each)"}
+          {flagged.has("documents") ? <span className="ml-2 text-xs font-medium text-amber-700">Please check</span> : null}
+        </legend>
         <p className="text-xs text-brand-gray">Your degree, its HEC attestation and any certificates. They are kept privately and only our team can open them.</p>
         <input type="file" accept={ACCEPT} multiple onChange={(e) => addFiles(e.target.files)} className="mt-2 block w-full text-sm" />
         {files.length ? (
@@ -228,7 +268,7 @@ export default function JoinForm({ token, email, kind }: { token: string; email:
       ) : null}
 
       <button type="submit" disabled={busy} className="min-h-12 w-full rounded-full bg-brand-primary px-6 text-sm text-white disabled:opacity-60">
-        {busy ? "Sending…" : "Send application"}
+        {busy ? "Sending…" : editing ? "Save changes" : "Send application"}
       </button>
     </form>
   );
