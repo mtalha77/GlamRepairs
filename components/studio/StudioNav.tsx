@@ -35,6 +35,8 @@ const STUDIO_ADMIN_LINKS = [
   { href: "/studio/admin/photos", label: "Photo retention" },
   { href: "/studio/admin/duplicates", label: "Possible duplicates" },
   { href: "/studio/gift-codes", label: "Gift codes" },
+  // HANDOVER-51 — practitioner applications and invites.
+  { href: "/studio/applications", label: "Applications" },
   { href: "/studio/admin/archive", label: "Archive" },
 ] as const;
 

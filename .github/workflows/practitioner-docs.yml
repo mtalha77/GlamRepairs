@@ -1,0 +1,36 @@
+name: Practitioner documents purge
+
+# HANDOVER-51. Deletes a rejected applicant's documents 30 days after the
+# rejection (Storage object first, then the row is marked). Daily at
+# 04:41 PKT. Vercel cron does not fire on this project, hence GitHub.
+
+on:
+  schedule:
+    - cron: "41 23 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: practitioner-docs
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Purge
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          URL: https://www.glamrepairs.com/api/cron/practitioner-docs
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET is not set in this repository's Actions secrets."
+            exit 1
+          fi
+          code=$(curl --silent --show-error --retry 2 --retry-delay 10 --retry-all-errors \
+            --max-time 70 --write-out '%{http_code}' --output response.json \
+            --header "Authorization: Bearer ${CRON_SECRET}" "${URL}")
+          echo "HTTP ${code}"; cat response.json; echo
+          echo "### Practitioner documents: purged $(jq -r '.purged // 0' response.json)" >> "$GITHUB_STEP_SUMMARY"
+          [ "${code}" = "200" ] || { echo "::error::Purge failed (HTTP ${code})."; exit 1; }

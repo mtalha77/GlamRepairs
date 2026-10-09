@@ -18,6 +18,7 @@ const TYPE_CLASS: Record<StudioNotificationType, string> = {
   customer_assigned: "bg-brand-purple-soft text-brand-primary",
   // HANDOVER-50 — needs action: a slot lost after payment, a missing call link.
   consultation_alert: "bg-red-100 text-red-800",
+  practitioner_application: "bg-brand-lavender/40 text-brand-primary",
 };
 
 export default function NotificationList() {
