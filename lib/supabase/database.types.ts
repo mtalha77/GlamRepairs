@@ -13,12 +13,22 @@ export type ReviewDecision =
   | "need_more_photos"
   | "not_suitable";
 export type BlogStatus = "draft" | "published" | "archived";
+export type PractitionerApplicationStatus =
+  | "new"
+  | "screening"
+  | "interview"
+  | "test_assessment"
+  | "approved"
+  | "rejected"
+  | "withdrawn";
+export type PractitionerDocumentKind = "degree" | "certificate" | "attestation" | "registration" | "id" | "other";
 export type StudioNotificationType =
   | "chat_message"
   | "review_submitted"
   | "payment_verified"
   | "customer_assigned"
-  | "consultation_alert";
+  | "consultation_alert"
+  | "practitioner_application";
 
 export type Database = {
   public: {
@@ -287,6 +297,121 @@ export type Database = {
         };
         Relationships: [];
       };
+      /** HANDOVER-51. Service role only; super admins may read through RLS. */
+      practitioner_applications: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          full_name: string;
+          email: string;
+          phone: string | null;
+          city: string | null;
+          kind: "practitioner" | "doctor";
+          qualification: string;
+          years_experience: number | null;
+          clinics: string | null;
+          about: string;
+          portfolio_url: string | null;
+          reg_body: string | null;
+          reg_no: string | null;
+          source: "apply_page" | "invite" | "manual";
+          invite_id: string | null;
+          status: PractitionerApplicationStatus;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          decision_note: string | null;
+          profile_id: string | null;
+          agreed_to_terms: boolean;
+          agreed_at: string | null;
+          is_test: boolean;
+          deleted_at: string | null;
+        };
+        Insert: {
+          full_name: string;
+          email: string;
+          phone?: string | null;
+          city?: string | null;
+          kind?: "practitioner" | "doctor";
+          qualification: string;
+          years_experience?: number | null;
+          clinics?: string | null;
+          about?: string;
+          portfolio_url?: string | null;
+          reg_body?: string | null;
+          reg_no?: string | null;
+          source?: "apply_page" | "invite" | "manual";
+          invite_id?: string | null;
+          status?: PractitionerApplicationStatus;
+          agreed_to_terms?: boolean;
+          agreed_at?: string | null;
+          is_test?: boolean;
+        };
+        Update: {
+          status?: PractitionerApplicationStatus;
+          updated_at?: string;
+          decision_note?: string | null;
+          deleted_at?: string | null;
+        };
+        Relationships: [];
+      };
+      practitioner_invites: {
+        Row: {
+          id: string;
+          created_at: string;
+          email: string;
+          kind: "practitioner" | "doctor";
+          invited_by: string | null;
+          note: string | null;
+          expires_at: string;
+          accepted_at: string | null;
+          application_id: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          is_test: boolean;
+        };
+        Insert: never;
+        Update: {
+          application_id?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+        };
+        Relationships: [];
+      };
+      practitioner_documents: {
+        Row: {
+          id: string;
+          practitioner_id: string | null;
+          application_id: string | null;
+          kind: PractitionerDocumentKind;
+          storage_path: string;
+          original_name: string | null;
+          verified: boolean | null;
+          verified_by: string | null;
+          verified_at: string | null;
+          created_at: string;
+          bytes: number | null;
+          mime: string | null;
+          purge_after: string | null;
+          deleted_at: string | null;
+        };
+        Insert: {
+          application_id?: string | null;
+          practitioner_id?: string | null;
+          kind: PractitionerDocumentKind;
+          storage_path: string;
+          original_name?: string | null;
+          bytes?: number | null;
+          mime?: string | null;
+        };
+        Update: {
+          verified?: boolean | null;
+          verified_by?: string | null;
+          verified_at?: string | null;
+          deleted_at?: string | null;
+        };
+        Relationships: [];
+      };
       studio_members: {
         Row: {
           user_id: string;
@@ -298,6 +423,7 @@ export type Database = {
           // live). Distinct from `role` — an "owner" is not automatically a
           // super admin, and vice versa; the two are set independently.
           is_super_admin: boolean;
+          member_kind: string | null;
           created_at: string;
         };
         Insert: {
@@ -307,6 +433,7 @@ export type Database = {
           can_verify_payment?: boolean;
           can_send_report?: boolean;
           is_super_admin?: boolean;
+          member_kind?: string | null;
           created_at?: string;
         };
         Update: {
@@ -316,6 +443,7 @@ export type Database = {
           can_verify_payment?: boolean;
           can_send_report?: boolean;
           is_super_admin?: boolean;
+          member_kind?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -1532,6 +1660,29 @@ export type Database = {
       };
     };
     Views: {
+      /** HANDOVER-51. Open applications first; filters deleted and test rows. */
+      practitioner_application_queue: {
+        Row: {
+          id: string;
+          created_at: string;
+          full_name: string;
+          email: string;
+          phone: string | null;
+          city: string | null;
+          kind: "practitioner" | "doctor";
+          qualification: string;
+          years_experience: number | null;
+          status: PractitionerApplicationStatus;
+          source: "apply_page" | "invite" | "manual";
+          reg_body: string | null;
+          reg_no: string | null;
+          profile_id: string | null;
+          document_count: number;
+          verified_count: number;
+          hours_waiting: number;
+        };
+        Relationships: [];
+      };
       /** HANDOVER-46 — rolling 28-day Search Console views, impression-weighted. */
       gsc_summary_28d: {
         Row: {
@@ -1817,6 +1968,23 @@ export type Database = {
       };
     };
     Functions: {
+      /** HANDOVER-51 — all four are service role only. */
+      issue_practitioner_invite: {
+        Args: { p_email: string; p_kind?: string; p_by?: string | null; p_note?: string | null; p_days?: number };
+        Returns: { invite_id: string; token: string }[];
+      };
+      lookup_practitioner_invite: {
+        Args: { p_token: string };
+        Returns: { invite_id: string; email: string; kind: "practitioner" | "doctor" }[];
+      };
+      approve_practitioner_application: {
+        Args: { p_app: string; p_by: string; p_note?: string | null };
+        Returns: string;
+      };
+      reject_practitioner_application: {
+        Args: { p_app: string; p_by: string; p_note: string; p_keep_days?: number };
+        Returns: undefined;
+      };
       /** HANDOVER-50 — service role only. Returns the hold token, or null when the slot is gone. */
       hold_slot: {
         Args: { p_slot: string; p_lead: string; p_minutes?: number };

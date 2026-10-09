@@ -19,6 +19,7 @@ export const STUDIO_NOTIFICATION_LABELS: Record<StudioNotificationType, string> 
   payment_verified: "Payment",
   customer_assigned: "Assigned",
   consultation_alert: "Consultation",
+  practitioner_application: "Application",
 };
 
 export function mapStudioNotification(row: {
