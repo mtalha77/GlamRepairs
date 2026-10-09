@@ -16,11 +16,11 @@ const steps = [
   },
   {
     image: "/images,svgs/face_pimples.webp",
-    alt: "Close-up face photo with expert markers for sebaceous filaments, pustules, papules, and acne scars",
+    alt: "Close-up face photo with annotation markers for sebaceous filaments, pustules, papules, and acne scars",
     number: "02",
-    title: "Experts Review",
+    title: "Practitioner Review",
     description:
-      "Our qualified aesthetics expert manually reviews your submission - no AI shortcuts, no automated reports.",
+      "Our Certified Aesthetics Practitioner reviews your submission by hand: no AI shortcuts, no automated reports.",
   },
   {
     image: "/images,svgs/men_face_pimple.webp",
@@ -77,11 +77,11 @@ export default function WhatWeDoSection() {
               </span>
             </h2>
             <p className="mt-3 font-sans font-normal text-brand-ink text-lg sm:mt-4 sm:text-2xl lg:text-[2rem]">
-              Real experts. Real photos. Real results.
+              A real practitioner. Your real photos. Real results.
             </p>
             <p className="mt-3 text-sm font-light leading-snug tracking-tighter text-brand-gray sm:mt-4 sm:text-lg lg:text-xl">
               You fill out a detailed intake form and share photos of your skin
-              and concern areas. A certified aesthetics professional reviews
+              and concern areas. A certified aesthetics practitioner reviews
               everything manually. You receive a personalized assessment, a
               step-by-step routine, and follow-up support to make sure
               it&apos;s actually working.

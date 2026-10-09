@@ -16,7 +16,7 @@ const nextSteps = [
   {
     number: "1",
     title: "Expert review",
-    description: "Our certified expert reviews your photos and intake form",
+    description: "Our certified practitioner reviews your photos and intake form",
   },
   {
     number: "2",
@@ -163,7 +163,7 @@ export default function ThankYouStep({
         ) : null}
 
         <p className="mx-auto mt-5 max-w-[20rem] text-sm leading-relaxed text-brand-gray sm:mt-6 sm:max-w-none sm:text-[0.9375rem]">
-          Our certified expert will review your skin assessment and deliver your
+          Our certified practitioner will review your skin assessment and deliver your
           personalized report within 24 hours.
         </p>
 

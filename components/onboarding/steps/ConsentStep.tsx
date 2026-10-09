@@ -224,7 +224,7 @@ function ConsentContent() {
           <ConsentCheckbox
             checked={privateReview}
             onChange={setPrivateReview}
-            label="I understand that my photos and information will be reviewed privately by our certified aesthetics expert."
+            label="I understand that my photos and information will be reviewed privately by our Certified Aesthetics Practitioner."
           />
           <StepRequiredError
             id="consent-private-review-error"
