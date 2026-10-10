@@ -22,6 +22,7 @@ import PricingSection from "@/components/pricing/PricingSection";
 import TestimonialsSection from "@/components/reviews/TestimonialsSection";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
+import { hasReviewingTeam } from "@/lib/practitioners/authorship";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 import { formatPlanPrice, getPaidPlan } from "@/lib/plans/plansPublic";
 import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
@@ -50,10 +51,14 @@ export default async function Home() {
   // HANDOVER-27 §1.2 — the paid price comes from `plans_public`, never from
   // pricing_regions.price_*, which are stale and still hold the old numbers.
   const paidPlan = await getPaidPlan(region.code);
-  const faqs = resolveFaqs("home", {
-    paid: paidPlan ? formatPlanPrice(paidPlan) : "",
-    videoMinutes: paidPlan?.videoMinutes ?? 15,
-  });
+  const faqs = resolveFaqs(
+    "home",
+    {
+      paid: paidPlan ? formatPlanPrice(paidPlan) : "",
+      videoMinutes: paidPlan?.videoMinutes ?? 15,
+    },
+    { team: await hasReviewingTeam() },
+  );
 
   return (
     <>

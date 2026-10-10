@@ -49,6 +49,7 @@ import {
   failedChecks,
 } from "@/lib/studio/reportQuality";
 import { buildSkinReportPdf } from "@/lib/studio/reportPdf";
+import { reportSignatureFor } from "@/lib/practitioners/authorship";
 import { bookConsultationForLead } from "@/lib/consultation/booking";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 
@@ -754,12 +755,17 @@ export async function sendCustomerReportAction(formData: FormData) {
   }
 
   const patient = buildReportPatient(customer);
+  // HANDOVER-52 step 13: signed by whoever is sending it, not by a default.
+  const signature = await reportSignatureFor(user.id);
+  const authorName = signature.name ?? member.displayName;
   let pdf: Buffer;
   try {
     pdf = await buildSkinReportPdf({
       ...content,
       patient,
-      authorName: member.displayName,
+      authorName,
+      authorSlug: signature.authorSlug,
+      signer: signature.signer,
       reportRef: leadDisplayRef(customer.sessionId) ?? undefined,
     });
   } catch (error) {
@@ -813,7 +819,7 @@ export async function sendCustomerReportAction(formData: FormData) {
   const { error: insertError } = await supabase.from("studio_reports").insert({
     lead_id: leadId,
     created_by: user.id,
-    author_name: member.displayName,
+    author_name: authorName,
     noticed: content.noticed,
     morning_routine: content.morningRoutine,
     night_routine: content.nightRoutine,

@@ -8,6 +8,7 @@ import { getAuthor, listAuthors } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph, personSchema } from "@/lib/seo/schema";
 import { SITE, canonicalOg } from "@/lib/seo/site";
 import { getTitleSuffix } from "@/lib/seo/pageSeo";
+import { publicPractitioner, type PublicPractitioner } from "@/lib/practitioners/authorship";
 
 /**
  * Author bio page.
@@ -18,6 +19,9 @@ import { getTitleSuffix } from "@/lib/seo/pageSeo";
  * is that page, and it is what every `author` reference in the article schema
  * resolves to.
  */
+/** Practitioners from the roster render on demand and refresh hourly. */
+export const revalidate = 3600;
+
 export function generateStaticParams() {
   return listAuthors().map((a) => ({ slug: a.slug }));
 }
@@ -29,7 +33,16 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const author = getAuthor(slug);
-  if (!author) return {};
+  if (!author) {
+    const p = await publicPractitioner(slug);
+    if (!p) return {};
+    const suffix = await getTitleSuffix();
+    return {
+      title: `${p.name}, ${p.title}`,
+      description: p.bio.slice(0, 160),
+      ...canonicalOg(`/authors/${p.slug}`, { type: "profile", title: `${p.name}, ${p.title}${suffix}`, description: p.bio.slice(0, 160) }),
+    };
+  }
 
   // HOTFIX-30 Part 1.1 — comma, matching the credential stack. This string
   // is the browser tab and the search result, which is the most-seen place
@@ -58,7 +71,11 @@ export default async function AuthorPage({
 }) {
   const { slug } = await params;
   const author = getAuthor(slug);
-  if (!author) notFound();
+  if (!author) {
+    const p = await publicPractitioner(slug);
+    if (!p) notFound();
+    return <PractitionerAuthor p={p} />;
+  }
 
   /*
    * HOTFIX-25 §1.2 — this page already had a visible trail AND a separate
@@ -176,6 +193,55 @@ export default async function AuthorPage({
           .
         </p>
       ) : null}
+    </main>
+  );
+}
+
+/**
+ * HANDOVER-52 step 13 — the author page for a practitioner from the roster.
+ *
+ * Only her own facts: name, title, degree, bio, and the photograph once the
+ * studio has checked it. Deliberately not `personSchema`, which attaches the
+ * HEC attestation from the primary author's verified record; borrowing it
+ * here would assert a credential this person has not been shown to hold.
+ */
+function PractitionerAuthor({ p }: { p: PublicPractitioner }) {
+  const trail: Crumb[] = [
+    { name: "Home", path: "/" },
+    { name: p.name, path: `/authors/${p.slug}` },
+  ];
+  const person = {
+    "@type": "Person",
+    "@id": `${SITE.url}/authors/${p.slug}#person`,
+    name: p.name,
+    jobTitle: p.title,
+    description: p.bio,
+    url: `${SITE.url}/authors/${p.slug}`,
+    ...(p.photo ? { image: p.photo } : {}),
+    ...(p.left ? {} : { worksFor: { "@id": `${SITE.url}/#organization` } }),
+    hasCredential: [{ "@type": "EducationalOccupationalCredential", credentialCategory: "degree", name: p.credentials }],
+  };
+  return (
+    <main className="mx-auto max-w-2xl px-6 py-16">
+      <JsonLd data={graph(person, breadcrumbSchema(trail))} />
+      <Breadcrumbs trail={trail} className="mb-10" />
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-center">
+        {p.photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.photo} alt={p.name} width={112} height={140} className="h-36 w-28 rounded-2xl object-cover" />
+        ) : null}
+        <div>
+          <h1 className="font-[family-name:var(--font-playfair)] text-4xl">{p.name}</h1>
+          <p className="mt-1 text-black/70">{p.title}</p>
+          <p className="mt-1 text-sm text-black/60">{p.credentials}</p>
+        </div>
+      </header>
+      {p.bio ? (
+        <section className="mt-10 text-lg leading-relaxed text-black/80">
+          <p>{p.bio}</p>
+        </section>
+      ) : null}
+      {p.left ? <p className="mt-8 text-sm text-black/60">{p.name} no longer takes consultations with GlamRepairs.</p> : null}
     </main>
   );
 }

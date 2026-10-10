@@ -9,6 +9,7 @@ import { createBridge } from "@/lib/consultation/ringcentral";
 import { getConsultationSettings } from "@/lib/consultation/slots";
 import { sendConsultationEmail } from "@/lib/email/sendConsultationEmail";
 import { requireStudioMember } from "@/lib/studio/member";
+import { practitionerName } from "@/lib/practitioners/authorship";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { AppointmentOutcome } from "@/lib/supabase/database.types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -294,7 +295,7 @@ export async function setAppointmentLink(input: {
     .from("appointments")
     .update({ join_url: url || null, updated_at: new Date().toISOString() })
     .eq("id", input.id)
-    .select("lead_id, starts_at")
+    .select("lead_id, starts_at, practitioner_id")
     .single();
   if (error || !appt) return { ok: false, error: error?.message ?? "Appointment not found." };
 
@@ -316,6 +317,7 @@ export async function setAppointmentLink(input: {
     joinUrl: url,
     minutes: await callMinutes(appt.lead_id),
     guidelinesMarkdown: settings.guidelinesMarkdown,
+    practitionerName: await practitionerName(appt.practitioner_id),
   });
   revalidatePath(PATH);
   return sent.ok
@@ -382,7 +384,7 @@ export async function createVideoRoom(input: { id: string; notify: boolean }): P
   const admin = createAdminSupabaseClient();
   const { data: appt } = await admin
     .from("appointments")
-    .select("lead_id, starts_at, status, join_url, provider_ref")
+    .select("lead_id, starts_at, status, join_url, provider_ref, practitioner_id")
     .eq("id", input.id)
     .maybeSingle();
   if (!appt) return { ok: false, error: "Appointment not found." };
@@ -423,6 +425,7 @@ export async function createVideoRoom(input: { id: string; notify: boolean }): P
     password: bridge.password,
     minutes: await callMinutes(appt.lead_id),
     guidelinesMarkdown: settings.guidelinesMarkdown,
+    practitionerName: await practitionerName(appt.practitioner_id),
   });
   revalidatePath(PATH);
   return sent.ok

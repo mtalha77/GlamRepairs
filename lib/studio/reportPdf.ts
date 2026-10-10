@@ -394,26 +394,34 @@ const DISCLAIMER =
  * Banned everywhere, including here: "Dr.", "MD", "licensed".
  */
 function signatureLines(input: SkinReportPdfInput): string[] {
-  const author =
-    AUTHORS[input.authorSlug ?? DEFAULT_AUTHOR_SLUG] ??
-    AUTHORS[DEFAULT_AUTHOR_SLUG];
+  const lines = ["Prepared and reviewed by"];
+  if (input.signer) {
+    // HANDOVER-52 step 13 — her own name, title and degree only. No HEC
+    // reference or membership line: those belong to a specific person's
+    // verified record, and borrowing them would be a false statement.
+    lines.push(input.signer.name);
+    if (input.signer.title) lines.push(input.signer.title);
+    if (input.signer.credentials) lines.push(input.signer.credentials);
+  } else {
+    const author =
+      AUTHORS[input.authorSlug ?? DEFAULT_AUTHOR_SLUG] ??
+      AUTHORS[DEFAULT_AUTHOR_SLUG];
 
-  // Falls back to the passed-in name so a practitioner without a record still
-  // gets a signed report rather than one signed by the wrong person.
-  const name = author?.name ?? input.authorName;
-  const lines = ["Prepared and reviewed by", name];
-
-  if (author?.title) lines.push(author.title);
-  if (author?.credentials) lines.push(author.credentials);
-  if (author?.hecReference) {
-    lines.push("Degree attested by the Higher Education Commission of Pakistan");
-    lines.push(`Ref. ${author.hecReference}`);
-  }
-  const ids = getCredential("ids-membership");
-  if (author?.memberOf) {
-    lines.push(
-      `Member, ${author.memberOf.name}${ids?.reference ? ` (Membership No. ${ids.reference})` : ""}`,
-    );
+    // Falls back to the passed-in name so a practitioner without a record still
+    // gets a signed report rather than one signed by the wrong person.
+    lines.push(author?.name ?? input.authorName);
+    if (author?.title) lines.push(author.title);
+    if (author?.credentials) lines.push(author.credentials);
+    if (author?.hecReference) {
+      lines.push("Degree attested by the Higher Education Commission of Pakistan");
+      lines.push(`Ref. ${author.hecReference}`);
+    }
+    const ids = getCredential("ids-membership");
+    if (author?.memberOf) {
+      lines.push(
+        `Member, ${author.memberOf.name}${ids?.reference ? ` (Membership No. ${ids.reference})` : ""}`,
+      );
+    }
   }
   lines.push(
     `Glam Repairs \u00b7 glamrepairs.com \u00b7 ${SITE.phone.displayInternational}`,

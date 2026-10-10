@@ -39,6 +39,8 @@ const DAYS_SHOWN = 5;
 export default function ConsultationPicker(props: Props) {
   const { guidelinesHtml, minutes, onStateChange } = props;
   const [slots, setSlots] = useState<PublicSlot[] | null>(null);
+  // HANDOVER-52 step 13: named only while one practitioner offers times.
+  const [practitioner, setPractitioner] = useState<string | null>(null);
   const [held, setHeld] = useState<HeldSlot | null>(null);
   const [chosen, setChosen] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -51,8 +53,9 @@ export default function ConsultationPicker(props: Props) {
     const qs = sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : "";
     try {
       const res = await fetch(`/api/consultation/slots${qs}`, { cache: "no-store" });
-      const data = (await res.json()) as { slots?: PublicSlot[]; held?: HeldSlot | null };
+      const data = (await res.json()) as { slots?: PublicSlot[]; held?: HeldSlot | null; practitioner?: string };
       setSlots(data.slots ?? []);
+      setPractitioner(data.practitioner ?? null);
       if (props.mode === "funnel") setHeld(data.held ?? null);
     } catch {
       setSlots([]);
@@ -152,7 +155,8 @@ export default function ConsultationPicker(props: Props) {
         Choose your consultation time
       </h2>
       <p className="mt-1 text-sm text-brand-gray">
-        Ayma Arif, Certified Aesthetics Practitioner. {minutes} minutes, by video.
+        {practitioner ? `${practitioner}. ` : ""}
+        {minutes} minutes, by video.
       </p>
 
       {guidelinesHtml ? (

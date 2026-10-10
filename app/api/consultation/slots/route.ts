@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getConsultationSettings, listBookableSlots, slotForSession } from "@/lib/consultation/slots";
+import { consultationPractitionerLine } from "@/lib/practitioners/authorship";
 
 /**
  * The picker's grid — HANDOVER-50 §5. Open slots past the lead time and
@@ -13,12 +14,13 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const sessionId = new URL(request.url).searchParams.get("sessionId")?.trim() ?? "";
   const settings = await getConsultationSettings();
-  const [slots, mine] = await Promise.all([
+  const [slots, mine, practitioner] = await Promise.all([
     listBookableSlots(settings),
     sessionId ? slotForSession(sessionId) : Promise.resolve({ eligible: false, slot: null }),
+    consultationPractitionerLine(),
   ]);
   return NextResponse.json(
-    { ok: true, slots, held: mine.slot, eligible: mine.eligible, holdMinutes: settings.holdMinutes },
+    { ok: true, slots, held: mine.slot, eligible: mine.eligible, holdMinutes: settings.holdMinutes, practitioner },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

@@ -9,6 +9,7 @@ import {
   slotForLead,
 } from "@/lib/consultation/slots";
 import { sendConsultationEmail } from "@/lib/email/sendConsultationEmail";
+import { practitionerName } from "@/lib/practitioners/authorship";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /**
@@ -214,6 +215,7 @@ export async function bookConsultationForLead(
     password: bridge?.password ?? null,
     minutes: await callMinutes(leadId),
     guidelinesMarkdown: settings.guidelinesMarkdown,
+    practitionerName: await practitionerName(practitionerId),
   });
   if (!sent.ok) {
     await notifyStudio({
