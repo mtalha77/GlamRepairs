@@ -14,16 +14,17 @@ import { getWhatsAppChatLink } from "@/lib/funnel/whatsapp";
  *   reminder    24 hours and 1 hour before
  *   feedback    once, after the call (HANDOVER-52 §3.6)
  *
- * Only ever the guest join link. `appointments.host_url` is Ayma's and is
+ * The practitioner is named from the appointment (HANDOVER-52 step 13),
+ * never assumed. Only ever the guest join link. `appointments.host_url` is Ayma's and is
  * never passed in here, so it cannot leak into an email by accident.
  */
 
 type Base = { toEmail: string | null; name: string | null };
 
 export type ConsultationEmail =
-  | (Base & { kind: "confirmed"; startsAt: string; joinUrl: string | null; password?: string | null; minutes: number; guidelinesMarkdown: string })
+  | (Base & { kind: "confirmed"; startsAt: string; joinUrl: string | null; password?: string | null; minutes: number; guidelinesMarkdown: string; practitionerName: string })
   | (Base & { kind: "repick" | "no_time"; pickUrl: string })
-  | (Base & { kind: "reminder"; when: "24h" | "1h"; startsAt: string; joinUrl: string | null; guidelinesMarkdown: string })
+  | (Base & { kind: "reminder"; when: "24h" | "1h"; startsAt: string; joinUrl: string | null; guidelinesMarkdown: string; practitionerName: string })
   | (Base & { kind: "feedback"; startsAt: string; practitionerName: string; feedbackUrl: string });
 
 const BRAND = "#662d91";
@@ -58,14 +59,14 @@ function compose(e: ConsultationEmail): { subject: string; html: string; text: s
       return {
         subject: `Your consultation is booked: ${when}`,
         html: shell(name, `
-          <p style="margin: 0 0 12px;">Your payment is confirmed and your ${e.minutes}-minute video consultation with Ayma Arif is booked for:</p>
+          <p style="margin: 0 0 12px;">Your payment is confirmed and your ${e.minutes}-minute video consultation with ${escapeHtml(e.practitionerName)} is booked for:</p>
           <p style="margin: 0 0 12px; font-size: 18px;"><strong>${escapeHtml(when)}</strong></p>
           ${link}
           ${guidelinesBlock(e.guidelinesMarkdown)}
           <p style="margin: 16px 0 0; font-size: 14px;">Need to change the time? Message us on <a href="${escapeHtml(whatsapp)}">WhatsApp</a>.</p>`),
         text: [
           `Hi ${name},`, "",
-          `Your ${e.minutes}-minute video consultation with Ayma Arif is booked for ${when}.`,
+          `Your ${e.minutes}-minute video consultation with ${e.practitionerName} is booked for ${when}.`,
           e.joinUrl ? `Join here at that time: ${e.joinUrl}` : "Your video link will follow before the call.",
           e.password ? `Meeting password: ${e.password}` : "",
           "", e.guidelinesMarkdown, "", `Need to change the time? WhatsApp us: ${whatsapp}`,
@@ -77,7 +78,7 @@ function compose(e: ConsultationEmail): { subject: string; html: string; text: s
       const lead =
         e.kind === "repick"
           ? "Thank you, your payment is confirmed. Unfortunately the consultation time you picked was taken while we were confirming it, and we are sorry for that."
-          : "Thank you, your payment is confirmed. Your plan includes a video consultation with Ayma Arif, and you have not chosen a time yet.";
+          : "Thank you, your payment is confirmed. Your plan includes a video consultation, and you have not chosen a time yet.";
       return {
         subject: e.kind === "repick" ? "Please choose a new consultation time" : "Choose your consultation time",
         html: shell(name, `
@@ -94,11 +95,11 @@ function compose(e: ConsultationEmail): { subject: string; html: string; text: s
       return {
         subject: `Reminder: your consultation ${soon}, ${when}`,
         html: shell(name, `
-          <p style="margin: 0 0 12px;">A reminder that your video consultation with Ayma Arif is ${soon}:</p>
+          <p style="margin: 0 0 12px;">A reminder that your video consultation with ${escapeHtml(e.practitionerName)} is ${soon}:</p>
           <p style="margin: 0 0 12px; font-size: 18px;"><strong>${escapeHtml(when)}</strong></p>
           ${e.joinUrl ? button(e.joinUrl, "Join your consultation") : `<p style="margin: 0 0 12px;">Your video link will follow before the call.</p>`}
           ${guidelinesBlock(e.guidelinesMarkdown)}`),
-        text: [`Hi ${name},`, "", `Your consultation with Ayma Arif is ${soon}: ${when}.`, e.joinUrl ? `Join: ${e.joinUrl}` : "", "", e.guidelinesMarkdown].join("\n"),
+        text: [`Hi ${name},`, "", `Your consultation with ${e.practitionerName} is ${soon}: ${when}.`, e.joinUrl ? `Join: ${e.joinUrl}` : "", "", e.guidelinesMarkdown].join("\n"),
       };
     }
     case "feedback": {

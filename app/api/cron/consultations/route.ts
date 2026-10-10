@@ -7,6 +7,7 @@ import { getConsultationSettings } from "@/lib/consultation/slots";
 import { feedbackUrl } from "@/lib/consultation/feedback";
 import { sendConsultationEmail } from "@/lib/email/sendConsultationEmail";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
+import { practitionerName } from "@/lib/practitioners/authorship";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /**
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
   // 2 hours (the confirmation has only just arrived).
   const { data: due24 } = await supabase
     .from("appointments")
-    .select("id, lead_id, starts_at, join_url")
+    .select("id, lead_id, starts_at, join_url, practitioner_id")
     .eq("status", "scheduled")
     .is("reminder_24h_at", null)
     .gt("starts_at", new Date(now + 3 * HOUR).toISOString())
@@ -68,7 +69,7 @@ export async function GET(request: Request) {
   // minutes before; a late run still sends it, as long as the call is ahead.
   const { data: due1 } = await supabase
     .from("appointments")
-    .select("id, lead_id, starts_at, join_url")
+    .select("id, lead_id, starts_at, join_url, practitioner_id")
     .eq("status", "scheduled")
     .is("reminder_1h_at", null)
     .gt("starts_at", new Date(now).toISOString())
@@ -100,6 +101,7 @@ export async function GET(request: Request) {
         startsAt: appt.starts_at,
         joinUrl: appt.join_url,
         guidelinesMarkdown: settings.guidelinesMarkdown,
+        practitionerName: await practitionerName(appt.practitioner_id),
       });
       if (sent.ok) {
         if (when === "24h") reminders.sent24h++;

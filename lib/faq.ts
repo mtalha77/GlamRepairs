@@ -248,6 +248,22 @@ export const FAQS: Faq[] = [
   },
 ];
 
+/**
+ * HANDOVER-52 §3.2 — "Who reviews my photographs?" names Ayma, which is
+ * true while she is the only practitioner reviewing assessments. Pages pass
+ * `team: await hasReviewingTeam()`, so the day a second reviewing
+ * practitioner is approved this answer replaces it, and not before.
+ */
+const TEAM_REVIEWS: Pick<Faq, "id" | "a" | "links"> = {
+  id: "who-reviews",
+  a:
+    "A qualified practitioner on our team reads your photographs and writes " +
+    "your assessment, and their name and credentials are on your report. " +
+    "Every practitioner's qualification is checked before they take on any " +
+    "client. Meet the team.",
+  links: [{ text: "Meet the team", href: "/about" }],
+};
+
 /** A question with its answer already resolved — no functions, ready to render or serialise. */
 export type ResolvedFaq = Omit<Faq, "fromPricing">;
 
@@ -258,13 +274,14 @@ export type ResolvedFaq = Omit<Faq, "fromPricing">;
  * Without it, price-dependent questions are dropped rather than rendered
  * with a placeholder.
  */
-export function resolveFaqs(tag: FaqTag, pricing?: FaqPricing): ResolvedFaq[] {
+export function resolveFaqs(tag: FaqTag, pricing?: FaqPricing, options: { team?: boolean } = {}): ResolvedFaq[] {
   return FAQS.filter((faq) => faq.tags.includes(tag))
     .filter((faq) => !faq.fromPricing || Boolean(pricing))
     .map(({ fromPricing, ...faq }) => ({
       ...faq,
       a: fromPricing && pricing ? fromPricing(pricing) : faq.a,
     }))
+    .map((faq) => (options.team && faq.id === TEAM_REVIEWS.id ? { ...faq, ...TEAM_REVIEWS } : faq))
     .sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
 }
 

@@ -46,6 +46,12 @@ export type SkinReportPdfInput = SkinReportContent & {
    * assigned one — the block states qualifications, so it has to be theirs.
    */
   authorSlug?: string;
+  /**
+   * HANDOVER-52 step 13 — a practitioner with no hand-written author record
+   * signs with her own profile: name, title and degree, nothing borrowed
+   * from anyone else's record. Takes precedence over `authorSlug`.
+   */
+  signer?: { name: string; title: string; credentials: string };
   /** ISO or display date for the follow-up check-in, when the plan has one. */
   followUpDate?: string;
 };

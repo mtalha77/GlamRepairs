@@ -36,6 +36,7 @@ import WhatWeWontDoSection from "@/components/about/WhatWeWontDoSection";
 import FaqSection from "@/components/faq/FaqSection";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
+import { hasReviewingTeam } from "@/lib/practitioners/authorship";
 import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
 import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 
@@ -51,8 +52,11 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
+/** Hourly, so the reviewer answer follows the roster (HANDOVER-52 §3.2). */
+export const revalidate = 3600;
+
 export default async function AboutPage() {
-  const faqs = resolveFaqs("about");
+  const faqs = resolveFaqs("about", undefined, { team: await hasReviewingTeam() });
 
   return (
     <>
