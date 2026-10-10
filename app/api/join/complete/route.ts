@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { sendPractitionerEmail } from "@/lib/email/sendPractitionerEmail";
 import { DOCS_BUCKET, OPEN_STATUSES } from "@/lib/practitioners/applications";
 import { DOCUMENT_KINDS, verifyApplicationSignature } from "@/lib/practitioners/join";
 import type { PractitionerDocumentKind } from "@/lib/supabase/database.types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /**
- * Step 2 of submitting /join: record the files that actually arrived.
+ * Record the files that actually arrived, for an applicant revising a
+ * submitted application (/join/edit). New applications use /api/join/draft.
  *
  * Only paths under this application's folder are accepted, and each is
  * checked against the bucket listing, so a document row can never point
@@ -60,24 +60,6 @@ export async function POST(request: Request) {
       console.error("[api/join/complete]", error.message);
       return NextResponse.json({ ok: false, error: "Your application is saved, but the documents could not be recorded." }, { status: 500 });
     }
-  }
-
-  // First completion only: tell the studio and the applicant.
-  if (recorded.size === 0) {
-    const { data: admins } = await admin.from("studio_members").select("user_id").eq("is_super_admin", true);
-    if (admins?.length) {
-      await admin.from("studio_notifications").insert(
-        admins.map((a) => ({
-          recipient_id: a.user_id,
-          type: "practitioner_application" as const,
-          title: "New practitioner application",
-          body: `${app.full_name} has applied, with ${rows.length} ${rows.length === 1 ? "document" : "documents"}.`,
-          href: `/studio/applications/${applicationId}`,
-          lead_id: null,
-        })),
-      );
-    }
-    await sendPractitionerEmail({ kind: "received", toEmail: app.email, name: app.full_name });
   }
 
   return NextResponse.json({ ok: true, documents: rows.length });

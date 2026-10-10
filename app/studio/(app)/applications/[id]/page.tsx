@@ -60,6 +60,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
           <Row label="Phone" value={app.phone} />
           <Row label="City" value={app.city} />
           <Row label="Qualification" value={app.qualification} />
+          <Row label="Studied at" value={[app.institution, app.qualification_year].filter(Boolean).join(", ") || null} />
           <Row label="Years of practice" value={app.years_experience != null ? String(app.years_experience) : null} />
           <Row label="Clinics" value={app.clinics} />
           <Row label="About" value={app.about} />
@@ -74,6 +75,11 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
             }
           />
           <Row label="Registration" value={app.reg_body ? `${app.reg_body} ${app.reg_no ?? ""}` : null} />
+          <Row
+            label="Payout"
+            value={app.payout_bank ? `${app.payout_bank}, ${app.payout_account_title ?? ""}${app.payout_reference ? `, ending ${app.payout_reference}` : ""}` : null}
+          />
+          <Row label="Submitted" value={app.submitted_at ? formatStudioDateTime(app.submitted_at) : "Not yet (draft)"} />
           <Row label="Agreed to terms" value={app.agreed_at ? formatStudioDateTime(app.agreed_at) : "No"} />
           <Row label="Decision note" value={app.decision_note} />
         </dl>

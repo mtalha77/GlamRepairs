@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 
 import { sendPractitionerEmail } from "@/lib/email/sendPractitionerEmail";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
-import { OPEN_STATUSES } from "@/lib/practitioners/applications";
+import { DOCS_BUCKET, OPEN_STATUSES } from "@/lib/practitioners/applications";
 import { REVISION_FIELDS, signApplicationEdit } from "@/lib/practitioners/join";
+import { storeProfilePhoto } from "@/lib/practitioners/photo";
 import { requireStudioMember } from "@/lib/studio/member";
 import type { PractitionerApplicationStatus } from "@/lib/supabase/database.types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -229,8 +230,13 @@ export async function approvePractitionerApplication(input: {
   if ("error" in g) return { ok: false, error: g.error as string };
 
   const admin = createAdminSupabaseClient();
-  const { data: current } = await admin.from("practitioner_applications").select("status").eq("id", input.id).maybeSingle();
+  const { data: current } = await admin
+    .from("practitioner_applications")
+    .select("status, submitted_at, payout_bank, payout_account_title, payout_reference")
+    .eq("id", input.id)
+    .maybeSingle();
   if (!current) return { ok: false, error: "Application not found." };
+  if (!current.submitted_at) return { ok: false, error: "This application has not been submitted yet." };
   if (!OPEN_STATUSES.includes(current.status)) return { ok: false, error: `This application is ${current.status}.` };
 
   const { data: profileId, error } = await admin.rpc("approve_practitioner_application", {
@@ -240,6 +246,10 @@ export async function approvePractitionerApplication(input: {
   });
   if (error || !profileId) return { ok: false, error: plainError(error?.message ?? "Approval failed.") };
 
+  // HANDOVER-52 §4.1: the step 4 photograph and step 5 payout carry over.
+  // The photograph still has to be ticked as checked before going live.
+  await carryOverToProfile(profileId, input.id, current);
+
   // The profile exists now; only then create the sign-in account.
   const login = await createPractitionerLogin(profileId);
   revalidatePath(PATH);
@@ -247,6 +257,38 @@ export async function approvePractitionerApplication(input: {
   return login.ok
     ? { ok: true, message: `Approved. ${login.message}` }
     : { ok: true, message: `Approved, and the profile is created, but the sign-in step failed: ${login.error} Use "Send sign-in link" to retry.` };
+}
+
+async function carryOverToProfile(
+  profileId: string,
+  applicationId: string,
+  app: { payout_bank: string | null; payout_account_title: string | null; payout_reference: string | null },
+) {
+  const admin = createAdminSupabaseClient();
+  if (app.payout_bank && app.payout_account_title) {
+    await admin
+      .from("practitioner_profiles")
+      .update({
+        payout_method: `Bank transfer, ${app.payout_bank}`,
+        payout_detail_ref: [app.payout_account_title, app.payout_reference ? `ending ${app.payout_reference}` : null].filter(Boolean).join(", "),
+      })
+      .eq("id", profileId)
+      .is("payout_method", null);
+  }
+  const { data: photo } = await admin
+    .from("practitioner_documents")
+    .select("storage_path")
+    .eq("kind", "photo")
+    .is("deleted_at", null)
+    .or(`practitioner_id.eq.${profileId},application_id.eq.${applicationId}`)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!photo) return;
+  const { data: file } = await admin.storage.from(DOCS_BUCKET).download(photo.storage_path);
+  if (!file) return;
+  const stored = await storeProfilePhoto(profileId, Buffer.from(await file.arrayBuffer()));
+  if (!stored.ok) console.error("[approve] photo", stored.error);
 }
 
 export async function resendPractitionerSignIn(input: { applicationId: string }): Promise<ApplicationActionResult> {
