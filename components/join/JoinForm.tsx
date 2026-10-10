@@ -6,7 +6,8 @@ import { formInputClassName, formLabelClassName } from "@/components/ui/fieldSty
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 /**
- * The application form — HANDOVER-51 §4.1.
+ * Revising a submitted application (/join/edit) — HANDOVER-51 §4.1.
+ * New applications use the five steps in ApplicationSteps.
  *
  * Files are only uploaded after the server has accepted the application,
  * which it does only with the terms box ticked. They go straight to the
@@ -42,37 +43,21 @@ type Fields = {
   regNo: string;
 };
 
-type Props =
-  | { mode?: "new"; token: string; email: string; kind: "practitioner" | "doctor" }
-  | {
-      mode: "edit";
-      applicationId: string;
-      editKey: string;
-      email: string;
-      kind: "practitioner" | "doctor";
-      initial: Fields;
-      /** Fields the reviewer flagged, highlighted in the form. */
-      flagged: string[];
-    };
-
-const EMPTY: Fields = {
-  fullName: "",
-  phone: "",
-  city: "",
-  qualification: "",
-  years: "",
-  clinics: "",
-  about: "",
-  portfolioUrl: "",
-  regBody: "",
-  regNo: "",
+type Props = {
+  mode: "edit";
+  applicationId: string;
+  editKey: string;
+  email: string;
+  kind: "practitioner" | "doctor";
+  initial: Fields;
+  /** Fields the reviewer flagged, highlighted in the form. */
+  flagged: string[];
 };
 
 export default function JoinForm(props: Props) {
   const { email, kind } = props;
-  const editing = props.mode === "edit";
-  const flagged = new Set(props.mode === "edit" ? props.flagged : []);
-  const [fields, setFields] = useState<Fields>(props.mode === "edit" ? props.initial : EMPTY);
+  const flagged = new Set(props.flagged);
+  const [fields, setFields] = useState<Fields>(props.initial);
   const [files, setFiles] = useState<Picked[]>([]);
   const [terms, setTerms] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -108,14 +93,14 @@ export default function JoinForm(props: Props) {
     e.preventDefault();
     setError(null);
     if (!terms) return setError("Please agree to the terms to continue.");
-    if (files.length === 0 && !editing) return setError("Please attach at least your degree.");
     setBusy(true);
     try {
-      const start = await fetch(props.mode === "edit" ? "/api/join/update" : "/api/join", {
+      const start = await fetch("/api/join/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...(props.mode === "edit" ? { applicationId: props.applicationId, editKey: props.editKey } : { token: props.token }),
+          applicationId: props.applicationId,
+          editKey: props.editKey,
           terms,
           ...fields,
           files: files.map((f) => ({ kind: f.kind, name: f.file.name, size: f.file.size, type: f.file.type })),
@@ -171,9 +156,7 @@ export default function JoinForm(props: Props) {
       <div role="status" className="rounded-2xl border border-brand-lavender/70 bg-white p-5">
         <h2 className="font-serif text-2xl text-brand-primary">Thank you</h2>
         <p className="mt-2 text-sm leading-relaxed text-brand-ink">
-          {editing
-            ? `Your changes are saved. We will look at them and reply by email to ${email}.`
-            : `Your application has arrived. We read every one ourselves and will reply by email to ${email}.`}
+          Your changes are saved. We will look at them and reply by email to {email}.
         </p>
         {error ? <p className="mt-2 text-sm text-brand-error-strong">{error}</p> : null}
       </div>
@@ -221,7 +204,7 @@ export default function JoinForm(props: Props) {
 
       <fieldset className={flag("documents")}>
         <legend className={formLabelClassName}>
-          {editing ? "Add documents (optional)" : "Documents (PDF, JPG, PNG or WebP, up to 10 MB each)"}
+          Add documents (optional)
           {flagged.has("documents") ? <span className="ml-2 text-xs font-medium text-amber-700">Please check</span> : null}
         </legend>
         <p className="text-xs text-brand-gray">Your degree, its HEC attestation and any certificates. They are kept privately and only our team can open them.</p>
@@ -268,7 +251,7 @@ export default function JoinForm(props: Props) {
       ) : null}
 
       <button type="submit" disabled={busy} className="min-h-12 w-full rounded-full bg-brand-primary px-6 text-sm text-white disabled:opacity-60">
-        {busy ? "Sending…" : editing ? "Save changes" : "Send application"}
+        {busy ? "Sending…" : "Save changes"}
       </button>
     </form>
   );

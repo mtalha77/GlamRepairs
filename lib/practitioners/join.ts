@@ -22,29 +22,103 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 export const MAX_FILES = 6;
 export const MAX_BYTES = 10 * 1024 * 1024;
 export const ALLOWED_MIME = ["application/pdf", "image/jpeg", "image/png", "image/webp"] as const;
-export const DOCUMENT_KINDS: PractitionerDocumentKind[] = ["degree", "attestation", "certificate", "registration", "id", "other"];
+export const DOCUMENT_KINDS: PractitionerDocumentKind[] = ["degree", "attestation", "certificate", "registration", "id", "photo", "other"];
+export const PHOTO_MIME = ["image/jpeg", "image/png", "image/webp"] as const;
 
-export type InviteFacts = { inviteId: string; email: string; kind: "practitioner" | "doctor" };
+export type InviteFacts = {
+  inviteId: string;
+  email: string;
+  kind: "practitioner" | "doctor";
+  /** The draft this invite has started, if it has not been submitted yet. */
+  applicationId: string | null;
+};
 
-/** Empty for a wrong, expired, revoked or used token: the caller cannot tell which. */
+/**
+ * Empty for a wrong, expired or revoked token, and for one whose
+ * application has been submitted: the caller cannot tell which. Until it is
+ * submitted, the invite link is how the applicant gets back to their
+ * draft (HANDOVER-52 §4.1: "they should come back to step 3, not step 1").
+ */
 export async function lookupInvite(token: string | null | undefined): Promise<InviteFacts | null> {
   if (!token || token.length < 32 || token.length > 128) return null;
-  const { data, error } = await createAdminSupabaseClient().rpc("lookup_practitioner_invite", { p_token: token });
+  const admin = createAdminSupabaseClient();
+  const { data, error } = await admin.rpc("lookup_practitioner_invite", { p_token: token });
   if (error) {
     console.error("[lookupInvite]", error.message);
     return null;
   }
   const row = data?.[0];
   if (!row) return null;
-  // One application per invite: once it has been used to apply, the link
-  // is spent, even if that application is later rejected.
-  const { data: used } = await createAdminSupabaseClient()
+  const { data: used } = await admin
     .from("practitioner_invites")
     .select("application_id")
     .eq("id", row.invite_id)
     .maybeSingle();
-  if (used?.application_id) return null;
-  return { inviteId: row.invite_id, email: row.email, kind: row.kind };
+  if (used?.application_id) {
+    // One application per invite. Once submitted the link is spent, even
+    // if that application is later rejected.
+    const { data: app } = await admin
+      .from("practitioner_applications")
+      .select("id, submitted_at, deleted_at")
+      .eq("id", used.application_id)
+      .maybeSingle();
+    if (!app || app.submitted_at || app.deleted_at) return null;
+    return { inviteId: row.invite_id, email: row.email, kind: row.kind, applicationId: app.id };
+  }
+  return { inviteId: row.invite_id, email: row.email, kind: row.kind, applicationId: null };
+}
+
+export type DraftDocument = { id: string; kind: PractitionerDocumentKind; name: string };
+
+export type Draft = {
+  step: number;
+  fullName: string;
+  phone: string;
+  city: string;
+  qualification: string;
+  qualificationYear: string;
+  institution: string;
+  years: string;
+  clinics: string;
+  about: string;
+  portfolioUrl: string;
+  regBody: string;
+  regNo: string;
+  payoutBank: string;
+  payoutAccountTitle: string;
+  payoutReference: string;
+  documents: DraftDocument[];
+};
+
+export async function loadDraft(applicationId: string): Promise<Draft | null> {
+  const admin = createAdminSupabaseClient();
+  const { data: a } = await admin.from("practitioner_applications").select("*").eq("id", applicationId).maybeSingle();
+  if (!a) return null;
+  const { data: docs } = await admin
+    .from("practitioner_documents")
+    .select("id, kind, original_name")
+    .eq("application_id", applicationId)
+    .is("deleted_at", null)
+    .order("created_at");
+  return {
+    step: a.current_step,
+    fullName: a.full_name,
+    phone: a.phone ?? "",
+    city: a.city ?? "",
+    qualification: a.qualification,
+    qualificationYear: a.qualification_year ? String(a.qualification_year) : "",
+    institution: a.institution ?? "",
+    years: a.years_experience === null ? "" : String(a.years_experience),
+    clinics: a.clinics ?? "",
+    about: a.about,
+    portfolioUrl: a.portfolio_url ?? "",
+    regBody: a.reg_body ?? "",
+    regNo: a.reg_no ?? "",
+    payoutBank: a.payout_bank ?? "",
+    payoutAccountTitle: a.payout_account_title ?? "",
+    payoutReference: a.payout_reference ?? "",
+    documents: (docs ?? []).map((d) => ({ id: d.id, kind: d.kind, name: d.original_name ?? "Document" })),
+  };
 }
 
 function key(): string {
@@ -145,3 +219,67 @@ export const REVISION_FIELDS: Record<string, string> = {
   portfolioUrl: "Portfolio link",
   documents: "Documents",
 };
+
+// ── The five steps (HANDOVER-52 §4.1) ──────────────────────────────────
+
+export function parseWhoYouAre(body: Record<string, unknown>): { fullName: string; phone: string; city: string } | { error: string } {
+  const fullName = clip(body.fullName, 120);
+  const phone = clip(body.phone, 30);
+  const city = clip(body.city, 80);
+  if (fullName.length < 3) return { error: "Please enter your full name." };
+  if (phone.replace(/[^\d]/g, "").length < 10) return { error: "Please enter a phone number we can reach you on." };
+  if (city.length < 2) return { error: "Please enter your city." };
+  return { fullName, phone, city };
+}
+
+export type QualificationFields = {
+  qualification: string;
+  qualificationYear: number;
+  institution: string;
+  years: number;
+  clinics: string;
+  about: string;
+  portfolioUrl: string | null;
+  regBody: string | null;
+  regNo: string | null;
+};
+
+export function parseQualification(body: Record<string, unknown>, kind: "practitioner" | "doctor"): QualificationFields | { error: string } {
+  if (!clip(body.years, 3)) return { error: "Please enter your years of practice." };
+  const base = parseFields({ ...body, fullName: "placeholder" }, kind);
+  if ("error" in base) return base;
+  const year = Number(clip(body.qualificationYear, 4));
+  const institution = clip(body.institution, 160);
+  if (!Number.isInteger(year) || year < 1960 || year > new Date().getFullYear()) {
+    return { error: "Please enter the year you qualified." };
+  }
+  if (institution.length < 3) return { error: "Please enter where you studied." };
+  return {
+    qualification: base.qualification,
+    qualificationYear: year,
+    institution,
+    years: base.years ?? 0,
+    clinics: base.clinics,
+    about: base.about,
+    portfolioUrl: base.portfolioUrl,
+    regBody: base.regBody,
+    regNo: base.regNo,
+  };
+}
+
+/**
+ * Bank name, account title and a reference: never the account number
+ * (§3.1). Bank details belong in whatever you pay from, not in a table the
+ * application reads on every page.
+ */
+export function parsePayout(body: Record<string, unknown>): { bank: string; title: string; reference: string } | { error: string } {
+  const bank = clip(body.payoutBank, 80);
+  const title = clip(body.payoutAccountTitle, 120);
+  const reference = clip(body.payoutReference, 60);
+  if (bank.length < 2) return { error: "Please enter your bank." };
+  if (title.length < 3) return { error: "Please enter the account title, the name the account is in." };
+  if (reference.replace(/[^\d]/g, "").length > 6 || /PK\d{2}/i.test(reference)) {
+    return { error: "Please do not enter the account number or IBAN here. The last four digits are enough." };
+  }
+  return { bank, title, reference };
+}

@@ -32,6 +32,7 @@ export const DOCUMENT_KIND_LABEL: Record<PractitionerDocumentKind, string> = {
   attestation: "HEC attestation",
   registration: "Registration",
   id: "ID",
+  photo: "Photograph",
   other: "Other",
 };
 

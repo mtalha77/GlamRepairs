@@ -21,7 +21,7 @@ export type PractitionerApplicationStatus =
   | "approved"
   | "rejected"
   | "withdrawn";
-export type PractitionerDocumentKind = "degree" | "certificate" | "attestation" | "registration" | "id" | "other";
+export type PractitionerDocumentKind = "degree" | "certificate" | "attestation" | "registration" | "id" | "photo" | "other";
 export type AppointmentOutcome =
   | "attended"
   | "client_no_show"
@@ -377,6 +377,13 @@ export type Database = {
           agreed_at: string | null;
           is_test: boolean;
           deleted_at: string | null;
+          submitted_at: string | null;
+          current_step: number;
+          qualification_year: number | null;
+          institution: string | null;
+          payout_bank: string | null;
+          payout_account_title: string | null;
+          payout_reference: string | null;
         };
         Insert: {
           full_name: string;
@@ -397,6 +404,13 @@ export type Database = {
           agreed_to_terms?: boolean;
           agreed_at?: string | null;
           is_test?: boolean;
+          submitted_at?: string | null;
+          current_step?: number;
+          qualification_year?: number | null;
+          institution?: string | null;
+          payout_bank?: string | null;
+          payout_account_title?: string | null;
+          payout_reference?: string | null;
         };
         Update: {
           status?: PractitionerApplicationStatus;
@@ -413,6 +427,13 @@ export type Database = {
           portfolio_url?: string | null;
           reg_body?: string | null;
           reg_no?: string | null;
+          submitted_at?: string | null;
+          current_step?: number;
+          qualification_year?: number | null;
+          institution?: string | null;
+          payout_bank?: string | null;
+          payout_account_title?: string | null;
+          payout_reference?: string | null;
         };
         Relationships: [];
       };
