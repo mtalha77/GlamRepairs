@@ -9,7 +9,12 @@ const PUBLIC_STUDIO_PATHS = [
   "/studio/invite",
 ];
 
+/** Read by the studio layout to keep a practitioner's seat on her own pages. */
+export const STUDIO_PATH_HEADER = "x-studio-path";
+
 export async function updateStudioSession(request: NextRequest) {
+  // Always overwritten here, so a client cannot supply its own.
+  request.headers.set(STUDIO_PATH_HEADER, request.nextUrl.pathname);
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {

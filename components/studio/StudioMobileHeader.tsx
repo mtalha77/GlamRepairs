@@ -11,8 +11,10 @@ import { useStudioNotifications } from "@/components/studio/StudioNotificationsP
 
 export default function StudioMobileHeader({
   superAdmin,
+  practitionerSeat,
 }: {
   superAdmin?: boolean;
+  practitionerSeat?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -82,8 +84,9 @@ export default function StudioMobileHeader({
           />
           <div className="absolute left-0 right-0 top-full z-20 border-b border-brand-lavender/70 bg-white px-4 py-3 shadow-lg">
             <StudioNav
-              includeSettings
+              includeSettings={!practitionerSeat}
               superAdmin={superAdmin}
+              practitionerSeat={practitionerSeat}
               onNavigate={() => setOpen(false)}
             />
           </div>

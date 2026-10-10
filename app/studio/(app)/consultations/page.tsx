@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import ConsultationsAdmin from "@/components/consultation/ConsultationsAdmin";
 import { loadConsultationAdmin } from "@/lib/consultation/admin";
 import { ringCentralConfigured } from "@/lib/consultation/ringcentral";
+import { listPractitioners } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -32,7 +33,10 @@ export default async function ConsultationsPage() {
     if (!own) redirect("/studio");
     scope = { practitionerId: own.id };
   }
-  const data = await loadConsultationAdmin(scope);
+  const [data, roster] = await Promise.all([
+    loadConsultationAdmin(scope),
+    member.isSuperAdmin ? listPractitioners() : Promise.resolve([]),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -50,6 +54,7 @@ export default async function ConsultationsPage() {
           readOnly={!member.isSuperAdmin}
           practitionerView={Boolean(scope)}
           ringCentralReady={ringCentralConfigured()}
+          practitioners={roster.map((p) => ({ id: p.id, name: p.fullName, live: p.status === "approved" }))}
         />
       ) : (
         <p role="alert" className="rounded-xl bg-brand-error/10 px-4 py-3 text-sm text-brand-error-strong">

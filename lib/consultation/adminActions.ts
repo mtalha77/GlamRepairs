@@ -64,10 +64,24 @@ export type WeeklyWindowInput = {
  * Replace the weekly pattern. New rows go in before the old ones come out,
  * so a failed save leaves the previous pattern standing rather than none.
  */
-export async function saveWeeklyAvailability(windows: WeeklyWindowInput[]): Promise<ConsultationActionResult> {
-  const g = await guard();
-  if ("error" in g) return { ok: false, error: g.error as string };
-  const practitioner = await getConsultingPractitioner();
+export async function saveWeeklyAvailability(
+  windows: WeeklyWindowInput[],
+  practitionerId?: string,
+): Promise<ConsultationActionResult> {
+  // HANDOVER-52 §4.3: a practitioner sets her own hours; a super admin can
+  // set anyone's. Checked here because the write below uses the service role.
+  const { user, member } = await requireStudioMember();
+  if (!user || !member) return { ok: false, error: "Not signed in." };
+  let practitioner: { id: string } | null = null;
+  if (member.isSuperAdmin) {
+    practitioner = practitionerId ? { id: practitionerId } : await getConsultingPractitioner();
+  } else {
+    const own = await createAdminSupabaseClient().from("practitioner_profiles").select("id").eq("user_id", user.id).maybeSingle();
+    if (!own.data || (practitionerId && practitionerId !== own.data.id)) {
+      return { ok: false, error: "You can only change your own hours." };
+    }
+    practitioner = { id: own.data.id };
+  }
   if (!practitioner) return { ok: false, error: "No approved practitioner profile exists." };
 
   if (windows.length > 50) return { ok: false, error: "That is more windows than a week can hold." };
@@ -77,8 +91,8 @@ export async function saveWeeklyAvailability(windows: WeeklyWindowInput[]): Prom
     if (toMinutes(w.endsTime) <= toMinutes(w.startsTime)) {
       return { ok: false, error: `A window ends before it starts (${w.startsTime}–${w.endsTime}).` };
     }
-    if (!Number.isInteger(w.slotMinutes) || w.slotMinutes < 5 || w.slotMinutes > 120) {
-      return { ok: false, error: "Call length must be between 5 and 120 minutes." };
+    if (!Number.isInteger(w.slotMinutes) || w.slotMinutes < 15 || w.slotMinutes > 120) {
+      return { ok: false, error: "Call length must be between 15 and 120 minutes. Ayma's 15 minutes is the shortest." };
     }
     if (!Number.isInteger(w.strideMinutes) || w.strideMinutes < w.slotMinutes || w.strideMinutes > 240) {
       return { ok: false, error: "The gap between call starts cannot be shorter than the call." };
@@ -98,7 +112,7 @@ export async function saveWeeklyAvailability(windows: WeeklyWindowInput[]): Prom
     }
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { data: old, error: readError } = await supabase
     .from("practitioner_availability")
     .select("id")

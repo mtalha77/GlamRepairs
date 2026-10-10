@@ -19,6 +19,7 @@ export default function StudioShell({
   initialNotifications,
   children,
 }: StudioShellProps) {
+  const practitionerSeat = member.memberKind === "practitioner" && !member.isSuperAdmin;
   return (
     <StudioNotificationsProvider
       userId={member.userId}
@@ -37,12 +38,12 @@ export default function StudioShell({
               Studio
             </p>
           </div>
-          <StudioNav superAdmin={member.isSuperAdmin} />
+          <StudioNav superAdmin={member.isSuperAdmin} practitionerSeat={practitionerSeat} />
           <StudioUserFooter member={member} />
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-          <StudioMobileHeader superAdmin={member.isSuperAdmin} />
+          <StudioMobileHeader superAdmin={member.isSuperAdmin} practitionerSeat={practitionerSeat} />
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
       </div>

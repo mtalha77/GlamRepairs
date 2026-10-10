@@ -25,6 +25,7 @@ export type Blackout = { id: string; startsAt: string; endsAt: string; reason: s
 
 export type StudioAppointment = {
   id: string;
+  practitionerId: string;
   leadId: string | null;
   clientName: string;
   phoneDigits: string | null;
@@ -114,7 +115,7 @@ export async function loadConsultationAdmin(scope?: { practitionerId: string }):
     supabase
       .from("appointments")
       .select(
-        "id, lead_id, starts_at, ends_at, status, join_url, provider_ref, notes, reminder_24h_at, reminder_1h_at",
+        "id, practitioner_id, lead_id, starts_at, ends_at, status, join_url, provider_ref, notes, reminder_24h_at, reminder_1h_at",
       )
       .eq("status", "scheduled")
       .eq(scope ? "practitioner_id" : "status", scope ? scope.practitionerId : "scheduled")
@@ -219,6 +220,7 @@ export async function loadConsultationAdmin(scope?: { practitionerId: string }):
       const lead = a.lead_id ? byId.get(a.lead_id) : undefined;
       return {
         id: a.id,
+        practitionerId: a.practitioner_id,
         leadId: a.lead_id,
         clientName: scope ? `Client ${a.id.slice(0, 4).toUpperCase()}` : lead?.full_name?.trim() || "Client",
         phoneDigits: scope ? null : digitsOnly(lead?.phone_e164 ?? lead?.phone),

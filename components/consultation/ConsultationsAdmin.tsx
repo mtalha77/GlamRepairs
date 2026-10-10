@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { ReassignControl } from "@/components/studio/practice/PracticeControls";
 import { formInputClassName } from "@/components/ui/fieldStyles";
 import type { Blackout, ConsultationAdminData, StudioAppointment, WeeklyWindow } from "@/lib/consultation/admin";
 import type { AppointmentOutcome } from "@/lib/supabase/database.types";
@@ -85,7 +86,18 @@ function callsIn(w: WeeklyWindow) {
 
 // ── Weekly hours ────────────────────────────────────────────────────────
 
-function WeeklyHours({ initial, defaultSlot, readOnly }: { initial: WeeklyWindow[]; defaultSlot: number; readOnly: boolean }) {
+export function WeeklyHours({
+  initial,
+  defaultSlot,
+  readOnly,
+  practitionerId,
+}: {
+  initial: WeeklyWindow[];
+  defaultSlot: number;
+  readOnly: boolean;
+  /** Whose hours; omitted for the default practitioner (Ayma). */
+  practitionerId?: string;
+}) {
   const router = useRouter();
   const [rows, setRows] = useState<WeeklyWindow[]>(initial);
   const [result, setResult] = useState<ConsultationActionResult | null>(null);
@@ -110,6 +122,7 @@ function WeeklyHours({ initial, defaultSlot, readOnly }: { initial: WeeklyWindow
           slotMinutes: Number(slotMinutes),
           strideMinutes: Number(strideMinutes),
         })),
+        practitionerId,
       );
       setResult(res);
       if (res.ok) router.refresh();
@@ -160,7 +173,7 @@ function WeeklyHours({ initial, defaultSlot, readOnly }: { initial: WeeklyWindow
                           </label>
                           <label className="flex flex-col gap-1">
                             <span className="text-xs text-brand-gray">Call (min)</span>
-                            <input type="number" min={5} max={120} value={w.slotMinutes} disabled={readOnly} onChange={(e) => update(i, { slotMinutes: Number(e.target.value) })} className={`${smallInput} w-20`} />
+                            <input type="number" min={15} max={120} value={w.slotMinutes} disabled={readOnly} onChange={(e) => update(i, { slotMinutes: Number(e.target.value) })} className={`${smallInput} w-20`} />
                           </label>
                           <label className="flex flex-col gap-1">
                             <span className="text-xs text-brand-gray">Gap (min)</span>
@@ -381,10 +394,12 @@ function AppointmentRow({
   a,
   readOnly,
   ringCentralReady,
+  practitioners,
 }: {
   a: StudioAppointment;
   readOnly: boolean;
   ringCentralReady: boolean;
+  practitioners: PractitionerOption[];
 }) {
   const router = useRouter();
   const [link, setLink] = useState(a.joinUrl ?? "");
@@ -461,6 +476,9 @@ function AppointmentRow({
         ) : (
           <p className="text-brand-error-strong">No video link yet. Create a room or paste a link below.</p>
         )}
+        {practitioners.length > 1 ? (
+          <p className="mt-1 text-brand-gray">With {practitioners.find((p) => p.id === a.practitionerId)?.name ?? "another practitioner"}</p>
+        ) : null}
         {a.notes ? <p className="mt-1 text-brand-gray">{a.notes}</p> : null}
         <p className="mt-1 text-xs text-brand-gray">
           Reminders: 24 hours {a.reminder24hAt ? "sent" : "not sent"} · 1 hour {a.reminder1hAt ? "sent" : "not sent"}
@@ -530,11 +548,16 @@ function AppointmentRow({
           </div>
           {outcome ? <p className="text-xs text-brand-gray">{OUTCOME_OPTIONS.find((o) => o.value === outcome)?.help}</p> : null}
           <Feedback result={result} />
+          {!past && practitioners.length > 1 ? (
+            <ReassignControl appointmentId={a.id} currentPractitionerId={a.practitionerId} practitioners={practitioners.filter((p) => p.live)} />
+          ) : null}
         </div>
       ) : null}
     </li>
   );
 }
+
+type PractitionerOption = { id: string; name: string; live: boolean };
 
 // ── Page ────────────────────────────────────────────────────────────────
 
@@ -543,7 +566,10 @@ export default function ConsultationsAdmin({
   readOnly,
   practitionerView = false,
   ringCentralReady,
+  practitioners = [],
 }: {
+  /** Practitioners, for names and for moving a booking (super admin only). */
+  practitioners?: PractitionerOption[];
   data: ConsultationAdminData;
   readOnly: boolean;
   /** A practitioner's own view: her consultations only, no calendar admin. */
@@ -618,7 +644,7 @@ export default function ConsultationsAdmin({
         {data.appointments.length ? (
           <ul className="mt-4 space-y-3">
             {data.appointments.map((a) => (
-              <AppointmentRow key={a.id} a={a} readOnly={readOnly} ringCentralReady={ringCentralReady} />
+              <AppointmentRow key={a.id} a={a} readOnly={readOnly} ringCentralReady={ringCentralReady} practitioners={practitioners} />
             ))}
           </ul>
         ) : (
