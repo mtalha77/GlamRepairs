@@ -254,6 +254,7 @@ export type Database = {
           client_timezone: string | null;
           reminder_24h_at: string | null;
           reminder_1h_at: string | null;
+          feedback_requested_at: string | null;
           bridge_deleted_at: string | null;
           practitioner_fee_minor: number | null;
           platform_fee_minor: number | null;
@@ -285,6 +286,7 @@ export type Database = {
           client_timezone?: string | null;
           reminder_24h_at?: string | null;
           reminder_1h_at?: string | null;
+          feedback_requested_at?: string | null;
           bridge_deleted_at?: string | null;
           practitioner_fee_minor?: number | null;
           platform_fee_minor?: number | null;
@@ -311,6 +313,7 @@ export type Database = {
           client_timezone?: string | null;
           reminder_24h_at?: string | null;
           reminder_1h_at?: string | null;
+          feedback_requested_at?: string | null;
           bridge_deleted_at?: string | null;
           practitioner_fee_minor?: number | null;
           platform_fee_minor?: number | null;
@@ -567,6 +570,48 @@ export type Database = {
         };
         Insert: never;
         Update: never;
+        Relationships: [];
+      };
+      practitioner_payouts: {
+        Row: {
+          id: string;
+          practitioner_id: string;
+          period_start: string;
+          period_end: string;
+          currency: string;
+          total_minor: number;
+          status: "draft" | "approved" | "paid" | "cancelled";
+          reference: string | null;
+          paid_at: string | null;
+          paid_by: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: { note?: string | null };
+        Relationships: [];
+      };
+      consultation_feedback: {
+        Row: {
+          appointment_id: string;
+          rating: number;
+          felt_heard: number | null;
+          would_return: boolean | null;
+          comment: string | null;
+          publishable: boolean;
+          created_at: string;
+        };
+        Insert: {
+          appointment_id: string;
+          rating: number;
+          felt_heard?: number | null;
+          would_return?: boolean | null;
+          comment?: string | null;
+          publishable?: boolean;
+        };
+        Update: { publishable?: boolean };
         Relationships: [];
       };
       practitioner_revision_requests: {
@@ -2173,6 +2218,19 @@ export type Database = {
       };
     };
     Functions: {
+      /** HANDOVER-52 §4.6 — service role only. Approves a run; returns how many practitioners it covers. */
+      create_payout_run: {
+        Args: { p_start: string; p_end: string; p_by: string };
+        Returns: number;
+      };
+      mark_payout_paid: {
+        Args: { p_payout: string; p_reference: string; p_by: string };
+        Returns: boolean;
+      };
+      cancel_payout: {
+        Args: { p_payout: string };
+        Returns: boolean;
+      };
       /** HANDOVER-52 §3.5 — service role only. Refuses when the target is busy. */
       reassign_appointment: {
         Args: { p_appt: string; p_to: string; p_by: string };

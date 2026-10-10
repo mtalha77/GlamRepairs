@@ -13,6 +13,7 @@ import {
   ownPractitionerProfile,
   weeklyWindowsFor,
 } from "@/lib/practitioners/roster";
+import { listOwnPayouts } from "@/lib/practitioners/payouts";
 import { requireStudioMember } from "@/lib/studio/member";
 
 /**
@@ -68,11 +69,12 @@ export default async function PracticePage() {
     );
   }
 
-  const [data, earnings, windows, degree] = await Promise.all([
+  const [data, earnings, windows, degree, payouts] = await Promise.all([
     loadConsultationAdmin({ practitionerId: profile.id }),
     earningsSummary(profile.id),
     weeklyWindowsFor(profile.id),
     hasVerifiedDegree(profile.id),
+    listOwnPayouts(profile.id),
   ]);
   const gone = profile.status === "offboarded";
   const missing = missingForLive({
@@ -164,6 +166,18 @@ export default async function PracticePage() {
           </div>
         </dl>
         <p className="mt-3 text-xs text-brand-gray">Paid monthly, by the 5th, for the month before.</p>
+        {payouts.length ? (
+          <ul className="mt-4 divide-y divide-brand-lavender/60 border-t border-brand-lavender/60 text-sm">
+            {payouts.map((p) => (
+              <li key={p.id} className="flex flex-wrap justify-between gap-2 py-2">
+                <span className="text-brand-ink">
+                  {p.period_start.slice(0, 7)} · {formatRupees(p.total_minor)}
+                </span>
+                <span className="text-brand-gray">{p.status === "paid" ? `Paid, reference ${p.reference}` : "Approved, payment on its way"}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </Card>
 
       {!gone ? (

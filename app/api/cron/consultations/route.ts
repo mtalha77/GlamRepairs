@@ -4,7 +4,9 @@ import { notifyStudio } from "@/lib/consultation/booking";
 import { formatSlot } from "@/lib/consultation/format";
 import { deleteBridge, ringCentralConfigured } from "@/lib/consultation/ringcentral";
 import { getConsultationSettings } from "@/lib/consultation/slots";
+import { feedbackUrl } from "@/lib/consultation/feedback";
 import { sendConsultationEmail } from "@/lib/email/sendConsultationEmail";
+import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /**
@@ -16,6 +18,8 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
  *   4. bridge deletion         each RingCentral room is deleted the day
  *                              after its call (or on cancellation), so a
  *                              past link can never open a live room again
+ *   5. feedback                one request per consultation, an hour or
+ *                              more after it ends (HANDOVER-52 §3.6)
  *
  * Called by .github/workflows/consultations.yml, since Vercel cron does not
  * fire on this project (see app/api/cron/gsc/route.ts). Safe to run twice:
@@ -121,6 +125,48 @@ export async function GET(request: Request) {
     }
   }
 
+  // Feedback: once, between 1 hour and 3 days after the call. Not for a
+  // cancelled call or one the client missed.
+  const feedback = { sent: 0, failed: 0 };
+  const { data: ended } = await supabase
+    .from("appointments")
+    .select("id, lead_id, starts_at, practitioner_id")
+    .in("status", ["scheduled", "completed"])
+    .is("feedback_requested_at", null)
+    .lt("ends_at", new Date(now - HOUR).toISOString())
+    .gt("ends_at", new Date(now - 72 * HOUR).toISOString())
+    .limit(50);
+  for (const appt of ended ?? []) {
+    const { data: claimed } = await supabase
+      .from("appointments")
+      .update({ feedback_requested_at: new Date().toISOString() })
+      .eq("id", appt.id)
+      .is("feedback_requested_at", null)
+      .select("id")
+      .maybeSingle();
+    if (!claimed) continue;
+    const [{ data: lead }, { data: profile }] = await Promise.all([
+      appt.lead_id
+        ? supabase.from("leads").select("full_name, email, is_test").eq("id", appt.lead_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabase.from("practitioner_profiles").select("full_name").eq("id", appt.practitioner_id).maybeSingle(),
+    ]);
+    if (!lead || lead.is_test) continue;
+    const sent = await sendConsultationEmail({
+      kind: "feedback",
+      toEmail: lead.email,
+      name: lead.full_name,
+      startsAt: appt.starts_at,
+      practitionerName: profile?.full_name ?? "your practitioner",
+      feedbackUrl: feedbackUrl(getPublicAppUrl(), appt.id),
+    });
+    if (sent.ok) feedback.sent++;
+    else {
+      feedback.failed++;
+      errors.push(`feedback ${appt.id}: ${sent.message}`);
+    }
+  }
+
   // Rooms: the day after the call, or as soon as it is cancelled.
   const bridges = { deleted: 0, failed: 0, skipped: 0 };
   const { data: rooms } = await supabase
@@ -150,6 +196,7 @@ export async function GET(request: Request) {
     released: released.data ?? 0,
     generated: generated.data ?? 0,
     reminders,
+    feedback,
     bridges,
     errors,
   };
