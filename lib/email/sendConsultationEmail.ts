@@ -12,6 +12,7 @@ import { getWhatsAppChatLink } from "@/lib/funnel/whatsapp";
  *   repick      the time was lost after payment: choose again, here is how
  *   no_time     paid, but no time was chosen: choose one
  *   reminder    24 hours and 1 hour before
+ *   feedback    once, after the call (HANDOVER-52 §3.6)
  *
  * Only ever the guest join link. `appointments.host_url` is Ayma's and is
  * never passed in here, so it cannot leak into an email by accident.
@@ -22,7 +23,8 @@ type Base = { toEmail: string | null; name: string | null };
 export type ConsultationEmail =
   | (Base & { kind: "confirmed"; startsAt: string; joinUrl: string | null; password?: string | null; minutes: number; guidelinesMarkdown: string })
   | (Base & { kind: "repick" | "no_time"; pickUrl: string })
-  | (Base & { kind: "reminder"; when: "24h" | "1h"; startsAt: string; joinUrl: string | null; guidelinesMarkdown: string });
+  | (Base & { kind: "reminder"; when: "24h" | "1h"; startsAt: string; joinUrl: string | null; guidelinesMarkdown: string })
+  | (Base & { kind: "feedback"; startsAt: string; practitionerName: string; feedbackUrl: string });
 
 const BRAND = "#662d91";
 
@@ -97,6 +99,23 @@ function compose(e: ConsultationEmail): { subject: string; html: string; text: s
           ${e.joinUrl ? button(e.joinUrl, "Join your consultation") : `<p style="margin: 0 0 12px;">Your video link will follow before the call.</p>`}
           ${guidelinesBlock(e.guidelinesMarkdown)}`),
         text: [`Hi ${name},`, "", `Your consultation with Ayma Arif is ${soon}: ${when}.`, e.joinUrl ? `Join: ${e.joinUrl}` : "", "", e.guidelinesMarkdown].join("\n"),
+      };
+    }
+    case "feedback": {
+      const when = formatSlot(e.startsAt);
+      return {
+        subject: "How was your consultation?",
+        html: shell(name, `
+          <p style="margin: 0 0 12px;">Thank you for your consultation with ${escapeHtml(e.practitionerName)} on ${escapeHtml(when)}.</p>
+          <p style="margin: 0 0 12px;">Would you tell us how it went? Four short questions, under a minute. We read every answer.</p>
+          ${button(e.feedbackUrl, "Give feedback")}
+          <p style="margin: 0; font-size: 14px;">Something went wrong? Reply to this email or message us on <a href="${escapeHtml(whatsapp)}">WhatsApp</a>.</p>`),
+        text: [
+          `Hi ${name},`, "",
+          `Thank you for your consultation with ${e.practitionerName} on ${when}.`,
+          `Would you tell us how it went? ${e.feedbackUrl}`, "",
+          `Something went wrong? Reply to this email or WhatsApp us: ${whatsapp}`,
+        ].join("\n"),
       };
     }
   }

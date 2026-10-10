@@ -39,6 +39,7 @@ const STUDIO_ADMIN_LINKS = [
   { href: "/studio/applications", label: "Applications" },
   // HANDOVER-52 — rates, status, photographs, offboarding.
   { href: "/studio/practitioners", label: "Practitioners" },
+  { href: "/studio/payouts", label: "Payouts" },
   { href: "/studio/admin/archive", label: "Archive" },
 ] as const;
 

@@ -7,6 +7,7 @@ import {
   PractitionerStatusButtons,
   RateForm,
 } from "@/components/studio/practice/PracticeControls";
+import { feedbackSummary } from "@/lib/consultation/feedback";
 import { formatRupees, listPractitioners, missingForLive } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -34,7 +35,7 @@ export default async function PractitionersPage() {
   if (!member) redirect("/studio/login");
   if (!member.isSuperAdmin) redirect("/studio");
 
-  const practitioners = await listPractitioners();
+  const [practitioners, ratings] = await Promise.all([listPractitioners(), feedbackSummary()]);
   const { data: apps } = practitioners.length
     ? await createAdminSupabaseClient()
         .from("practitioner_applications")
@@ -75,6 +76,12 @@ export default async function PractitionersPage() {
                   <span className="ml-2 text-brand-gray">
                     {p.upcoming} upcoming · {formatRupees(p.feeMinor)} to them, {formatRupees(p.platformMinor)} to us per call
                   </span>
+                  {ratings.get(p.id) ? (
+                    <span className="mt-1 block text-right text-xs text-brand-gray">
+                      Client rating {ratings.get(p.id)!.averageRating.toFixed(1)} of 5 from {ratings.get(p.id)!.count} in 90 days
+                      {ratings.get(p.id)!.averageHeard ? `, felt listened to ${ratings.get(p.id)!.averageHeard!.toFixed(1)}` : ""}
+                    </span>
+                  ) : null}
                 </p>
               </header>
 
