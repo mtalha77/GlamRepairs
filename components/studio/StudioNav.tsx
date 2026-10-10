@@ -37,23 +37,34 @@ const STUDIO_ADMIN_LINKS = [
   { href: "/studio/gift-codes", label: "Gift codes" },
   // HANDOVER-51 — practitioner applications and invites.
   { href: "/studio/applications", label: "Applications" },
+  // HANDOVER-52 — rates, status, photographs, offboarding.
+  { href: "/studio/practitioners", label: "Practitioners" },
   { href: "/studio/admin/archive", label: "Archive" },
+] as const;
+
+/** A practitioner's seat sees only her own work (HANDOVER-52 §4.4). */
+const PRACTITIONER_LINKS = [
+  { href: "/studio/practice", label: "My practice" },
+  { href: "/studio/consultations", label: "Consultations" },
+  { href: "/studio/notifications", label: "Notifications" },
 ] as const;
 
 type StudioNavProps = {
   onNavigate?: () => void;
   includeSettings?: boolean;
   superAdmin?: boolean;
+  practitionerSeat?: boolean;
 };
 
 export default function StudioNav({
   onNavigate,
   includeSettings,
   superAdmin,
+  practitionerSeat,
 }: StudioNavProps) {
   const pathname = usePathname();
   const { unreadCount } = useStudioNotifications();
-  const links = [
+  const links = practitionerSeat ? PRACTITIONER_LINKS : [
     ...STUDIO_NAV_LINKS,
     ...(superAdmin ? STUDIO_ADMIN_LINKS : []),
     ...(includeSettings ? [{ href: "/studio/settings", label: "Settings" }] : []),

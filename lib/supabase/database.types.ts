@@ -64,6 +64,16 @@ export type Database = {
           timezone: string;
           created_at: string;
           updated_at: string;
+          kind: "practitioner" | "doctor";
+          max_per_day: number;
+          max_per_week: number;
+          payout_method: string | null;
+          payout_detail_ref: string | null;
+          profile_photo_verified: boolean;
+          approved_at: string | null;
+          offboarded_at: string | null;
+          suspended_reason: string | null;
+          probation_reports_remaining: number | null;
         };
         Insert: {
           id?: string;
@@ -82,6 +92,15 @@ export type Database = {
           timezone?: string;
           created_at?: string;
           updated_at?: string;
+          max_per_day?: number;
+          max_per_week?: number;
+          payout_method?: string | null;
+          payout_detail_ref?: string | null;
+          profile_photo_verified?: boolean;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          suspended_at?: string | null;
+          suspended_reason?: string | null;
         };
         Update: {
           user_id?: string | null;
@@ -99,6 +118,15 @@ export type Database = {
           timezone?: string;
           created_at?: string;
           updated_at?: string;
+          max_per_day?: number;
+          max_per_week?: number;
+          payout_method?: string | null;
+          payout_detail_ref?: string | null;
+          profile_photo_verified?: boolean;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          suspended_at?: string | null;
+          suspended_reason?: string | null;
         };
         Relationships: [];
       };
@@ -540,6 +568,32 @@ export type Database = {
           requested_by?: string | null;
         };
         Update: { resolved_at?: string | null; resolution_note?: string | null };
+        Relationships: [];
+      };
+      practitioner_rates: {
+        Row: {
+          id: string;
+          practitioner_id: string;
+          practitioner_fee_minor: number;
+          platform_fee_minor: number;
+          currency: string;
+          effective_from: string;
+          effective_to: string | null;
+          note: string | null;
+          set_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          practitioner_id: string;
+          practitioner_fee_minor: number;
+          platform_fee_minor: number;
+          currency?: string;
+          effective_from?: string;
+          effective_to?: string | null;
+          note?: string | null;
+          set_by?: string | null;
+        };
+        Update: { effective_to?: string | null };
         Relationships: [];
       };
       studio_members: {
@@ -2098,6 +2152,16 @@ export type Database = {
       };
     };
     Functions: {
+      /** HANDOVER-52 §3.5 — service role only. Refuses when the target is busy. */
+      reassign_appointment: {
+        Args: { p_appt: string; p_to: string; p_by: string };
+        Returns: undefined;
+      };
+      /** HANDOVER-52 §3.3 — service role only. Returns { moved, failed: [{appointment_id, starts_at, reason}] }. */
+      offboard_practitioner: {
+        Args: { p_profile: string; p_to: string; p_by: string; p_reason?: string | null };
+        Returns: { moved: number; failed: { appointment_id: string; starts_at: string; reason: string }[] };
+      };
       /** HANDOVER-52 — service role only. Rate in force at a moment, else the platform default. */
       rate_for: {
         Args: { p_practitioner: string; p_at?: string };

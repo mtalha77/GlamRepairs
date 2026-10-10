@@ -73,12 +73,20 @@ export async function listBookableSlots(settings?: ConsultationSettings): Promis
     .gte("starts_at", from)
     .lte("starts_at", to)
     .order("starts_at")
-    .limit(400);
+    .limit(1000);
   if (error) {
     console.error("[listBookableSlots]", error.message);
     return [];
   }
-  return (data ?? []).map((r) => ({ id: r.id, startsAt: r.starts_at, endsAt: r.ends_at }));
+  // With more than one practitioner the same time can be open twice. The
+  // client chooses a time, not a person (HANDOVER-52 §2.2), so show each
+  // time once and spread the bookings by picking one of them at random.
+  const byStart = new Map<string, { id: string; starts_at: string; ends_at: string }[]>();
+  for (const r of data ?? []) byStart.set(r.starts_at, [...(byStart.get(r.starts_at) ?? []), r]);
+  return [...byStart.values()].map((same) => {
+    const r = same[Math.floor(Math.random() * same.length)];
+    return { id: r.id, startsAt: r.starts_at, endsAt: r.ends_at };
+  });
 }
 
 export type LeadSlot = {
