@@ -454,12 +454,16 @@ export type Database = {
           revoked_at: string | null;
           revoked_by: string | null;
           is_test: boolean;
+          source: "studio" | "self";
+          requested_ip_hash: string | null;
         };
         Insert: never;
         Update: {
           application_id?: string | null;
           revoked_at?: string | null;
           revoked_by?: string | null;
+          source?: "studio" | "self";
+          requested_ip_hash?: string | null;
         };
         Relationships: [];
       };

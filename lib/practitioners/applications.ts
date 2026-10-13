@@ -50,6 +50,7 @@ export async function listInvites() {
     .from("practitioner_invites")
     .select("id, created_at, email, kind, expires_at, accepted_at, application_id, revoked_at, note")
     .eq("is_test", false)
+    .eq("source", "studio")
     .order("created_at", { ascending: false })
     .limit(50);
   return data ?? [];

@@ -59,13 +59,12 @@ const EMPTY: Fields = {
 
 const STEPS = ["Who you are", "Your qualification", "Documents", "Your photograph", "How you are paid"] as const;
 
-const DOC_KINDS = [
-  { value: "degree", label: "Degree" },
-  { value: "attestation", label: "HEC attestation" },
-  { value: "certificate", label: "Certificate" },
-  { value: "id", label: "CNIC" },
-  { value: "registration", label: "Registration" },
-  { value: "other", label: "Other" },
+/** Step 3, one slot per document, as in the 13 October design. */
+const DOC_SLOTS = [
+  { kind: "degree", label: "Degree or diploma certificate", required: true, many: false, help: "PDF or photograph, up to 10 MB. A clear phone photograph is fine." },
+  { kind: "attestation", label: "HEC attestation", required: false, many: false, help: "If you have it. It is never required." },
+  { kind: "certificate", label: "Other certificates", required: false, many: true, help: "Short courses, memberships, anything with a reference number." },
+  { kind: "id", label: "CNIC", required: true, many: false, help: "For payment records only. Never shown publicly, never shown to clients." },
 ] as const;
 
 const DOC_ACCEPT = "application/pdf,image/jpeg,image/png,image/webp";
@@ -95,7 +94,9 @@ export default function ApplicationSteps({
   const [fields, setFields] = useState<Fields>(initial ? { ...EMPTY, ...initial } : EMPTY);
   const [docs, setDocs] = useState<Doc[]>(initial?.documents ?? []);
   const [terms, setTerms] = useState(Boolean(initial));
-  const [docKind, setDocKind] = useState<string>(initial?.documents.some((d) => d.kind === "degree") ? "certificate" : "degree");
+  // Step 3: nothing leaves the browser until this is ticked, as in ConsentStep.
+  const [docsConsent, setDocsConsent] = useState(Boolean(initial?.documents.some((d) => d.kind !== "photo")));
+  const [justSaved, setJustSaved] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,6 +122,7 @@ export default function ApplicationSteps({
       if (!reply.ok) return setError(reply.error ?? "Something went wrong. Please try again.");
       if (next > 5) return setDone(true);
       setSaved((s) => Math.max(s, next));
+      setJustSaved(true);
       setStep(next);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
@@ -136,7 +138,7 @@ export default function ApplicationSteps({
     if (file.size > MAX_BYTES) return setError(`${file.name} is over 10 MB.`);
     setBusy(true);
     try {
-      const ticket = await call("upload", { kind: fileKind, name: file.name, size: file.size, type: file.type });
+      const ticket = await call("upload", { kind: fileKind, name: file.name, size: file.size, type: file.type, consent: fileKind === "photo" || docsConsent });
       if (!ticket.ok || !ticket.path || !ticket.uploadToken) return setError(ticket.error ?? "Could not prepare the upload.");
       const { error: upError } = await createBrowserSupabaseClient()
         .storage.from("practitioner-docs")
@@ -146,7 +148,7 @@ export default function ApplicationSteps({
       if (!recorded.ok) return setError(recorded.error ?? "The file arrived but could not be recorded.");
       setDocs(recorded.documents ?? []);
       if (fileKind === "photo") setPhotoPreview(URL.createObjectURL(file));
-      else if (fileKind === "degree") setDocKind("certificate");
+      setJustSaved(true);
     } catch {
       setError("Something went wrong. Please check your connection and try again.");
     } finally {
@@ -161,6 +163,7 @@ export default function ApplicationSteps({
     setBusy(false);
     if (!reply.ok) return setError(reply.error ?? "Could not remove the file.");
     setDocs(reply.documents ?? []);
+    setJustSaved(true);
   }
 
   if (done) {
@@ -199,7 +202,7 @@ export default function ApplicationSteps({
                 aria-current={n === step ? "step" : undefined}
                 className="flex min-h-12 w-full flex-col items-start gap-1 text-left disabled:cursor-default"
               >
-                <span className={`h-1.5 w-full rounded-full ${n <= saved ? "bg-brand-primary" : "bg-brand-lavender"}`} />
+                <span className={`h-1 w-full rounded-full ${n === step ? "bg-brand-primary" : n <= saved ? "bg-brand-accent" : "bg-brand-lavender/70"}`} />
                 <span className={`text-[11px] leading-tight sm:text-xs ${n === step ? "font-medium text-brand-primary" : "text-brand-gray"}`}>
                   <span className="sm:hidden">{n}</span>
                   <span className="hidden sm:inline">{label}</span>
@@ -268,48 +271,69 @@ export default function ApplicationSteps({
         {step === 3 ? (
           <>
             <p className="text-sm leading-relaxed text-brand-ink">
-              Your degree is the one we need. Add your HEC attestation if you have it, any certificates, and your CNIC.
-              PDF, JPG, PNG or WebP, up to 10 MB each. Only the studio&apos;s administrator can open them.
+              We check every degree before a practitioner takes a single client. That is the reason clients trust the
+              credentials on our site, so this step matters more than it looks.
             </p>
-            {documents.length ? (
-              <ul className="divide-y divide-brand-lavender/60 rounded-xl bg-white">
-                {documents.map((d) => (
-                  <li key={d.id} className="flex items-center justify-between gap-3 px-4 py-2 text-sm">
-                    <span className="min-w-0 truncate text-brand-ink">
-                      <span className="font-medium">{DOC_KINDS.find((k) => k.value === d.kind)?.label ?? "Document"}</span>
-                      <span className="text-brand-gray"> · {d.name}</span>
-                    </span>
-                    <button type="button" className="min-h-12 shrink-0 px-2 text-brand-error-strong underline" disabled={busy} onClick={() => remove(d.id)}>
-                      Remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <div className="flex flex-wrap items-end gap-3">
-              <label className="block">
-                <span className={formLabelClassName}>This file is</span>
-                <select value={docKind} onChange={(e) => setDocKind(e.target.value)} className={`${formInputClassName} min-h-12`}>
-                  {DOC_KINDS.map((k) => (
-                    <option key={k.value} value={k.value}>
-                      {k.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className={`${secondary} cursor-pointer`}>
-                {busy ? "Uploading…" : "Choose file"}
-                <input
-                  type="file"
-                  accept={DOC_ACCEPT}
-                  className="sr-only"
-                  disabled={busy}
-                  onChange={(e) => {
-                    void upload(e.target.files?.[0], docKind);
-                    e.target.value = "";
-                  }}
-                />
-              </label>
+            <label className="flex min-h-12 items-start gap-3 rounded-xl border border-brand-lavender/60 bg-white px-4 py-3 text-sm leading-relaxed text-brand-gray">
+              <input type="checkbox" checked={docsConsent} onChange={(e) => setDocsConsent(e.target.checked)} className="mt-1 h-5 w-5 shrink-0" />
+              <span>
+                <strong className="font-semibold text-brand-ink">I agree to GlamRepairs storing these documents to verify my credentials.</strong>{" "}
+                They are held in private storage, visible only to the studio&apos;s administrator. If my application is
+                unsuccessful they are deleted within 30 days.
+              </span>
+            </label>
+            <div className="space-y-3">
+              {DOC_SLOTS.map((slot) => {
+                const files = documents.filter((d) => d.kind === slot.kind);
+                const canAdd = slot.many || files.length === 0;
+                return (
+                  <div key={slot.kind} className="rounded-xl border-[1.5px] border-dashed border-brand-lavender bg-white p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-brand-ink">
+                          {slot.label}{" "}
+                          {slot.required ? (
+                            <span className="text-brand-primary" aria-label="required">*</span>
+                          ) : (
+                            <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-accent">Optional</span>
+                          )}
+                        </p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-brand-gray">{slot.help}</p>
+                      </div>
+                      {canAdd ? (
+                        <label
+                          className={`${secondary} ${docsConsent && !busy ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                          title={docsConsent ? undefined : "Tick the box above first"}
+                        >
+                          {busy ? "Uploading…" : files.length ? "Add another" : "Choose file"}
+                          <input
+                            type="file"
+                            accept={DOC_ACCEPT}
+                            className="sr-only"
+                            disabled={busy || !docsConsent}
+                            onChange={(e) => {
+                              void upload(e.target.files?.[0], slot.kind);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      ) : null}
+                    </div>
+                    {files.length ? (
+                      <ul className="mt-2 divide-y divide-brand-lavender/60 border-t border-brand-lavender/60">
+                        {files.map((d) => (
+                          <li key={d.id} className="flex items-center justify-between gap-3 text-sm">
+                            <span className="min-w-0 truncate text-brand-success-strong">✓ {d.name}</span>
+                            <button type="button" className="min-h-12 shrink-0 px-2 text-brand-error-strong underline" disabled={busy} onClick={() => remove(d.id)}>
+                              Remove
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           </>
         ) : null}
@@ -418,7 +442,12 @@ export default function ApplicationSteps({
             </button>
           ) : null}
           {step === 3 ? (
-            <button type="button" className={primary} disabled={busy || !documents.some((d) => d.kind === "degree")} onClick={() => save("documents", {}, 4)}>
+            <button
+              type="button"
+              className={primary}
+              disabled={busy || !documents.some((d) => d.kind === "degree") || !documents.some((d) => d.kind === "id")}
+              onClick={() => save("documents", {}, 4)}
+            >
               Continue
             </button>
           ) : null}
@@ -444,7 +473,10 @@ export default function ApplicationSteps({
             </button>
           ) : null}
         </div>
-        <p className="text-xs text-brand-gray">Saved after every step. Your invitation link brings you back here.</p>
+        <p className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-gray">
+          <span>Saved after every step. The link in your email brings you back here.</span>
+          {justSaved ? <span className="font-medium text-brand-success-strong">✓ Saved</span> : null}
+        </p>
       </div>
     </div>
   );

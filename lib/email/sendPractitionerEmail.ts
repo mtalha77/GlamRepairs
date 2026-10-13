@@ -6,6 +6,7 @@ import { escapeHtml, getResendConfig } from "@/lib/email/resendClient";
  * Practitioner onboarding emails — HANDOVER-51.
  *
  *   invite     a link to /join carrying the one-time token
+ *   continue   the same kind of link, asked for from /join by the applicant
  *   received   the application arrived; what happens next
  *   rejected   the decision, with the reviewer's note (never blank: the
  *              database refuses a rejection without one)
@@ -19,6 +20,7 @@ type Base = { toEmail: string; name: string | null };
 
 export type PractitionerEmail =
   | (Base & { kind: "invite"; joinUrl: string; expiresAt: string; note: string | null })
+  | (Base & { kind: "continue"; joinUrl: string; expiresAt: string })
   | (Base & { kind: "received" })
   | (Base & { kind: "rejected"; note: string })
   | (Base & { kind: "changes"; message: string; fields: string[]; editUrl: string })
@@ -57,6 +59,19 @@ function compose(e: PractitionerEmail): { subject: string; html: string; text: s
         subject: "Your invitation to apply to GlamRepairs",
         html: shell(name, `${lines.map(p).join("")}${e.note ? p(e.note) : ""}${button(e.joinUrl, "Start your application")}`),
         text: [`Hi ${name},`, "", ...lines, e.note ?? "", "", `Apply here: ${e.joinUrl}`].join("\n"),
+      };
+    }
+    case "continue": {
+      const expires = new Date(e.expiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+      const lines = [
+        "Here is your link to apply to join GlamRepairs as a practitioner.",
+        "The application is five short steps. It is saved after every step, so you can stop and come back to where you left off with this same link.",
+        `The link is for you only and works until ${expires}. If you did not ask for it, you can ignore this email.`,
+      ];
+      return {
+        subject: "Your GlamRepairs application link",
+        html: shell(name, `${lines.map(p).join("")}${button(e.joinUrl, "Continue your application")}`),
+        text: [`Hi ${name},`, "", ...lines, "", `Continue here: ${e.joinUrl}`].join("\n"),
       };
     }
     case "received": {

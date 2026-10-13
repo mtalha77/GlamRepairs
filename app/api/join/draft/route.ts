@@ -117,6 +117,8 @@ export async function POST(request: Request) {
     const size = Number(body.size);
     const name = String(body.name ?? "").slice(0, 200);
     if (!DOCUMENT_KINDS.includes(kind)) return fail("Choose what this file is.");
+    // Step 3 has its own consent box, ticked before any document leaves the browser.
+    if (kind !== "photo" && body.consent !== true) return fail("Please tick the box to agree to us storing your documents.");
     const allowed: readonly string[] = kind === "photo" ? PHOTO_MIME : ALLOWED_MIME;
     if (!allowed.includes(type)) return fail(kind === "photo" ? "The photograph must be a JPG, PNG or WebP." : "Only PDF, JPG, PNG or WebP files.");
     if (!(size > 0) || size > MAX_BYTES) return fail("Files must be under 10 MB.");
@@ -186,7 +188,8 @@ export async function POST(request: Request) {
 
   if (action === "documents") {
     const draft = await loadDraft(applicationId);
-    if (!draft?.documents.some((d) => d.kind === "degree")) return fail("Please add your degree. It is the one document we need.");
+    if (!draft?.documents.some((d) => d.kind === "degree")) return fail("Please add your degree certificate.");
+    if (!draft.documents.some((d) => d.kind === "id")) return fail("Please add your CNIC. It is for payment records only.");
     await advance(applicationId, 4);
     return NextResponse.json({ ok: true });
   }
@@ -205,6 +208,7 @@ export async function POST(request: Request) {
     if (!draft) return fail("Invalid request.", 400);
     if (draft.qualification.length < 3) return fail("Please finish step 2 first.");
     if (!draft.documents.some((d) => d.kind === "degree")) return fail("Please add your degree at step 3 first.");
+    if (!draft.documents.some((d) => d.kind === "id")) return fail("Please add your CNIC at step 3 first.");
     if (!draft.documents.some((d) => d.kind === "photo")) return fail("Please add your photograph at step 4 first.");
 
     const { data: app, error } = await admin
