@@ -88,32 +88,48 @@ export type PublicPractitioner = {
   bio: string;
   photo: string | null;
   left: boolean;
+  city: string | null;
+  yearsExperience: number | null;
+  specialisms: string[];
+  languages: string[];
+  nextAvailableAt: string | null;
 };
 
 /**
  * A practitioner's public author page, for one with no hand-written record
- * in lib/seo/authors.ts. Approved practitioners, and ones who have left, so
- * an old report byline still resolves (HANDOVER-52 §3.3). The photograph
- * only once the studio has checked it.
+ * in lib/seo/authors.ts. Only what she agreed to show (public_consent_at,
+ * through the practitioners_public view). Someone who has left keeps a
+ * minimal page so an old byline still resolves (HANDOVER-52 §3.3). The
+ * photograph only once the studio has checked it.
  */
 export async function publicPractitioner(slug: string): Promise<PublicPractitioner | null> {
   if (!/^[a-z0-9-]{2,80}$/.test(slug) || AUTHORS[slug]) return null;
   try {
-    const { data } = await createAdminSupabaseClient()
-      .from("practitioner_profiles")
-      .select("slug, full_name, title, credentials, bio, photo_url, profile_photo_verified, status")
-      .eq("slug", slug)
-      .in("status", ["approved", "offboarded"])
-      .maybeSingle();
-    if (!data) return null;
+    const admin = createAdminSupabaseClient();
+    const [{ data: live }, { data: row }] = await Promise.all([
+      admin.from("practitioners_public").select("*").eq("slug", slug).maybeSingle(),
+      admin
+        .from("practitioner_profiles")
+        .select("slug, full_name, title, credentials, bio, photo_url, profile_photo_verified, status, public_consent_at")
+        .eq("slug", slug)
+        .in("status", ["approved", "offboarded"])
+        .not("public_consent_at", "is", null)
+        .maybeSingle(),
+    ]);
+    if (!row) return null;
     return {
-      slug: data.slug,
-      name: data.full_name,
-      title: data.title,
-      credentials: data.credentials,
-      bio: data.bio ?? "",
-      photo: data.profile_photo_verified ? data.photo_url : null,
-      left: data.status === "offboarded",
+      slug: row.slug,
+      name: row.full_name,
+      title: row.title,
+      credentials: row.credentials,
+      bio: row.bio ?? "",
+      photo: row.profile_photo_verified ? row.photo_url : null,
+      left: row.status === "offboarded",
+      city: live?.city ?? null,
+      yearsExperience: live?.years_experience ?? null,
+      specialisms: live?.specialisms ?? [],
+      languages: live?.languages ?? [],
+      nextAvailableAt: live?.accepting_clients ? (live.next_available_at ?? null) : null,
     };
   } catch {
     return null;

@@ -2,9 +2,17 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { WeeklyHours } from "@/components/consultation/ConsultationsAdmin";
-import { BioForm, CannotAttendButton, LeaveButton, PhotoUpload } from "@/components/studio/practice/PracticeControls";
+import {
+  BioForm,
+  CannotAttendButton,
+  DailyLimitForm,
+  LeaveButton,
+  PhotoUpload,
+  PublicProfileForm,
+  TimeOffControls,
+} from "@/components/studio/practice/PracticeControls";
 import { loadConsultationAdmin } from "@/lib/consultation/admin";
-import { formatSlot, TZ_LABEL } from "@/lib/consultation/format";
+import { formatDay, formatSlot, TZ_LABEL } from "@/lib/consultation/format";
 import {
   earningsSummary,
   formatRupees,
@@ -15,6 +23,7 @@ import {
 } from "@/lib/practitioners/roster";
 import { listOwnPayouts } from "@/lib/practitioners/payouts";
 import { requireStudioMember } from "@/lib/studio/member";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /**
  * Studio → My practice — HANDOVER-52 §4.3 / §4.4.
@@ -69,13 +78,25 @@ export default async function PracticePage() {
     );
   }
 
-  const [data, earnings, windows, degree, payouts] = await Promise.all([
+  const [data, earnings, windows, degree, payouts, { data: blackouts }] = await Promise.all([
     loadConsultationAdmin({ practitionerId: profile.id }),
     earningsSummary(profile.id),
     weeklyWindowsFor(profile.id),
     hasVerifiedDegree(profile.id),
     listOwnPayouts(profile.id),
+    createAdminSupabaseClient()
+      .from("practitioner_blackouts")
+      .select("id, starts_at, ends_at, reason")
+      .eq("practitioner_id", profile.id)
+      .gte("ends_at", new Date().toISOString())
+      .order("starts_at"),
   ]);
+  // A block runs to midnight after its last day; show the last day itself.
+  const timeOff = (blackouts ?? []).map((b) => {
+    const first = formatDay(b.starts_at);
+    const last = formatDay(new Date(new Date(b.ends_at).getTime() - 1));
+    return { id: b.id, label: first === last ? first : `${first} to ${last}`, reason: b.reason };
+  });
   const gone = profile.status === "offboarded";
   const missing = missingForLive({
     photoUrl: profile.photo_url,
@@ -83,6 +104,7 @@ export default async function PracticePage() {
     bio: profile.bio ?? "",
     hasVerifiedDegree: degree,
     payoutMethod: profile.payout_method,
+    publicConsent: Boolean(profile.public_consent_at),
   });
   const upcoming = data.appointments.filter((a) => !a.ended);
 
@@ -173,7 +195,12 @@ export default async function PracticePage() {
                 <span className="text-brand-ink">
                   {p.period_start.slice(0, 7)} · {formatRupees(p.total_minor)}
                 </span>
-                <span className="text-brand-gray">{p.status === "paid" ? `Paid, reference ${p.reference}` : "Approved, payment on its way"}</span>
+                <span className="text-brand-gray">
+                  {p.status === "paid" ? `Paid, reference ${p.reference}` : "Approved, payment on its way"} ·{" "}
+                  <Link href={`/studio/practice/statements/${p.id}`} className="text-brand-primary underline">
+                    Statement
+                  </Link>
+                </span>
               </li>
             ))}
           </ul>
@@ -191,8 +218,32 @@ export default async function PracticePage() {
             <BioForm initial={profile.bio ?? ""} />
           </Card>
 
+          <Card title="Your public profile">
+            <p className="mb-3 text-sm text-brand-gray">
+              {profile.public_consent_at
+                ? "Shown on the website. You agreed on " + formatDay(profile.public_consent_at) + "."
+                : "Not shown anywhere yet. Nothing about you appears on the website until you tick the box below."}
+            </p>
+            <PublicProfileForm
+              city={profile.city ?? ""}
+              yearsExperience={profile.years_experience === null ? "" : String(profile.years_experience)}
+              specialisms={(profile.specialisms ?? []).join(", ")}
+              languages={(profile.languages ?? []).join(", ")}
+              consented={Boolean(profile.public_consent_at)}
+            />
+          </Card>
+
           <Card title="Your hours">
+            <p className="mb-3 text-sm text-brand-gray">Clients can only book inside these hours. Change them whenever you like.</p>
             <WeeklyHours initial={windows} defaultSlot={data.defaultSlotMinutes} readOnly={false} practitionerId={profile.id} />
+            <div className="mt-5 border-t border-brand-lavender/60 pt-4">
+              <DailyLimitForm initial={profile.max_per_day} />
+            </div>
+          </Card>
+
+          <Card title="Time off">
+            <p className="mb-3 text-sm text-brand-gray">Block whole days, for a wedding or a holiday, and no times are offered on them.</p>
+            <TimeOffControls blocks={timeOff} />
           </Card>
 
           <Card title="Leaving GlamRepairs">

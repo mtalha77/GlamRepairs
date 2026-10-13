@@ -232,7 +232,7 @@ export async function approvePractitionerApplication(input: {
   const admin = createAdminSupabaseClient();
   const { data: current } = await admin
     .from("practitioner_applications")
-    .select("status, submitted_at, payout_bank, payout_account_title, payout_reference")
+    .select("status, submitted_at, payout_bank, payout_account_title, payout_reference, city, years_experience")
     .eq("id", input.id)
     .maybeSingle();
   if (!current) return { ok: false, error: "Application not found." };
@@ -262,9 +262,21 @@ export async function approvePractitionerApplication(input: {
 async function carryOverToProfile(
   profileId: string,
   applicationId: string,
-  app: { payout_bank: string | null; payout_account_title: string | null; payout_reference: string | null },
+  app: {
+    payout_bank: string | null;
+    payout_account_title: string | null;
+    payout_reference: string | null;
+    city: string | null;
+    years_experience: number | null;
+  },
 ) {
   const admin = createAdminSupabaseClient();
+  // Prefilled for her public profile; nothing is shown until she agrees.
+  await admin
+    .from("practitioner_profiles")
+    .update({ city: app.city, years_experience: app.years_experience })
+    .eq("id", profileId)
+    .is("city", null);
   if (app.payout_bank && app.payout_account_title) {
     await admin
       .from("practitioner_profiles")

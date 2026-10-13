@@ -131,6 +131,7 @@ export async function makePractitionerLive(id: string): Promise<PractitionerActi
     if (m.includes("photograph")) return { ok: false, error: "Tick the photograph as checked first." };
     if (m.includes("payout method")) return { ok: false, error: "Record a payout method first." };
     if (m.includes("approved_needs_detail")) return { ok: false, error: "They need a photograph and a bio of more than 80 characters." };
+    if (m.includes("public_needs_consent")) return { ok: false, error: "They have not agreed to their profile being shown yet. They switch it on in My practice." };
     return { ok: false, error: m };
   }
   revalidate();
@@ -285,4 +286,134 @@ async function offboard(profileId: string, by: string, reason: string): Promise<
       ? `Done. ${data?.moved ?? 0} moved to Ayma; ${failed.length} need assigning in Consultations.`
       : `Done. ${data?.moved ?? 0} booked ${data?.moved === 1 ? "consultation has" : "consultations have"} been moved to Ayma.`,
   };
+}
+
+// ── Her own hours, limit, time off and public profile ──────────────────
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** Midnight Pakistan time (no daylight saving) at the start of a date. */
+const pktMidnight = (date: string) => new Date(`${date}T00:00:00+05:00`);
+
+async function refreshOpenSlots() {
+  const { error } = await createAdminSupabaseClient().rpc("refresh_open_slots", { p_days: 60 });
+  if (error) console.error("[refresh_open_slots]", error.message);
+}
+
+/** The most consultations she will take in a day (§3.4). Her own call, within the platform's ceiling. */
+export async function setOwnDailyLimit(limit: number): Promise<PractitionerActionResult> {
+  const g = await self();
+  if ("error" in g) return { ok: false, error: g.error as string };
+  if (!Number.isInteger(limit) || limit < 1 || limit > 15) return { ok: false, error: "Choose between 1 and 15 a day." };
+  const { error } = await createAdminSupabaseClient()
+    .from("practitioner_profiles")
+    .update({ max_per_day: limit, updated_at: new Date().toISOString() })
+    .eq("id", g.profile.id);
+  if (error) return { ok: false, error: error.message };
+  await refreshOpenSlots();
+  revalidate();
+  return { ok: true, message: `Saved. No more than ${limit} ${limit === 1 ? "consultation" : "consultations"} will be offered on any one day.` };
+}
+
+/**
+ * Days off, whole Pakistan days. Refused while she has bookings inside
+ * them: those are handed on first with "I can't attend", so nothing booked
+ * is ever silently left without a practitioner.
+ */
+export async function addOwnTimeOff(input: { from: string; to: string; reason: string }): Promise<PractitionerActionResult> {
+  const g = await self();
+  if ("error" in g) return { ok: false, error: g.error as string };
+  if (!DATE.test(input.from) || !DATE.test(input.to)) return { ok: false, error: "Choose the first and last day." };
+  const startsAt = pktMidnight(input.from);
+  const endsAt = new Date(pktMidnight(input.to).getTime() + 86_400_000);
+  if (endsAt <= startsAt) return { ok: false, error: "The last day cannot be before the first." };
+  if (endsAt.getTime() - startsAt.getTime() > 120 * 86_400_000) return { ok: false, error: "Block at most 120 days at a time." };
+
+  const admin = createAdminSupabaseClient();
+  const { count } = await admin
+    .from("appointments")
+    .select("id", { count: "exact", head: true })
+    .eq("practitioner_id", g.profile.id)
+    .eq("status", "scheduled")
+    .lt("starts_at", endsAt.toISOString())
+    .gt("ends_at", startsAt.toISOString());
+  if (count) {
+    return {
+      ok: false,
+      error: `You have ${count} booked ${count === 1 ? "consultation" : "consultations"} in those days. Use "I can't attend" on ${count === 1 ? "it" : "each one"} first, then block the days.`,
+    };
+  }
+  const { error } = await admin.from("practitioner_blackouts").insert({
+    practitioner_id: g.profile.id,
+    starts_at: startsAt.toISOString(),
+    ends_at: endsAt.toISOString(),
+    reason: input.reason.trim().slice(0, 200) || null,
+  });
+  if (error) return { ok: false, error: error.message };
+  await refreshOpenSlots();
+  revalidate();
+  return { ok: true, message: "Blocked. No times are offered on those days." };
+}
+
+export async function removeOwnTimeOff(id: string): Promise<PractitionerActionResult> {
+  const g = await self();
+  if ("error" in g) return { ok: false, error: g.error as string };
+  const { data, error } = await createAdminSupabaseClient()
+    .from("practitioner_blackouts")
+    .delete()
+    .eq("id", id)
+    .eq("practitioner_id", g.profile.id)
+    .select("id");
+  if (error) return { ok: false, error: error.message };
+  if (!data?.length) return { ok: false, error: "That time off is not yours to remove." };
+  await refreshOpenSlots();
+  revalidate();
+  return { ok: true, message: "Removed. Those days are offered again." };
+}
+
+const PUBLIC_CONSENT_VERSION = "practice-2026-10";
+
+/**
+ * What appears about her on the site, and her agreement to it. Nothing is
+ * shown until she agrees; while she is taking clients the profile has to
+ * stay visible (the database enforces it), so withdrawing means pausing.
+ */
+export async function saveOwnPublicProfile(input: {
+  city: string;
+  yearsExperience: string;
+  specialisms: string;
+  languages: string;
+  consent: boolean;
+}): Promise<PractitionerActionResult> {
+  const g = await self();
+  if ("error" in g) return { ok: false, error: g.error as string };
+  const list = (v: string) =>
+    [...new Set(v.split(",").map((x) => x.trim()).filter(Boolean))].slice(0, 8).map((x) => x.slice(0, 40));
+  const years = input.yearsExperience.trim() === "" ? null : Number(input.yearsExperience);
+  if (years !== null && (!Number.isInteger(years) || years < 0 || years > 60)) return { ok: false, error: "Years of experience must be a whole number." };
+
+  const p = g.profile;
+  const taking = p.status === "approved" && p.accepting_clients;
+  if (!input.consent && taking) {
+    return { ok: false, error: "While you are taking clients your profile stays visible. To hide it, ask the studio to pause you first." };
+  }
+  const now = new Date().toISOString();
+  const { error } = await createAdminSupabaseClient()
+    .from("practitioner_profiles")
+    .update({
+      city: input.city.trim().slice(0, 80) || null,
+      years_experience: years,
+      specialisms: list(input.specialisms),
+      languages: list(input.languages),
+      ...(input.consent
+        ? p.public_consent_at
+          ? {}
+          : { public_consent_at: now, public_consent_version: PUBLIC_CONSENT_VERSION }
+        : { public_consent_at: null, public_consent_version: null }),
+      updated_at: now,
+    })
+    .eq("id", p.id);
+  if (error) return { ok: false, error: error.message };
+  revalidate();
+  revalidatePath(`/authors/${p.slug}`);
+  return { ok: true, message: input.consent ? "Saved. This is what clients see about you." : "Saved. Nothing about you is shown on the site." };
 }

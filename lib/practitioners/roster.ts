@@ -26,6 +26,7 @@ export type PractitionerRow = {
   feeMinor: number;
   platformMinor: number;
   upcoming: number;
+  publicConsent: boolean;
 };
 
 /**
@@ -100,6 +101,7 @@ export async function listPractitioners(): Promise<PractitionerRow[]> {
         feeMinor: rate?.[0]?.practitioner_fee_minor ?? 0,
         platformMinor: rate?.[0]?.platform_fee_minor ?? 0,
         upcoming: upcomingCount.get(p.id) ?? 0,
+        publicConsent: Boolean(p.public_consent_at),
       };
     }),
   );
@@ -157,6 +159,7 @@ export function missingForLive(p: {
   bio: string;
   hasVerifiedDegree: boolean;
   payoutMethod: string | null;
+  publicConsent?: boolean;
 }): string[] {
   const missing: string[] = [];
   if (!p.photoUrl) missing.push("A profile photograph");
@@ -164,6 +167,7 @@ export function missingForLive(p: {
   if (p.bio.trim().length <= 80) missing.push("A bio of more than 80 characters");
   if (!p.hasVerifiedDegree) missing.push("A verified degree");
   if (!p.payoutMethod) missing.push("A payout method");
+  if (p.publicConsent === false) missing.push("Agreement to show the profile on the website");
   return missing;
 }
 
