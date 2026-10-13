@@ -69,6 +69,12 @@ export type Database = {
           max_per_week: number;
           payout_method: string | null;
           payout_detail_ref: string | null;
+          city: string | null;
+          years_experience: number | null;
+          specialisms: string[];
+          languages: string[];
+          public_consent_at: string | null;
+          public_consent_version: string | null;
           profile_photo_verified: boolean;
           approved_at: string | null;
           offboarded_at: string | null;
@@ -96,6 +102,12 @@ export type Database = {
           max_per_week?: number;
           payout_method?: string | null;
           payout_detail_ref?: string | null;
+          city?: string | null;
+          years_experience?: number | null;
+          specialisms?: string[];
+          languages?: string[];
+          public_consent_at?: string | null;
+          public_consent_version?: string | null;
           profile_photo_verified?: boolean;
           approved_at?: string | null;
           approved_by?: string | null;
@@ -122,6 +134,12 @@ export type Database = {
           max_per_week?: number;
           payout_method?: string | null;
           payout_detail_ref?: string | null;
+          city?: string | null;
+          years_experience?: number | null;
+          specialisms?: string[];
+          languages?: string[];
+          public_consent_at?: string | null;
+          public_consent_version?: string | null;
           profile_photo_verified?: boolean;
           approved_at?: string | null;
           approved_by?: string | null;
@@ -1914,6 +1932,28 @@ export type Database = {
       };
     };
     Views: {
+      /** Approved practitioners who agreed to be shown (migration 20261013174559). */
+      practitioners_public: {
+        Row: {
+          id: string;
+          slug: string;
+          full_name: string;
+          title: string;
+          credentials: string;
+          photo_url: string | null;
+          bio: string | null;
+          kind: string;
+          city: string | null;
+          years_experience: number | null;
+          specialisms: string[];
+          languages: string[];
+          reg_body: string | null;
+          reg_no: string | null;
+          accepting_clients: boolean;
+          next_available_at: string | null;
+        };
+        Relationships: [];
+      };
       /** HANDOVER-51. Open applications first; filters deleted and test rows. */
       practitioner_application_queue: {
         Row: {

@@ -5,11 +5,15 @@ import { useState, useTransition } from "react";
 
 import { formInputClassName } from "@/components/ui/fieldStyles";
 import {
+  addOwnTimeOff,
   cannotAttend,
   leaveGlamRepairs,
   makePractitionerLive,
   offboardPractitionerAsAdmin,
   reassignAppointment,
+  removeOwnTimeOff,
+  saveOwnPublicProfile,
+  setOwnDailyLimit,
   setPractitionerRate,
   suspendPractitioner,
   updateOwnBio,
@@ -320,6 +324,117 @@ export function ReassignControl({
         </button>
       </div>
       <Feedback result={result} />
+    </div>
+  );
+}
+
+// ── Her limit, time off and public profile ─────────────────────────────
+
+export function DailyLimitForm({ initial }: { initial: number }) {
+  const [limit, setLimit] = useState(String(initial));
+  const { result, pending, run } = useAction();
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-brand-gray">Most consultations in a day</span>
+          <input type="number" min={1} max={15} value={limit} onChange={(e) => setLimit(e.target.value)} className={`${formInputClassName} w-28`} />
+        </label>
+        <button type="button" className={ghost} disabled={pending} onClick={() => run(() => setOwnDailyLimit(Number(limit)))}>
+          {pending ? "Saving…" : "Save limit"}
+        </button>
+      </div>
+      <Feedback result={result} />
+    </div>
+  );
+}
+
+export function TimeOffControls({ blocks }: { blocks: { id: string; label: string; reason: string | null }[] }) {
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [reason, setReason] = useState("");
+  const { result, pending, run } = useAction();
+  return (
+    <div className="space-y-3">
+      {blocks.length ? (
+        <ul className="divide-y divide-brand-lavender/60 text-sm">
+          {blocks.map((b) => (
+            <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+              <span className="text-brand-ink">
+                {b.label}
+                {b.reason ? <span className="text-brand-gray"> · {b.reason}</span> : null}
+              </span>
+              <button type="button" className={ghost} disabled={pending} onClick={() => run(() => removeOwnTimeOff(b.id))}>
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-brand-gray">No time off booked.</p>
+      )}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-brand-gray">First day</span>
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={formInputClassName} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-brand-gray">Last day</span>
+          <input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className={formInputClassName} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-brand-gray">Note (optional)</span>
+          <input value={reason} maxLength={200} onChange={(e) => setReason(e.target.value)} className={formInputClassName} />
+        </label>
+      </div>
+      <Feedback result={result} />
+      <button type="button" className={primary} disabled={pending || !from || !to} onClick={() => run(() => addOwnTimeOff({ from, to, reason }))}>
+        {pending ? "Saving…" : "Block these days"}
+      </button>
+    </div>
+  );
+}
+
+export function PublicProfileForm(props: {
+  city: string;
+  yearsExperience: string;
+  specialisms: string;
+  languages: string;
+  consented: boolean;
+}) {
+  const [v, setV] = useState(props);
+  const { result, pending, run } = useAction();
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-brand-gray">City you practise in</span>
+          <input value={v.city} onChange={(e) => setV({ ...v, city: e.target.value })} className={formInputClassName} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-brand-gray">Years of experience</span>
+          <input inputMode="numeric" value={v.yearsExperience} onChange={(e) => setV({ ...v, yearsExperience: e.target.value })} className={formInputClassName} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-brand-gray">Specialisms (comma separated)</span>
+          <input value={v.specialisms} placeholder="e.g. Acne, Pigmentation" onChange={(e) => setV({ ...v, specialisms: e.target.value })} className={formInputClassName} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-brand-gray">Languages (comma separated)</span>
+          <input value={v.languages} onChange={(e) => setV({ ...v, languages: e.target.value })} className={formInputClassName} />
+        </label>
+      </div>
+      <label className="flex min-h-12 items-start gap-3 rounded-xl border border-brand-lavender/60 px-4 py-3 text-sm leading-relaxed text-brand-ink">
+        <input type="checkbox" checked={v.consented} onChange={(e) => setV({ ...v, consented: e.target.checked })} className="mt-1 h-5 w-5 shrink-0" />
+        <span>
+          Show my profile on the GlamRepairs website: my name, photograph, title, qualification, bio, years of experience,
+          city, specialisms, languages and when I am next available. Never my CNIC, documents, phone number or address.
+        </span>
+      </label>
+      <Feedback result={result} />
+      <button type="button" className={primary} disabled={pending} onClick={() => run(() => saveOwnPublicProfile({ ...v, consent: v.consented }))}>
+        {pending ? "Saving…" : "Save profile"}
+      </button>
     </div>
   );
 }

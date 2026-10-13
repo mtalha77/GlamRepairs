@@ -8,6 +8,7 @@ import { getAuthor, listAuthors } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph, personSchema } from "@/lib/seo/schema";
 import { SITE, canonicalOg } from "@/lib/seo/site";
 import { getTitleSuffix } from "@/lib/seo/pageSeo";
+import { formatSlot } from "@/lib/consultation/format";
 import { publicPractitioner, type PublicPractitioner } from "@/lib/practitioners/authorship";
 
 /**
@@ -234,8 +235,35 @@ function PractitionerAuthor({ p }: { p: PublicPractitioner }) {
           <h1 className="font-[family-name:var(--font-playfair)] text-4xl">{p.name}</h1>
           <p className="mt-1 text-black/70">{p.title}</p>
           <p className="mt-1 text-sm text-black/60">{p.credentials}</p>
+          {p.yearsExperience || p.city ? (
+            <p className="mt-1 text-sm text-black/60">
+              {[p.yearsExperience ? `${p.yearsExperience} years of practice` : null, p.city].filter(Boolean).join(" · ")}
+            </p>
+          ) : null}
         </div>
       </header>
+      {p.specialisms.length || p.languages.length || p.nextAvailableAt ? (
+        <dl className="mt-8 grid gap-3 text-sm sm:grid-cols-3">
+          {p.specialisms.length ? (
+            <div>
+              <dt className="text-black/50">Specialisms</dt>
+              <dd className="mt-1 text-black/80">{p.specialisms.join(", ")}</dd>
+            </div>
+          ) : null}
+          {p.languages.length ? (
+            <div>
+              <dt className="text-black/50">Languages</dt>
+              <dd className="mt-1 text-black/80">{p.languages.join(", ")}</dd>
+            </div>
+          ) : null}
+          {p.nextAvailableAt ? (
+            <div>
+              <dt className="text-black/50">Next available</dt>
+              <dd className="mt-1 text-black/80">{formatSlot(p.nextAvailableAt)}</dd>
+            </div>
+          ) : null}
+        </dl>
+      ) : null}
       {p.bio ? (
         <section className="mt-10 text-lg leading-relaxed text-black/80">
           <p>{p.bio}</p>

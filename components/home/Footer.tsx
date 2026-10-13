@@ -290,12 +290,19 @@ export default function Footer() {
           <div className="mt-8 border-t border-brand-primary/15 pt-4">
             <div className="flex flex-col gap-2 text-xs text-brand-ink sm:flex-row sm:items-center sm:justify-between">
               <p>© 2026 Glam Repairs. All rights reserved.</p>
-              <div className="flex gap-5">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                 <Link href="/privacy" className="inline-flex min-h-11 items-center transition-colors hover:text-brand-primary sm:min-h-0">
                   Privacy policy
                 </Link>
                 <Link href="/terms" className="inline-flex min-h-11 items-center transition-colors hover:text-brand-primary sm:min-h-0">
                   Terms &amp; Conditions
+                </Link>
+                {/* Practitioner recruitment: the page is noindex, so a link here sends people, not crawl weight. */}
+                <Link
+                  href="/join"
+                  className="inline-flex min-h-11 items-center rounded-full border border-brand-primary px-3.5 font-semibold text-brand-primary transition-colors hover:bg-brand-primary hover:text-white sm:min-h-8"
+                >
+                  Join as a practitioner
                 </Link>
               </div>
             </div>
