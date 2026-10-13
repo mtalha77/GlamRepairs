@@ -67,7 +67,7 @@ export async function issuePractitionerInvite(input: {
 
   const { data: row } = await admin.from("practitioner_invites").select("expires_at").eq("id", issued.invite_id).maybeSingle();
   // The plaintext token exists only here, on its way into the email.
-  const joinUrl = `${getPublicAppUrl()}/join?token=${encodeURIComponent(issued.token)}`;
+  const joinUrl = `${getPublicAppUrl()}/join/apply?token=${encodeURIComponent(issued.token)}`;
   const sent = await sendPractitionerEmail({
     kind: "invite",
     toEmail: email,
