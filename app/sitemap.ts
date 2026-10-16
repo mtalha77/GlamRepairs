@@ -54,6 +54,8 @@ const STATIC_ROUTES: {
   { path: "/blog", priority: 0.8, changeFrequency: "weekly" },
   { path: "/about", priority: 0.7, changeFrequency: "monthly" },
   { path: "/credentials", priority: 0.5, changeFrequency: "monthly" },
+  // HANDOVER-54 §2.2 — practitioner recruitment, fed by the careers articles.
+  { path: "/join", priority: 0.6, changeFrequency: "monthly" },
   { path: "/contact", priority: 0.5, changeFrequency: "yearly" },
   { path: "/editorial-policy", priority: 0.4, changeFrequency: "yearly" },
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" },

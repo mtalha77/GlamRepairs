@@ -16,13 +16,27 @@ import { getWhatsAppChatLink } from "@/lib/funnel/whatsapp";
  * off (both in her dashboard), the note releasing the fee, and nothing
  * public until she agrees. The earnings figure is a calculator with its
  * working shown and a plain statement that it is not a forecast. No cities
- * (Talha, 13 October). noindex, nofollow.
+ * (Talha, 13 October).
+ *
+ * Indexable since HANDOVER-54 §2.2: articles now feed it, so Google has to be
+ * able to show it. The application (/join/apply) and its steps stay noindex.
+ * Its own share card (§2.3) so a WhatsApp preview pitches the work, not the
+ * client service.
  */
 
+const TITLE = "Work from home as a skincare practitioner";
+const SHARE_TITLE = "Work from home as a skincare practitioner | GlamRepairs";
+const DESCRIPTION =
+  "Use your cosmetology qualification from home, in the evening. Rs 2,000 per 15 minute consultation, paid monthly by the 5th. Set your own hours.";
+const SHARE_IMAGE = { url: "/join/opengraph-image", width: 1200, height: 630, alt: "GlamRepairs for practitioners" };
+
 export const metadata: Metadata = {
-  title: "Work from home as a skincare practitioner",
-  description: "Use your qualification from home, in the evening. Rs 2,000 per 15 minute consultation, paid monthly by the 5th.",
-  robots: { index: false, follow: false },
+  title: TITLE,
+  description: DESCRIPTION,
+  robots: { index: true, follow: true },
+  alternates: { canonical: "/join" },
+  openGraph: { type: "website", url: "/join", title: SHARE_TITLE, description: DESCRIPTION, images: [SHARE_IMAGE] },
+  twitter: { card: "summary_large_image", title: SHARE_TITLE, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
 };
 
 const APPLY = "/join/apply";

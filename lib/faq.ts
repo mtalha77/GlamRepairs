@@ -101,8 +101,8 @@ export const FAQS: Faq[] = [
     fromPricing: ({ paid, videoMinutes }) =>
       `Skin Transform is ${paid}, one payment, and includes a ${videoMinutes} ` +
       "minute video consultation with your practitioner. Skin Starter is " +
-      "free while the offer lasts. Prices are shown in your local currency " +
-      "if you are outside Pakistan.",
+      "free while the offer lasts. Outside Pakistan, you can switch the " +
+      "prices to your own currency.",
   },
   {
     id: "how-to-pay",
@@ -111,7 +111,7 @@ export const FAQS: Faq[] = [
     tags: ["home", "pricing", "contact"],
     a:
       "By bank transfer. After you complete the assessment we show you the " +
-      "account details and a reference number, and you send the payment " +
+      "account details, and you send the payment " +
       "screenshot on WhatsApp. We confirm it and your assessment begins.",
   },
   {
@@ -233,8 +233,8 @@ export const FAQS: Faq[] = [
     group: "practical",
     tags: ["home", "pricing", "contact"],
     a:
-      "Yes. The assessment is online, and prices are shown in your local " +
-      "currency. Advice is written for the climate and water conditions " +
+      "Yes. The assessment is online, and you can switch the prices to your " +
+      "own currency. Advice is written for the climate and water conditions " +
       "where you actually live.",
   },
   {
