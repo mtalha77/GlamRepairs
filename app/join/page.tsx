@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import Logo from "@/components/home/Logo";
 import EarningsCalculator from "@/components/join/EarningsCalculator";
-import { getWhatsAppChatLink } from "@/lib/funnel/whatsapp";
+import { getWhatsAppChatLink, getWhatsAppDisplayNumber } from "@/lib/funnel/whatsapp";
 
 /**
  * /join — work from home as a skincare practitioner (HANDOVER-52 Part 5,
@@ -24,14 +24,17 @@ import { getWhatsAppChatLink } from "@/lib/funnel/whatsapp";
  * client service.
  */
 
-const TITLE = "Work from home as a skincare practitioner";
-const SHARE_TITLE = "Work from home as a skincare practitioner | GlamRepairs";
+const TITLE = "Beautician Jobs From Home: Rs 2,000 per Consultation";
+const SHARE_TITLE = "Beautician Jobs From Home: Rs 2,000 per Consultation | GlamRepairs";
 const DESCRIPTION =
-  "Use your cosmetology qualification from home, in the evening. Rs 2,000 per 15 minute consultation, paid monthly by the 5th. Set your own hours.";
+  "For qualified beauticians: read skin photographs and take video consultations from home, in the evening. Rs 2,000 per 15 minute consultation, paid monthly.";
 const SHARE_IMAGE = { url: "/join/opengraph-image", width: 1200, height: 630, alt: "GlamRepairs for practitioners" };
 
 export const metadata: Metadata = {
-  title: TITLE,
+  // HANDOVER-55 §2.2: "beautician" is what people search; "cosmetology" has
+  // no volume as a job term. Absolute, so the brand suffix does not push the
+  // title past what a result shows.
+  title: { absolute: TITLE },
   description: DESCRIPTION,
   robots: { index: true, follow: true },
   alternates: { canonical: "/join" },
@@ -40,7 +43,6 @@ export const metadata: Metadata = {
 };
 
 const APPLY = "/join/apply";
-const WHATSAPP_DISPLAY = "0335 5880333";
 
 const em = "font-serif font-medium italic text-brand-primary";
 const kicker = "text-[12.5px] font-bold uppercase tracking-[0.15em] text-brand-primary";
@@ -582,7 +584,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
             <p className="mt-5 text-[13px] text-white/75">
               Questions first?{" "}
               <a href={whatsapp} className="underline underline-offset-2">
-                WhatsApp {WHATSAPP_DISPLAY}
+                WhatsApp {getWhatsAppDisplayNumber()}
               </a>
             </p>
           </div>

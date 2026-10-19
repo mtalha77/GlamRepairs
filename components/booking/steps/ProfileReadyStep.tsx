@@ -121,7 +121,7 @@ function getGlowZone(score: number) {
       title: "Getting there",
       bg: "#F9B233",
       description:
-        "You have a solid foundation. A few consistent habits — better hydration, sleep, and daily sunscreen — will noticeably improve your skin health.",
+        "You have a solid foundation. A few consistent habits (better hydration, sleep, and daily sunscreen) will noticeably improve your skin health.",
     };
   }
   return {

@@ -46,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata("/about", {
     title: "About Glam Repairs, Skin Care for Pakistan",
     description:
-      "Glam Repairs provides online skin consultations in Pakistan — a personalised " +
+      "Glam Repairs provides online skin consultations in Pakistan: a personalised " +
     "skincare routine built for your skin, your climate and your budget, reviewed " +
     "by a certified aesthetics practitioner. No brand bias, no AI-generated advice.",
   });

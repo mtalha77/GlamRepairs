@@ -59,7 +59,7 @@ export const dynamic = "force-dynamic";
 
 const DESCRIPTION =
   "An honest comparison of an online skin assessment against a clinic visit, " +
-  "an online doctor, buying products, and free advice — with sources, and " +
+  "an online doctor, buying products, and free advice, with sources, and " +
   "including the two things a doctor does that we cannot.";
 
 /*
@@ -82,7 +82,7 @@ const FAQS = [
   {
     question: "Is a Glam Repairs assessment cheaper than seeing a dermatologist?",
     answer:
-      "Not necessarily. Dermatologist consultation fees in Lahore are listed from around Rs. 300 to Rs. 5,000, so at our prices we are comparable rather than cheaper. What differs is what you leave with: a full written assessment you keep, delivered within 24 hours, with 30 days of follow-up included — and no travel.",
+      "Not necessarily. Dermatologist consultation fees in Lahore are listed from around Rs. 300 to Rs. 5,000, so at our prices we are comparable rather than cheaper. What differs is what you leave with: a full written assessment you keep, delivered within 24 hours, with 30 days of follow-up included, and no travel.",
   },
   {
     question: "Can Glam Repairs prescribe medication or diagnose a skin condition?",
@@ -102,7 +102,7 @@ const FAQS = [
   {
     question: "How is this different from a brand's online skin quiz?",
     answer:
-      "A brand's quiz recommends that brand's products — it is a sales funnel shaped like a consultation. Nobody looks at your skin and no one is accountable for the answer. Our assessments are written by a named practitioner who has looked at your photographs, and they name no brands at all.",
+      "A brand's quiz recommends that brand's products. It is a sales funnel shaped like a consultation. Nobody looks at your skin and no one is accountable for the answer. Our assessments are written by a named practitioner who has looked at your photographs, and they name no brands at all.",
   },
 ];
 
@@ -317,7 +317,7 @@ export default async function ComparePage() {
             </strong>{" "}
             If your answers or photographs suggest one, we say so, point you
             towards a doctor, and refund you. That is not a disclaimer at the
-            bottom of a page — it is the outcome we would rather have than a
+            bottom of a page. It is the outcome we would rather have than a
             fee.
           </p>
           <p>
@@ -342,7 +342,7 @@ export default async function ComparePage() {
             This is what most people are actually doing, and it is the only
             option on this page with no one behind it at all. It is also the
             one where we could not find a credible published figure for what
-            it costs in Pakistan — so rather than invent one, the table labels
+            it costs in Pakistan, so rather than invent one, the table labels
             its range as illustrative.
           </p>
           <p>
@@ -350,7 +350,7 @@ export default async function ComparePage() {
             you, bought over a year, at the price of the serums that get
             recommended on Instagram. The number people arrive at is almost
             always larger than they expected, and it buys no diagnosis, no
-            order to follow, and nothing written down — which is why the same
+            order to follow, and nothing written down, which is why the same
             mistake tends to repeat with a different bottle.
           </p>
           <p>
@@ -368,13 +368,13 @@ export default async function ComparePage() {
             funded, and funding shapes what gets recommended. Where influencer
             marketing is regulated, a paid relationship, a free product or a
             discount all count as a material connection that must be disclosed
-            with the post itself — see <Cite id="ftcInfluencers" />.
+            with the post itself (see <Cite id="ftcInfluencers" />).
           </p>
           <p>
             The deeper problem is not disclosure. It is that advice tuned to
             one person&rsquo;s skin is not advice for yours. A routine that
             transformed someone with oily, resilient skin is the routine that
-            will strip a dry, reactive barrier — and neither of you will know
+            will strip a dry, reactive barrier, and neither of you will know
             which of you is which from a video.
           </p>
           <p>
@@ -389,7 +389,7 @@ export default async function ComparePage() {
             A brand&rsquo;s skin quiz recommends that brand&rsquo;s products.
             That is not a flaw in the quiz; it is the quiz&rsquo;s purpose. It
             is a sales funnel shaped like a consultation, and the resemblance
-            is the point — the questions feel diagnostic because feeling
+            is the point: the questions feel diagnostic because feeling
             diagnostic is what makes the recommendation persuasive.
           </p>
           <p>
@@ -408,7 +408,7 @@ export default async function ComparePage() {
         <Section id="fairness-creams" title="Unregulated skin-lightening creams">
           <p>
             This one is not a comparison so much as a warning, and it is the
-            reason several people arrive here in the first place — usually
+            reason several people arrive here in the first place, usually
             with marks that a cream has made worse.
           </p>
           <p>
@@ -467,7 +467,7 @@ export default async function ComparePage() {
                 "Persistent redness with visible blood vessels.",
                 "A rash with fever, or one that appeared suddenly across the body.",
                 "Skin problems alongside fatigue or irregular periods.",
-                "Anything you need a prescription for — isotretinoin, prescription-strength retinoids, oral antibiotics.",
+                "Anything you need a prescription for: isotretinoin, prescription-strength retinoids, oral antibiotics.",
                 "A skin condition you have already been diagnosed with and are being treated for.",
               ].map((item) => (
                 <li key={item}>{item}</li>

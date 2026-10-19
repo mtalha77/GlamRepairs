@@ -126,7 +126,7 @@ export const GIFT_REJECTION_COPY: Record<
 > = {
   not_found: {
     title: "We don't recognise this code",
-    body: "Check the spelling — it may have been mistyped. Codes look like GLAM-GIFT-ABC123.",
+    body: "Check the spelling. It may have been mistyped. Codes look like GLAM-GIFT-ABC123.",
   },
   inactive: {
     title: "This code is no longer active",
@@ -145,7 +145,7 @@ export const GIFT_REJECTION_COPY: Record<
   },
   self_redemption: {
     title: "This is your own gift code",
-    body: "It's meant for someone else — send them the link and their assessment is on us.",
+    body: "It's meant for someone else. Send them the link and their assessment is on us.",
   },
   already_gifted: {
     title: "You've already had a gifted assessment",

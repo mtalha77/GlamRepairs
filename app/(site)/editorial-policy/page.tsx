@@ -48,7 +48,7 @@ const SECTIONS = [
   {
     h: "Products and independence",
     p: [
-      "We do not name specific brands in our content, and we do not take payment for coverage. If that ever changes — for example through a disclosed partnership — it will be labelled clearly on the page it affects.",
+      "We do not name specific brands in our content, and we do not take payment for coverage. If that ever changes, for example through a disclosed partnership, it will be labelled clearly on the page it affects.",
     ],
   },
   {
@@ -74,7 +74,7 @@ const SECTIONS = [
         Interpolating the registry means it cannot drift again, rather than
         being correct until the next person retypes it.
       */
-      `Our articles are general information. They are not a diagnosis, and they are not a substitute for seeing a doctor. A personalised assessment from us is exactly that — personalised guidance from a ${PRACTITIONER.title.toLowerCase()} — and it is also not a medical diagnosis.`,
+      `Our articles are general information. They are not a diagnosis, and they are not a substitute for seeing a doctor. A personalised assessment from us is exactly that: personalised guidance from a ${PRACTITIONER.title.toLowerCase()} — and it is also not a medical diagnosis.`,
       "If a skin concern is painful, spreading, changing shape, or not responding to care, see a doctor. We will tell you when we think that is the right call rather than sell you a routine.",
     ],
   },
@@ -104,7 +104,7 @@ export default function EditorialPolicyPage() {
         Editorial policy
       </h1>
       <p className="mt-4 text-lg text-black/65">
-        How we research, write, review and update what you read here — and who
+        How we research, write, review and update what you read here, and who
         is accountable for it.
       </p>
 

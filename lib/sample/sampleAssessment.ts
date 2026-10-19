@@ -112,7 +112,7 @@ export const SAMPLE_SECTIONS: SampleSection[] = [
           lead: "Niacinamide serum.",
           rest: "Not vitamin C for now. It irritated you, and niacinamide works on pigment without the sting.",
         },
-        { lead: "Light moisturiser", rest: "— gel or fluid." },
+        { lead: "Light moisturiser.", rest: "Gel or fluid." },
         {
           lead: "SPF 50, reapplied on commute days.",
           rest: "A tinted one helps, because visible light drives melasma too.",

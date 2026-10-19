@@ -38,7 +38,7 @@ export type CompareSource = {
 export const COMPARE_SOURCES: Record<string, CompareSource> = {
   oladocLahore: {
     id: "oladocLahore",
-    label: "oladoc — dermatology consultation prices, Lahore",
+    label: "oladoc: dermatology consultation prices, Lahore",
     url: "https://oladoc.com/pakistan/lahore/treatment/dermatology",
     checkedOn: "2026-09-14",
     supports:
@@ -46,7 +46,7 @@ export const COMPARE_SOURCES: Record<string, CompareSource> = {
   },
   oladocVideo: {
     id: "oladocVideo",
-    label: "oladoc — dermatologist video consultations",
+    label: "oladoc: dermatologist video consultations",
     url: "https://oladoc.com/pakistan/video-consultation/dermatologist",
     checkedOn: "2026-09-14",
     supports:
@@ -54,7 +54,7 @@ export const COMPARE_SOURCES: Record<string, CompareSource> = {
   },
   marhamFees: {
     id: "marhamFees",
-    label: "Marham — doctor consultation fees in Pakistan",
+    label: "Marham: doctor consultation fees in Pakistan",
     url: "https://www.marham.pk/healthhub/medical-consultation-cost-in-pakistan/",
     checkedOn: "2026-09-14",
     supports:
@@ -63,16 +63,16 @@ export const COMPARE_SOURCES: Record<string, CompareSource> = {
   creamsLahore2026: {
     id: "creamsLahore2026",
     label:
-      "Biological Trace Element Research (2026) — hydroquinone, mercury and steroids in skin-lightening creams marketed in Pakistan",
+      "Biological Trace Element Research (2026): hydroquinone, mercury and steroids in skin-lightening creams marketed in Pakistan",
     url: "https://link.springer.com/article/10.1007/s12011-026-05237-9",
     checkedOn: "2026-09-14",
     supports:
-      "Ten brands sampled from the Lahore market contained hydroquinone up to 5.56% and mercury up to 4.9 ppm, above USFDA and PSQCA limits, plus undeclared corticosteroids — hydrocortisone in 50% of samples, betamethasone and prednisolone in 30%, dexamethasone in 20%.",
+      "Ten brands sampled from the Lahore market contained hydroquinone up to 5.56% and mercury up to 4.9 ppm, above USFDA and PSQCA limits, plus undeclared corticosteroids: hydrocortisone in 50% of samples, betamethasone and prednisolone in 30%, dexamethasone in 20%.",
   },
   creamsSustainability: {
     id: "creamsSustainability",
     label:
-      "Sustainability 13(16):8786 (2021) — hydroquinone and mercury in skin-lightening creams available in Pakistan",
+      "Sustainability 13(16):8786 (2021): hydroquinone and mercury in skin-lightening creams available in Pakistan",
     url: "https://doi.org/10.3390/su13168786",
     checkedOn: "2026-09-14",
     supports:
@@ -80,11 +80,11 @@ export const COMPARE_SOURCES: Record<string, CompareSource> = {
   },
   ftcInfluencers: {
     id: "ftcInfluencers",
-    label: "US Federal Trade Commission — Disclosures 101 for Social Media Influencers",
+    label: "US Federal Trade Commission: Disclosures 101 for Social Media Influencers",
     url: "https://www.ftc.gov/business-guidance/resources/disclosures-101-social-media-influencers",
     checkedOn: "2026-09-14",
     supports:
-      "A paid relationship, free product or discount is a 'material connection' that has to be disclosed with the endorsement itself — the standard that exists where influencer marketing is regulated.",
+      "A paid relationship, free product or discount is a 'material connection' that has to be disclosed with the endorsement itself, the standard that exists where influencer marketing is regulated.",
   },
 };
 

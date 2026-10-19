@@ -60,6 +60,17 @@ const nextConfig: NextConfig = {
       // Deliberately NOT a catch-all `/:path*.html`. A blanket rule would
       // silently swallow any future genuine 404 and make it look like a
       // working page, which is harder to debug than a missing redirect.
+
+      // HANDOVER-55 §2.7 — the project's production alias on vercel.app was
+      // live and crawlable: the whole site, duplicated on a second host.
+      // Only that one alias. Preview deployments use their own hostnames and
+      // must keep working for review.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "glam-repairscom.vercel.app" }],
+        destination: "https://www.glamrepairs.com/:path*",
+        permanent: true,
+      },
     ];
   },
 };

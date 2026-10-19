@@ -46,7 +46,7 @@ export default async function LatestPostsSection() {
             </span>
           </h2>
           <p className="mt-4 font-sans text-base leading-snug text-brand-ink sm:text-lg">
-            Straight answers about what your skin is actually doing — written
+            Straight answers about what your skin is actually doing, written
             and reviewed by a certified practitioner.
           </p>
         </header>

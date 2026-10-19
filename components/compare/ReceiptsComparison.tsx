@@ -419,7 +419,7 @@ export default function ReceiptsComparison({
         >
           {clinicFeeSourceIndex}
         </a>
-        . The Glam Repairs receipt is not illustrative — every line on it is
+        . The Glam Repairs receipt is not illustrative: every line on it is
         read from the same live prices and plan settings the pricing page
         uses.
         {pricedForPakistan ? null : (

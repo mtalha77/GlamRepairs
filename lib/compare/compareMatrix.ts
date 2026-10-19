@@ -253,8 +253,8 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       id: "followUp",
       label: "Follow-up included",
       cells: {
-        clinic: { value: "No — a second visit is a second fee", tone: "lose" },
-        onlineDoctor: { value: "No — usually a second fee", tone: "lose" },
+        clinic: { value: "No, a second visit is a second fee", tone: "lose" },
+        onlineDoctor: { value: "No, usually a second fee", tone: "lose" },
         transform: { value: supportLabel(transform), tone: "win" },
         products: { value: "None", tone: "lose" },
         freeAdvice: { value: "None", tone: "lose" },
@@ -298,7 +298,7 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
           value: "The platform takes a fee per consultation",
           tone: "neutral",
         },
-        transform: { value: "None — no brand commission", tone: "win" },
+        transform: { value: "None, no brand commission", tone: "win" },
         products: { value: "Whatever the shelf pushes", tone: "lose" },
         freeAdvice: {
           value: "Paid partnerships and own-brand ranges",

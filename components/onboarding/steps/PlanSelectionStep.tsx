@@ -268,7 +268,7 @@ export default function PlanSelectionStep({
         */}
         {isEarly ? (
           <p className="mt-3 text-sm leading-relaxed text-brand-gray">
-            Pick the one that fits. You can change it before you pay — nothing
+            Pick the one that fits. You can change it before you pay, and nothing
             is charged yet.
           </p>
         ) : null}

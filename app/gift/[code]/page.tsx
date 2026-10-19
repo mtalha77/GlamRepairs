@@ -108,7 +108,7 @@ export default async function GiftPage({ params }: GiftPageProps) {
             {copy.body}
           </p>
           <p className="mt-5 text-sm leading-relaxed text-brand-ink">
-            You can still book an assessment yourself — a certified
+            You can still book an assessment yourself. A certified
             practitioner reads your photographs and writes your routine by
             hand.
           </p>

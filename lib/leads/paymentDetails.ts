@@ -22,7 +22,7 @@ export type PaymentTextInput = {
 /** Plain-text bank block. Used in the WhatsApp body and the email's text part. */
 export function buildPaymentLines({ amount, reference }: PaymentTextInput) {
   const lines = [
-    "— How to pay —",
+    "How to pay:",
     PAYMENT.ownerDisclosure,
     "",
     `Bank: ${PAYMENT.bank}`,
@@ -34,7 +34,7 @@ export function buildPaymentLines({ amount, reference }: PaymentTextInput) {
   if (reference) {
     lines.push(
       "",
-      `Please put the reference ${reference} in the transfer note — it is how we match your payment to your assessment.`,
+      `Please put the reference ${reference} in the transfer note. It is how we match your payment to your assessment.`,
     );
   }
   lines.push(
@@ -70,7 +70,7 @@ export function buildScreenshotPrefill({
 
   lines.push(
     "Payment details:",
-    `${PAYMENT.bankShort} — ${PAYMENT.accountTitle}`,
+    `${PAYMENT.bankShort}, ${PAYMENT.accountTitle}`,
     `IBAN: ${PAYMENT.iban}`,
     `Acct: ${PAYMENT.accountNumber}`,
     "",

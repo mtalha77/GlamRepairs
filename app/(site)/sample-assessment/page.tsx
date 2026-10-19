@@ -65,7 +65,7 @@ const PUBLISHED = "2026-09-14";
 
 const TITLE = "See a real assessment";
 const DESCRIPTION =
-  "Read a full sample skin assessment before you pay — the same structure, " +
+  "Read a full sample skin assessment before you pay: the same structure, " +
   "length and wording a certified practitioner writes for every client. " +
   "Ingredients and percentages, never product brands.";
 
@@ -160,7 +160,7 @@ export default async function SampleAssessmentPage() {
               medical information. See lib/sample/sampleAssessment.ts.
             */}
             <p className="mt-[18px] inline-block rounded-full border border-[#f0e2c0] bg-brand-cream px-[15px] py-[7px] text-xs font-medium text-[#7a6320]">
-              A demonstration. The client is a composite — no real
+              A demonstration. The client is a composite; no real
               client&apos;s report is published.
             </p>
           </div>

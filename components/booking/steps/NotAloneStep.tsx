@@ -33,7 +33,7 @@ export default function NotAloneStep() {
 
       <StepBody className="mt-10 sm:mt-12">
         <p className="font-serif text-[2rem] leading-[1.15] text-brand-ink sm:text-[2.375rem]">
-          You&apos;re not alone — our practitioner has helped{" "}
+          You&apos;re not alone. Our practitioner has helped{" "}
           <AnimatedCount value={900} className="inline-block" />+ people with
           similar concerns
         </p>

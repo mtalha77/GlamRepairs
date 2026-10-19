@@ -43,7 +43,7 @@ const REASON_COPY: Record<
   },
   not_found: {
     tone: "bad",
-    text: "We don't recognise that code. Check the spelling — it's easy to mistake 0 for O.",
+    text: "We don't recognise that code. Check the spelling. It's easy to mistake 0 for O.",
   },
   inactive: {
     tone: "bad",
@@ -59,15 +59,15 @@ const REASON_COPY: Record<
   },
   self_redemption: {
     tone: "bad",
-    text: "That's your own gift code — it's meant for someone else. Send them the link and their assessment is on us.",
+    text: "That's your own gift code, and it's meant for someone else. Send them the link and their assessment is on us.",
   },
   already_gifted: {
     tone: "bad",
-    text: "You've already had a gifted assessment — they're one per person. You're very welcome to book at the usual price.",
+    text: "You've already had a gifted assessment. They're one per person. You're very welcome to book at the usual price.",
   },
   plan_unavailable: {
     tone: "bad",
-    text: "That code covers a plan we no longer offer. Nothing has gone wrong on your end — message us and we'll sort out an equivalent.",
+    text: "That code covers a plan we no longer offer. Nothing has gone wrong on your end. Message us and we'll sort out an equivalent.",
   },
   rate_limited: {
     tone: "bad",
@@ -175,9 +175,9 @@ export default function GiftCodeField() {
             moment they find out otherwise is the payment screen.
           */}
           {applied && result?.discountPct != null && result.discountPct < 100
-            ? `Code applied — ${result.discountPct}% off. The rest is payable as usual.`
+            ? `Code applied: ${result.discountPct}% off. The rest is payable as usual.`
             : applied
-              ? "Code applied — your assessment is covered."
+              ? "Code applied. Your assessment is covered."
               : copy.text}
         </p>
       ) : null}

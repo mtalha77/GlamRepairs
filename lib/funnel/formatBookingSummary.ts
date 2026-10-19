@@ -293,7 +293,7 @@ export function formatBookingWhatsAppMessage({
     eventLine += ".";
     wantParts.push(eventLine);
   } else if (specialEvent === "none") {
-    wantParts.push("I don't have a special event — I just want to look and feel my best.");
+    wantParts.push("I don't have a special event. I just want to look and feel my best.");
   }
   if (wantParts.length) paragraphs.push(wantParts.join(" "));
 
@@ -363,7 +363,7 @@ export function formatBookingWhatsAppMessage({
     ).length;
     if (count > 0) {
       extras.push(
-        `Photos submitted with this assessment (${count}) — our team will review them in the portal.`,
+        `Photos submitted with this assessment (${count}). Our team will review them in the portal.`,
       );
     }
   }
