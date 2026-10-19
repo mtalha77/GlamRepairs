@@ -7,6 +7,9 @@ import { listPublishedPosts } from "@/lib/studio/blog";
  */
 const MAX_RELATED = 3;
 
+/** HANDOVER-55 §2.3: the rest of the cluster, as plain links. */
+const MAX_SERIES = 15;
+
 /**
  * HOTFIX-10 §1c — cross-links between posts.
  * HANDOVER-22 §8 — the editor's own choices come first.
@@ -60,6 +63,20 @@ export default async function RelatedReading({
     if (ranked.length === MAX_RELATED) break;
   }
 
+  /*
+   * HANDOVER-55 §2.3, §2.4 — the rest of the cluster.
+   *
+   * Three cards is right for a reader and too few for a crawler: a cluster
+   * of twelve was reachable only through /blog pagination, and Google
+   * discovered every page in it and crawled none. Every other published post
+   * in the same cluster, as plain links under the cards, makes the cluster
+   * one connected set and lets the pillar link all of it. Driven by
+   * `cluster`, never a hardcoded list.
+   */
+  const series = cluster
+    ? others.filter((post) => post.cluster === cluster && !seen.has(post.slug)).slice(0, MAX_SERIES)
+    : [];
+
   return (
     <section className="mt-14 border-t border-black/10 pt-8">
       <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-black/45">
@@ -92,6 +109,25 @@ export default async function RelatedReading({
           </li>
         ))}
       </ul>
+      {series.length ? (
+        <nav aria-labelledby="more-on-topic" className="mt-8">
+          <h2 id="more-on-topic" className="text-sm font-semibold uppercase tracking-[0.18em] text-black/45">
+            More on this topic
+          </h2>
+          <ul className="mt-3 space-y-1">
+            {series.map((post) => (
+              <li key={post.slug}>
+                <Link
+                  href={`/blog/${post.slug}`}
+                  className="inline-flex min-h-11 items-center text-base text-brand-primary underline underline-offset-2 hover:no-underline"
+                >
+                  {post.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
     </section>
   );
 }

@@ -60,7 +60,7 @@ export async function issueGiftCodeForLead(options: {
       ok: false,
       refusal: "error",
       message:
-        "Could not read the gift settings, so no code was issued. This is a fault, not a setting — try again.",
+        "Could not read the gift settings, so no code was issued. This is a fault, not a setting. Try again.",
     };
   }
   if (!settings.enabled) {

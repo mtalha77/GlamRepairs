@@ -12,7 +12,7 @@ export const contactReachOut = {
   // ask something before committing had no way to reach us — while the
   // Google Business Profile listed a number the site never showed.
   description:
-    "Email us, call us, or message us on WhatsApp — we typically respond " +
+    "Email us, call us, or message us on WhatsApp. We typically respond " +
     "within a few hours.",
   emailIcon: "/svgs/gmail-mail-icon.png",
   emailDisplay: "glamrepairs@gmail.com",

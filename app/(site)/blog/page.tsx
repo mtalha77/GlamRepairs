@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata("/blog", {
     title: "Skin Care Advice for Pakistan, Explained",
     description:
-      "Straight answers about skin from a certified practitioner — what is " +
+      "Straight answers about skin from a certified practitioner: what is " +
       "actually happening, what to do about it, and when to see a doctor instead.",
   });
 }
@@ -73,7 +73,7 @@ export default async function BlogIndexPage() {
           {await pageH1("/blog", "Skin, explained")}
         </h1>
         <p className="mt-4 max-w-xl text-lg text-black/65">
-          Straight answers about what your skin is actually doing — written and
+          Straight answers about what your skin is actually doing, written and
           reviewed by a certified practitioner. No brand names, no miracle
           promises.
         </p>

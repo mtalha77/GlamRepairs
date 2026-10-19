@@ -76,7 +76,7 @@ export default function ConcernDurationStep() {
             id="worsening-factors"
             name="worseningFactors"
             rows={3}
-            placeholder="Optional — share anything that triggers or worsens your concern"
+            placeholder="Optional: share anything that triggers or worsens your concern"
             value={worseningFactors}
             onChange={(event) => setWorseningFactors(event.target.value)}
             className={`${inputClassName} resize-none`}

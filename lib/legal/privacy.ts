@@ -23,14 +23,14 @@ export const LAST_UPDATED = "2026-09-03";
 export const INTRO = `Glam Repairs asks you for photographs of your face and details about your health and lifestyle. That is sensitive information and we treat it that way. This policy explains exactly what we collect, who sees it, how long we keep it, and how you can have it deleted.`;
 
 export const PRIVACY_MARKDOWN = `## Who we are
-Glam Repairs is an online skin consultation service operating in Pakistan. We provide written skin assessments prepared by qualified aesthetics professionals. We are the data controller for the information described in this policy.
+Glam Repairs is an online skin consultation service operating in Pakistan. We provide written skin assessments prepared by qualified aesthetics practitioners. We are the data controller for the information described in this policy.
 For any privacy question or request, contact us at glamrepairs@gmail.com.
 ## What we collect
 We only collect what is needed to assess your skin and send you your report.
 **Information you give us**
 - Your name, email address and phone number.
 - Your age range, city and general climate.
-- Your answers to the skin assessment questionnaire — skin type, concerns, duration, current routine and products.
+- Your answers to the skin assessment questionnaire: skin type, concerns, duration, current routine and products.
 - Lifestyle information you choose to share: sleep, water intake, stress level and sun protection habits.
 - Any skin history, sensitivities, reactions or goals you describe to us.
 - Photographs of your face and areas of concern, however you send them to us.
@@ -43,7 +43,7 @@ We only collect what is needed to assess your skin and send you your report.
 - Standard technical data recorded by our hosting provider, such as IP address and browser type.
 We do not ask for government identification numbers or full financial account details, and you should not send them to us.
 ## Health-related information
-Some of what you tell us — skin conditions, reactions, medication effects on your skin — may be considered health-related information, which carries a higher standard of protection under many privacy laws.
+Some of what you tell us (skin conditions, reactions, medication effects on your skin) may be considered health-related information, which carries a higher standard of protection under many privacy laws.
 We process it only with your explicit consent, given when you tick the consent boxes at the end of the assessment. You may withdraw that consent at any time by emailing us, and we will delete the information we hold.
 Glam Repairs does not provide medical diagnosis or treatment. Our assessments are cosmetic guidance and are not a substitute for advice from a doctor or dermatologist.
 ## Your photographs
@@ -68,7 +68,7 @@ If you would prefer to avoid third-party services entirely, tell us and we will 
 - To prepare and deliver your personal skin assessment report.
 - To email or message you your report and any follow-up relating to your assessment.
 - To operate your account, if you create one, and show you your consultation history and progress.
-- To send you service notifications — appointment reminders, payment confirmations, and updates about your consultation — by email, messaging service, or in your account.
+- To send you service notifications (appointment reminders, payment confirmations, and updates about your consultation) by email, messaging service, or in your account.
 - To arrange and take payment for your consultation.
 - To arrange and conduct appointments with a practitioner, including video consultations where offered.
 - To respond to questions you send us.
@@ -85,11 +85,11 @@ We do not sell your information. We share it only with the service providers nee
 - **Messaging and notification providers**, where you choose to communicate with us that way or where we send you service notifications.
 - **The qualified practitioner** assigned to your assessment.
 - **Our payment providers**, where you pay through a payment method that involves one.
-These providers act on our instructions and are not permitted to use your information for their own purposes — except for third-party messaging services you choose to use, where that provider's own terms govern the copy held on their systems. Some providers store data outside Pakistan; where that happens we take reasonable steps to ensure appropriate protection.
+These providers act on our instructions and are not permitted to use your information for their own purposes, except for third-party messaging services you choose to use, where that provider's own terms govern the copy held on their systems. Some providers store data outside Pakistan; where that happens we take reasonable steps to ensure appropriate protection.
 We may disclose information if required by law, or to establish or defend a legal claim.
 ## If you are a practitioner
 If you apply to provide consultations through Glam Repairs, we collect and verify additional information about you: your name, contact details, professional qualifications, certificates, registration numbers where applicable, and a photograph.
-We do this so that clients can see who is reviewing their skin, and so that we can confirm you are qualified to do so. **Your name, professional title, credentials and photograph will be published on your public profile page.** Documents you submit for verification — degree certificates and similar — are stored privately and are not published.
+We do this so that clients can see who is reviewing their skin, and so that we can confirm you are qualified to do so. **Your name, professional title, credentials and photograph will be published on your public profile page.** Documents you submit for verification (degree certificates and similar) are stored privately and are not published.
 ## How long we keep it
 - **Photographs on our systems:** deleted within 30 days.
 - **Photographs sent through a third-party service:** we delete our copy; copies held in your own account on that service are under your control.
@@ -112,6 +112,6 @@ Email glamrepairs@gmail.com and we will respond within 30 days. We may ask you t
 ## Children
 Glam Repairs is intended for adults. We do not knowingly collect information or photographs from anyone under 18. If you believe a minor has submitted an assessment, contact us and we will delete it.
 ## Mobile applications
-We currently operate as a website. If we release iOS or Android applications, this policy will be updated before they launch to describe any additional information those apps collect — such as device identifiers, push notification tokens, or camera access — and you will be asked to consent where required.
+We currently operate as a website. If we release iOS or Android applications, this policy will be updated before they launch to describe any additional information those apps collect, such as device identifiers, push notification tokens, or camera access, and you will be asked to consent where required.
 ## Changes to this policy
 If we change this policy we will update the date at the top of this page. If the change materially affects how we handle your information, we will tell you directly.`;

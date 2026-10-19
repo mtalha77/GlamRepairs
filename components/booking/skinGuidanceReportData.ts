@@ -40,7 +40,7 @@ export const morningRoutine = [
   },
   {
     week: "Week 2",
-    text: "Broad-spectrum sunscreen every single morning — reapply outdoors.",
+    text: "Broad-spectrum sunscreen every single morning. Reapply outdoors.",
   },
 ] as const;
 
@@ -71,6 +71,6 @@ export const avoidItems = [
 export const monitoringNote = {
   title: "Sun protection gap",
   description:
-    "Take photos in the same light at the same time each week. If you notice irritation, burning, swelling, or fast-spreading patches — pause and seek in-person care.",
+    "Take photos in the same light at the same time each week. If you notice irritation, burning, swelling, or fast-spreading patches, pause and seek in-person care.",
   icon: "/svgs/Sun_Allergy.svg",
 } as const;

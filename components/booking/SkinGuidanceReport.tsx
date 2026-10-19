@@ -363,7 +363,7 @@ export default function SkinGuidanceReport() {
           <p className="mt-2 text-xs leading-relaxed text-brand-gray sm:mt-3 sm:text-[0.8125rem]">
             Skin Transform adds a written assessment read by a certified
             practitioner, a personalised morning and evening routine, and a 15
-            minute video consultation — we&apos;ll send your quiz answers ahead
+            minute video consultation. We&apos;ll send your quiz answers ahead
             on WhatsApp.
           </p>
           <div className="mt-4 flex flex-col items-stretch gap-3 sm:mt-5 sm:flex-row sm:items-center sm:justify-end">

@@ -41,7 +41,7 @@ const STEP_METADATA: Record<number, Metadata> = {
   2: {
     title: "Choose Your Plan",
     description:
-      "Pick the plan that fits before you answer anything — no surprises later.",
+      "Pick the plan that fits before you answer anything. No surprises later.",
   },
   3: {
     title: "Your Program",

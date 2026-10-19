@@ -120,7 +120,7 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
     return (
       <section className="mt-6 rounded-2xl border-2 border-brand-light/70 bg-white px-4 py-4 text-left shadow-sm sm:mt-7 sm:px-5 sm:py-5">
         <h2 className="font-serif text-lg text-brand-primary sm:text-xl">
-          Nothing to pay — this one is a gift
+          Nothing to pay: this one is a gift
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-brand-ink sm:text-[0.9375rem]">
           Your assessment is covered. We&apos;ll be in touch on WhatsApp once
@@ -145,7 +145,7 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
   return (
     <section className="mt-6 rounded-2xl border-2 border-brand-light/70 bg-white px-4 py-4 text-left shadow-sm sm:mt-7 sm:px-5 sm:py-5">
       <h2 className="font-serif text-lg text-brand-primary sm:text-xl">
-        Almost done — here&apos;s how to pay
+        Almost done. Here&apos;s how to pay
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-brand-ink sm:text-[0.9375rem]">
         {amount ? (
@@ -193,7 +193,7 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
             <CopyButton value={reference} label="reference" />
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-brand-gray">
-            Put it in the transfer note — it&apos;s how we match your payment
+            Put it in the transfer note. It&apos;s how we match your payment
             to your assessment.
           </p>
         </div>

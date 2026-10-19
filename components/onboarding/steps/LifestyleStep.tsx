@@ -127,7 +127,7 @@ export default function LifestyleStep() {
     <div>
       <StepHeader
         eyebrow="Lifestyle"
-        title="Tell us a bit about your lifestyle — it affects your skin more than most people realize."
+        title="Tell us a bit about your lifestyle. It affects your skin more than most people realize."
       />
 
       <StepBody className="space-y-6 sm:space-y-7">

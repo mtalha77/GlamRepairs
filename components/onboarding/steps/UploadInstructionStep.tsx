@@ -7,11 +7,11 @@ const correctPhoto = "/onboarding/photo-guide-correct.png";
 const photoTips = [
   {
     lead: "Natural light only",
-    rest: " — stand near a window. Avoid flash or overhead lights.",
+    rest: ". Stand near a window. Avoid flash or overhead lights.",
   },
   {
     lead: "No filters, no makeup",
-    rest: " — your skin needs to be visible as it is.",
+    rest: ". Your skin needs to be visible as it is.",
   },
   {
     lead: "Photos to take",
@@ -19,7 +19,7 @@ const photoTips = [
   },
   {
     lead: "Hold the camera at eye level",
-    rest: " — not above or below.",
+    rest: ", not above or below.",
   },
 ] as const;
 

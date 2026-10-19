@@ -29,7 +29,7 @@ type PricingSectionProps = {
 
 const defaultTitle = "Pricing";
 const defaultSubtitle =
-  "Skincare consultations built around your skin — not a one-size-fits-all routine.";
+  "Skincare consultations built around your skin, not a one-size-fits-all routine.";
 
 const trustLine =
   "Every paid assessment is manually reviewed by a certified aesthetics practitioner with a degree in Cosmetology & Dermatology Science.";
@@ -122,8 +122,8 @@ export default async function PricingSection({
               className="font-medium text-brand-primary underline underline-offset-4 hover:opacity-80"
             >
               Read a full sample assessment
-            </Link>{" "}
-            — the whole document, before you pay.
+            </Link>
+            : the whole document, before you pay.
           </p>
         ) : null}
 

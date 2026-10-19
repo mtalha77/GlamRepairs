@@ -29,7 +29,7 @@ export const LAST_UPDATED = "2026-09-15";
 export const INTRO = `These terms apply when you use glamrepairs.com or purchase a skin consultation from us. By completing an assessment you agree to them, so please read them first.`;
 
 export const TERMS_MARKDOWN = `## What Glam Repairs is
-Glam Repairs provides online skin consultations. You complete a questionnaire, send us photographs, a qualified aesthetics professional reviews them, and you receive a written assessment with a suggested routine.
+Glam Repairs provides online skin consultations. You complete a questionnaire, send us photographs, a qualified aesthetics practitioner reviews them, and you receive a written assessment with a suggested routine.
 **Glam Repairs is a cosmetic guidance service. It is not a medical service.**
 We do not diagnose conditions, prescribe medication, or provide treatment. Our assessments are not a substitute for consulting a doctor or dermatologist. If you have a skin condition that is painful, spreading, bleeding, rapidly changing, or otherwise concerning, please see a medical professional.
 Where a practitioner believes your concern needs medical attention rather than cosmetic guidance, they will tell you so and we will not proceed with a routine. Where we have not started work, we refund in full.
@@ -55,11 +55,11 @@ We offer two plans. Skin Starter is complimentary and available for a limited pe
 - **Only send payment using the details we give you directly through an official Glam Repairs channel.** We will never ask you to send payment to a different account or number than the one in your official confirmation, and we will never ask for payment through an unexpected channel. If anything looks unusual, stop and contact us at glamrepairs@gmail.com before sending anything.
 - We may change our prices at any time, but the price you were shown at purchase is the price that applies to you.
 ## Notifications
-We will send you messages about your own consultation — payment confirmations, appointment reminders, requests for better photographs, and delivery of your report — by email, by messaging service, or in your account. These are service messages, not marketing, and you will receive them as part of using the service. Marketing is separate and requires your opt-in.
+We will send you messages about your own consultation (payment confirmations, appointment reminders, requests for better photographs, and delivery of your report) by email, by messaging service, or in your account. These are service messages, not marketing, and you will receive them as part of using the service. Marketing is separate and requires your opt-in.
 ## Delivery
 Skin Transform assessments are delivered within 24 hours of confirmed payment and receipt of your completed questionnaire and usable photographs.
 Reports are sent to the email address you provide, and are available in your account if you have one. It is your responsibility to give us a working address and to check your spam folder.
-If your photographs are unusable — too dark, blurred, filtered, or not showing the area of concern — we will ask you to retake them. The delivery window restarts when we receive usable photographs.
+If your photographs are unusable (too dark, blurred, filtered, or not showing the area of concern), we will ask you to retake them. The delivery window restarts when we receive usable photographs.
 ## Appointments and video consultations
 Where we offer appointments with a practitioner, including video consultations:
 - Appointments are for a scheduled time with a designated practitioner.
@@ -72,7 +72,7 @@ If your assessment does not address what you asked about, tell us within 14 days
 Because each assessment is prepared individually by a practitioner, we are generally unable to refund a report once it has been delivered. If we have not yet started work on your assessment, you may cancel for a full refund.
 If we are unable to complete your assessment for any reason, we will refund you in full.
 ## What we recommend
-We recommend ingredient categories and product types — for example a niacinamide serum or a ceramide-based moisturiser. We do not recommend specific brands and we do not receive commission, payment or incentives from any brand.
+We recommend ingredient categories and product types, for example a niacinamide serum or a ceramide-based moisturiser. We do not recommend specific brands and we do not receive commission, payment or incentives from any brand.
 If that ever changes, we will disclose it clearly. You are free to buy whichever products fit your budget and availability.
 ## Results, and their limits
 Skin responds differently from person to person. We cannot and do not guarantee any particular outcome, timeline or result.

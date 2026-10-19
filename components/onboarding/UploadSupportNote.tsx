@@ -36,7 +36,7 @@ export default function UploadSupportNote() {
         >
           {SITE.phone.display}
         </a>{" "}
-        — we&apos;ll help you get it done.
+        and we&apos;ll help you get it done.
       </p>
       <div className="mt-2.5 flex items-center justify-center gap-2">
         <a

@@ -54,13 +54,13 @@ function paymentHtml(amount: string | null, reference: string | null) {
     ? `<div style="margin: 14px 0 0; padding: 12px 14px; background: #ffffff; border: 1px solid #c9a9e0; border-radius: 10px;">
          <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #662d91; font-weight: 700;">Include this reference</p>
          <p style="margin: 6px 0 0; font-size: 20px; font-weight: 700; color: #662d91; font-family: monospace;">${escapeHtml(reference)}</p>
-         <p style="margin: 6px 0 0; font-size: 13px; color: #6b6b6b;">Put it in the transfer note — it&#39;s how we match your payment to your assessment.</p>
+         <p style="margin: 6px 0 0; font-size: 13px; color: #6b6b6b;">Put it in the transfer note. It&#39;s how we match your payment to your assessment.</p>
        </div>`
     : "";
 
   return `
     <div style="margin: 0 0 16px; padding: 16px; background: #f6edff; border-radius: 12px;">
-      <h3 style="margin: 0 0 8px; font-size: 17px; color: #662d91;">Almost done — here&#39;s how to pay</h3>
+      <h3 style="margin: 0 0 8px; font-size: 17px; color: #662d91;">Almost done. Here&#39;s how to pay</h3>
       <p style="margin: 0 0 10px; font-size: 14px;">
         ${amount ? `Transfer <strong>${escapeHtml(amount)}</strong> to the account below, then send us the screenshot on WhatsApp so we can confirm it.` : "Transfer your plan amount to the account below, then send us the screenshot on WhatsApp so we can confirm it."}
       </p>

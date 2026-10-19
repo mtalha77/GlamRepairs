@@ -245,7 +245,7 @@ export default function ApplicationSteps({
         {step === 2 ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2">
-              {field("qualification", "Degree or qualification", { placeholder: "e.g. BSc Cosmetology" })}
+              {field("qualification", "Degree or qualification", { placeholder: "e.g. BS Cosmetology" })}
               {field("institution", "Where you studied")}
               {field("qualificationYear", "Year you qualified", { inputMode: "numeric", maxLength: 4 })}
               {field("years", "Years practising", { inputMode: "numeric", maxLength: 2 })}

@@ -22,7 +22,7 @@ type RoutineOption =
   | "not-working";
 
 const routineOptions: { value: RoutineOption; label: string }[] = [
-  { value: "none", label: "I don't have one — I use whatever is available" },
+  { value: "none", label: "I don't have one, I use whatever is available" },
   { value: "face-wash-only", label: "Just a face wash (nothing else)" },
   { value: "wash-moisturizer", label: "Face wash + moisturizer" },
   { value: "wash-moisturizer-spf", label: "Face wash + moisturizer + sunscreen" },
@@ -65,7 +65,7 @@ export default function CurrentRoutineStep() {
 
         <div className="mt-6 sm:mt-7">
           <label htmlFor="products-used" className={labelClassName}>
-            List any products or ingredients you currently use (optional — even a product type
+            List any products or ingredients you currently use (optional, even a product type
             helps):
           </label>
           <textarea

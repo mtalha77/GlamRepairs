@@ -84,7 +84,7 @@ export default function Hero({ h1 = "Everyone Deserves Healthy Skin" }: { h1?: s
         <p className="mt-5 max-w-[659px] font-sans text-base font-normal leading-[1.35] text-brand-ink sm:mt-6 sm:text-lg sm:text-white lg:mt-[54px] lg:text-[24px]">
           Share your concerns &amp; receive a personalized skincare routine from
           a certified{" "}
-          <span className="font-serif italic">Aesthetics Expert</span>, with
+          <span className="font-serif italic">Aesthetics Practitioner</span>, with
           complete privacy, delivered to you within{" "}
           <span className="font-serif italic">24&nbsp;hours</span>.
         </p>

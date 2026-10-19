@@ -335,7 +335,7 @@ export default function UploadPhotosStep() {
       <div className="mt-5 flex items-center justify-center gap-2 rounded-2xl border border-brand-border-light/50 bg-white px-3 py-2.5 shadow-sm sm:mt-6 sm:gap-2.5 sm:px-4 sm:py-3">
         <PrivacyShieldIcon />
         <p className="text-[0.6875rem] leading-snug text-brand-gray sm:text-xs">
-          Private. Reviewed only by certified professionals. Never shared.
+          Private. Reviewed only by certified practitioners. Never shared.
         </p>
       </div>
     </div>

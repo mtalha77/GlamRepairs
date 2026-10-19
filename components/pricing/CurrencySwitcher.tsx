@@ -51,7 +51,7 @@ export default function CurrencySwitcher({
       >
         {regions.map((option) => (
           <option key={option.code} value={option.code}>
-            {option.currency} — {option.label}
+            {option.currency} · {option.label}
           </option>
         ))}
       </select>
