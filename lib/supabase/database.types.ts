@@ -889,6 +889,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      /** Payment records (19 October 2026). Read for the client history. */
+      payments: {
+        Row: {
+          id: string;
+          lead_id: string | null;
+          amount_minor: number | null;
+          currency: string | null;
+          method: string | null;
+          provider: string | null;
+          provider_ref: string | null;
+          screenshot_path: string | null;
+          status: string;
+          received_at: string | null;
+          verified_by: string | null;
+          verified_at: string | null;
+          note: string | null;
+          is_test: boolean;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /** Every change to a client's email, phone or name, written by a trigger. */
+      lead_contact_edits: {
+        Row: {
+          id: number;
+          lead_id: string;
+          field: "email" | "phone" | "full_name";
+          old_value: string | null;
+          new_value: string | null;
+          reason: string | null;
+          edited_by: string | null;
+          edited_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       /** Follow-ups 15 and 30 days after the first report (20 October 2026). */
       client_followups: {
         Row: {
@@ -1350,6 +1389,9 @@ export type Database = {
           // Abandonment recovery (19 October 2026).
           do_not_contact: boolean;
           abandon_stage: number;
+          assigned_at: string | null;
+          payment_verified_at: string | null;
+          payment_verified_by: string | null;
           abandoned_at: string | null;
           status: CustomerStatus;
           notes: string | null;
