@@ -273,6 +273,11 @@ export type Database = {
           reminder_24h_at: string | null;
           reminder_1h_at: string | null;
           feedback_requested_at: string | null;
+          practitioner_notified_at: string | null;
+          practitioner_reminder_24h_at: string | null;
+          practitioner_reminder_1h_at: string | null;
+          note_reminder_count: number;
+          note_reminder_at: string | null;
           bridge_deleted_at: string | null;
           practitioner_fee_minor: number | null;
           platform_fee_minor: number | null;
@@ -305,6 +310,11 @@ export type Database = {
           reminder_24h_at?: string | null;
           reminder_1h_at?: string | null;
           feedback_requested_at?: string | null;
+          practitioner_notified_at?: string | null;
+          practitioner_reminder_24h_at?: string | null;
+          practitioner_reminder_1h_at?: string | null;
+          note_reminder_count?: number;
+          note_reminder_at?: string | null;
           bridge_deleted_at?: string | null;
           practitioner_fee_minor?: number | null;
           platform_fee_minor?: number | null;
@@ -337,6 +347,11 @@ export type Database = {
           platform_fee_minor?: number | null;
           fee_currency?: string | null;
           rate_id?: string | null;
+          practitioner_notified_at?: string | null;
+          practitioner_reminder_24h_at?: string | null;
+          practitioner_reminder_1h_at?: string | null;
+          note_reminder_count?: number;
+          note_reminder_at?: string | null;
         };
         Relationships: [];
       };
@@ -829,33 +844,107 @@ export type Database = {
         Row: {
           id: string;
           lead_id: string;
-          sent_by: string;
+          sent_by: string | null;
           to_email: string;
           subject: string;
           body: string;
           resend_id: string | null;
           created_at: string;
+          kind: string;
+          template_key: string | null;
+          application_id: string | null;
+          status: string;
+          delivered_at: string | null;
+          opened_at: string | null;
+          bounced_at: string | null;
+          complained_at: string | null;
+          error: string | null;
+          scheduled_for: string | null;
         };
         Insert: {
           id?: string;
           lead_id: string;
-          sent_by: string;
+          sent_by?: string | null;
           to_email: string;
           subject: string;
           body: string;
           resend_id?: string | null;
           created_at?: string;
+          kind?: string;
+          template_key?: string | null;
+          status?: string;
+          error?: string | null;
         };
         Update: {
           id?: string;
           lead_id?: string;
-          sent_by?: string;
+          sent_by?: string | null;
           to_email?: string;
           subject?: string;
           body?: string;
           resend_id?: string | null;
           created_at?: string;
+          status?: string;
+          error?: string | null;
         };
+        Relationships: [];
+      };
+      /** Follow-ups 15 and 30 days after the first report (20 October 2026). */
+      client_followups: {
+        Row: {
+          id: string;
+          lead_id: string;
+          sequence: number;
+          due_at: string;
+          status: "pending" | "done" | "skipped";
+          completed_by: string | null;
+          completed_at: string | null;
+          notes: string | null;
+          created_at: string;
+          email_sent_at: string | null;
+          whatsapp_sent_at: string | null;
+          whatsapp_sent_by: string | null;
+        };
+        Insert: { lead_id: string; sequence: number; due_at: string };
+        Update: {
+          status?: "pending" | "done" | "skipped";
+          completed_by?: string | null;
+          completed_at?: string | null;
+          notes?: string | null;
+          email_sent_at?: string | null;
+          whatsapp_sent_at?: string | null;
+          whatsapp_sent_by?: string | null;
+        };
+        Relationships: [];
+      };
+      email_templates: {
+        Row: {
+          key: string;
+          label: string;
+          subject: string;
+          body_markdown: string;
+          active: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: never;
+        Update: { subject?: string; body_markdown?: string; active?: boolean; updated_at?: string; updated_by?: string | null };
+        Relationships: [];
+      };
+      email_settings: {
+        Row: {
+          id: number;
+          from_name: string;
+          from_email: string;
+          reply_to: string | null;
+          signature_markdown: string;
+          footer_markdown: string;
+          abandon_1_hours: number;
+          abandon_2_hours: number;
+          abandon_final_hours: number;
+        };
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       studio_reports: {
@@ -1258,6 +1347,9 @@ export type Database = {
           phone: string | null;
           phone_e164: string | null;
           last_seen_at: string | null;
+          // Abandonment recovery (19 October 2026).
+          do_not_contact: boolean;
+          abandon_stage: number;
           abandoned_at: string | null;
           status: CustomerStatus;
           notes: string | null;
@@ -2013,6 +2105,22 @@ export type Database = {
       };
     };
     Views: {
+      /** Who is due an abandonment email, and which one (19 October 2026). */
+      abandon_queue: {
+        Row: {
+          lead_id: string;
+          email: string;
+          full_name: string | null;
+          last_seen_at: string;
+          abandon_stage: number;
+          abandon_1_hours: number;
+          abandon_2_hours: number;
+          abandon_final_hours: number;
+          hours_idle: number;
+          next_kind: "abandon_1" | "abandon_2" | "abandon_final";
+        };
+        Relationships: [];
+      };
       /** Approved practitioners who agreed to be shown (migration 20261013174559). */
       practitioners_public: {
         Row: {
@@ -2394,6 +2502,11 @@ export type Database = {
         Returns: undefined;
       };
       /** HANDOVER-56 — service role only. Starts the clock; refuses a second open attempt or a third submission. */
+      /** Records an abandonment email and advances the lead's stage. Service role only. */
+      log_abandon_email: {
+        Args: { p_lead: string; p_kind: string; p_to: string; p_subject: string; p_body: string; p_resend_id?: string | null };
+        Returns: string;
+      };
       start_assessment: {
         Args: { p_app: string; p_minutes?: number; p_count?: number };
         Returns: { out_attempt_id: string; out_expires_at: string; out_question_ids: string[] }[];

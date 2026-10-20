@@ -2,6 +2,7 @@ import "server-only";
 
 import { renderMarkdown } from "@/lib/blog/markdown";
 import { formatSlot } from "@/lib/consultation/format";
+import { logClientEmail } from "@/lib/email/logClientEmail";
 import { escapeHtml, getResendConfig } from "@/lib/email/resendClient";
 import { getWhatsAppChatLink } from "@/lib/funnel/whatsapp";
 
@@ -19,7 +20,16 @@ import { getWhatsAppChatLink } from "@/lib/funnel/whatsapp";
  * never passed in here, so it cannot leak into an email by accident.
  */
 
-type Base = { toEmail: string | null; name: string | null };
+/** leadId puts the email on the client's record (20 October 2026). */
+type Base = { toEmail: string | null; name: string | null; leadId?: string | null };
+
+const LOG_KIND = {
+  confirmed: "consultation_booked",
+  reminder: "consultation_reminder",
+  repick: "other",
+  no_time: "other",
+  feedback: "other",
+} as const;
 
 export type ConsultationEmail =
   | (Base & { kind: "confirmed"; startsAt: string; joinUrl: string | null; password?: string | null; minutes: number; guidelinesMarkdown: string; practitionerName: string })
@@ -130,7 +140,17 @@ export async function sendConsultationEmail(
   const to = email.toEmail?.trim();
   if (!to || !to.includes("@")) return { ok: false, message: "No email address on this lead." };
   const { subject, html, text } = compose(email);
-  const { error } = await config.resend.emails.send({ from: config.from, to: [to], subject, html, text });
+  const { data, error } = await config.resend.emails.send({ from: config.from, to: [to], subject, html, text });
+  await logClientEmail({
+    leadId: email.leadId,
+    toEmail: to,
+    subject,
+    body: text,
+    kind: LOG_KIND[email.kind],
+    templateKey: email.kind === "reminder" ? `consultation_reminder_${email.when}` : `consultation_${email.kind}`,
+    resendId: data?.id ?? null,
+    error: error?.message ?? null,
+  });
   if (error) return { ok: false, message: error.message };
   return { ok: true };
 }

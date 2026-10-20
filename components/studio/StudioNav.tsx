@@ -32,6 +32,8 @@ export const STUDIO_NAV_LINKS = [
  * and the member record is already resolved on the server.
  */
 const STUDIO_ADMIN_LINKS = [
+  // 20 October 2026 — the 15 and 30 day check-ins, WhatsApp sent from here.
+  { href: "/studio/followups", label: "Follow-ups" },
   { href: "/studio/admin/photos", label: "Photo retention" },
   { href: "/studio/admin/duplicates", label: "Possible duplicates" },
   { href: "/studio/gift-codes", label: "Gift codes" },

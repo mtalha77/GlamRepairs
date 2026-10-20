@@ -1,0 +1,44 @@
+name: Client emails
+
+# Calls /api/cron/client-emails every hour on GitHub's scheduler, because
+# Vercel cron does not fire on this project (see gsc-sync.yml). Each run
+# sends the abandoned-assessment emails that are due and the 15 and 30 day
+# follow-up emails (20 October 2026). Safe to run twice.
+
+on:
+  schedule:
+    - cron: "41 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: client-emails
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          URL: https://www.glamrepairs.com/api/cron/client-emails
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET is not set in this repository's Actions secrets."
+            exit 1
+          fi
+          code=$(curl --silent --show-error --retry 2 --retry-delay 10 --retry-all-errors \
+            --max-time 130 --write-out '%{http_code}' --output response.json \
+            --header "Authorization: Bearer ${CRON_SECRET}" "${URL}")
+          echo "HTTP ${code}"; cat response.json; echo
+          {
+            echo "### Client emails"
+            jq -r '"- abandoned assessments: \(.abandonSent // 0) sent, \(.abandonSkipped // 0) too old to send\n- follow-ups: \(.followupsSent // 0) sent"' response.json
+            jq -r '.errors[]? | "- ⚠️ \(.)"' response.json
+          } >> "$GITHUB_STEP_SUMMARY" || true
+          [ "${code}" = "200" ] || { echo "::error::Client emails run failed (HTTP ${code})."; exit 1; }
+          if [ "$(jq -r '.ok' response.json)" != "true" ]; then
+            echo "::warning::Client emails run finished with errors. See the summary."
+          fi
