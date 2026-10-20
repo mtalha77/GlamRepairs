@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import Logo from "@/components/home/Logo";
 import EarningsCalculator from "@/components/join/EarningsCalculator";
-import { getWhatsAppChatLink, getWhatsAppDisplayNumber } from "@/lib/funnel/whatsapp";
+import { PRACTITIONER_WHATSAPP, practitionerWhatsAppLink } from "@/lib/seo/site";
 
 /**
  * /join — work from home as a skincare practitioner (HANDOVER-52 Part 5,
@@ -169,7 +169,8 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
   // Invites sent before the application moved to /join/apply.
   const { token } = await searchParams;
   if (token) redirect(`${APPLY}?token=${encodeURIComponent(token)}`);
-  const whatsapp = getWhatsAppChatLink("Hi, I have a question about working with GlamRepairs as a practitioner.");
+  // The hiring number, not the client one: see PRACTITIONER_WHATSAPP.
+  const whatsapp = practitionerWhatsAppLink("question");
 
   return (
     <div className="min-h-dvh bg-white text-brand-ink">
@@ -537,10 +538,17 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
               <strong className="font-semibold text-brand-ink">three working days</strong>, either to approve you, to ask for one or two
               things, or to say no. <strong className="font-semibold text-brand-ink">You will always get a reason.</strong>
             </p>
-            <div className="mt-7">
+            <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2">
               <Link href={APPLY} className={btnPrimary}>
                 Start your application
               </Link>
+              <p className="text-sm leading-relaxed text-brand-gray">
+                A question first?{" "}
+                <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center text-brand-primary underline underline-offset-2">
+                  WhatsApp {PRACTITIONER_WHATSAPP.display}
+                </a>
+                <span className="block text-xs">{PRACTITIONER_WHATSAPP.hours}</span>
+              </p>
             </div>
           </div>
         </section>
@@ -583,9 +591,10 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
             </Link>
             <p className="mt-5 text-[13px] text-white/75">
               Questions first?{" "}
-              <a href={whatsapp} className="underline underline-offset-2">
-                WhatsApp {getWhatsAppDisplayNumber()}
+              <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center underline underline-offset-2">
+                WhatsApp {PRACTITIONER_WHATSAPP.display}
               </a>
+              , {PRACTITIONER_WHATSAPP.hours}.
             </p>
           </div>
         </section>

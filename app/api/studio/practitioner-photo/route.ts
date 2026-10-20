@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   }
   if (!profileId) return NextResponse.json({ ok: false, error: "No practitioner profile." }, { status: 403 });
 
-  const stored = await storeProfilePhoto(profileId, Buffer.from(await file.arrayBuffer()));
+  const stored = await storeProfilePhoto(profileId, Buffer.from(await file.arrayBuffer()), file.type);
   if (!stored.ok) return NextResponse.json({ ok: false, error: stored.error }, { status: 400 });
   return NextResponse.json({ ok: true, url: stored.url });
 }

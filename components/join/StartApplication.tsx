@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { WhatsAppHelpLine } from "@/components/join/PractitionerWhatsApp";
 import { formInputClassName, formLabelClassName } from "@/components/ui/fieldStyles";
 
 /**
@@ -73,6 +74,7 @@ export default function StartApplication({ intro }: { intro?: string }) {
       >
         {busy ? "Sending…" : "Email me my application link"}
       </button>
+      <WhatsAppHelpLine />
     </form>
   );
 }

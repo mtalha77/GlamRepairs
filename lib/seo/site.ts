@@ -435,3 +435,36 @@ export function canonicalOg(
     twitter,
   };
 }
+
+/**
+ * Practitioner and hiring enquiries only. Clients use SITE.phone.
+ *
+ * Two numbers on purpose (Talha, 19 October 2026), not an inconsistency:
+ *
+ *   0301 8770506  SITE.phone   clients: footer, FAQ, /pricing, /contact,
+ *                              the funnel, and the Google Business Profile
+ *   0335 5880333  this         practitioners: /join and /join/apply only
+ *
+ * Recruitment is a separate channel. Do not "fix" this by merging them, and
+ * never show this number on a client-facing page or in the footer.
+ */
+export const PRACTITIONER_WHATSAPP = {
+  digits: "923355880333",
+  display: "0335 5880333",
+  /** The hours it is answered, labelled with the zone: applicants are not all in Pakistan. */
+  hours: "12pm to 10pm PKT, Monday to Saturday",
+} as const;
+
+/** Prefilled openings, one per place the link appears, so each message arrives already in context. */
+export const PRACTITIONER_WHATSAPP_TEXT = {
+  question: "Hi, I have a question about working with GlamRepairs as a practitioner.",
+  help: "Hi, I need help with the GlamRepairs practitioner application form.",
+  documents: "Hi, I am having trouble uploading my documents to the GlamRepairs practitioner application.",
+  // Ends with "My name is " so the cursor sits where they type their name.
+  submitted: "Hi, I have just submitted my practitioner application to GlamRepairs. My name is ",
+  confirmation: "Hi, I have submitted my practitioner application to GlamRepairs and wanted to check it came through.",
+} as const;
+
+export function practitionerWhatsAppLink(context: keyof typeof PRACTITIONER_WHATSAPP_TEXT): string {
+  return `https://wa.me/${PRACTITIONER_WHATSAPP.digits}?text=${encodeURIComponent(PRACTITIONER_WHATSAPP_TEXT[context])}`;
+}
