@@ -19,6 +19,7 @@ import {
 } from "@/lib/studio/customers";
 import {
   bootstrapOwnerIfNeeded,
+  canManageClients,
   listStudioMembers,
   requireStudioMember,
 } from "@/lib/studio/member";
@@ -461,7 +462,7 @@ export async function createCustomerAction(formData: FormData) {
   }
 
   revalidatePath("/studio/customers");
-  if (member.role !== "owner") {
+  if (!canManageClients(member)) {
     redirect("/studio/customers?added=1");
   }
   redirect(`/studio/customers/${data.id}`);
@@ -621,7 +622,7 @@ export async function sendCustomerEmailAction(formData: FormData) {
 
 export async function assignCustomerAction(formData: FormData) {
   const { member } = await requireStudioMember();
-  if (!member || member.role !== "owner") {
+  if (!canManageClients(member)) {
     redirect("/studio/customers?error=forbidden");
   }
 
@@ -662,7 +663,7 @@ export async function assignCustomerAction(formData: FormData) {
 
 export async function assignCustomersBulkAction(formData: FormData) {
   const { member } = await requireStudioMember();
-  if (!member || member.role !== "owner") {
+  if (!canManageClients(member)) {
     redirect("/studio/customers?error=forbidden");
   }
 

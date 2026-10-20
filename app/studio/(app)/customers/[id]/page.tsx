@@ -35,7 +35,7 @@ import {
 import { visiblePhotoCount } from "@/lib/studio/customerTypes";
 import { listCustomerEmails } from "@/lib/studio/emails";
 import { formatStudioDateTime } from "@/lib/studio/formatDate";
-import { listStudioMembers, requireStudioMember } from "@/lib/studio/member";
+import { canManageClients, listStudioMembers, requireStudioMember } from "@/lib/studio/member";
 import {
   getPersonHistory,
   listSiblingSubmissions,
@@ -99,6 +99,8 @@ export default async function CustomerDetailPage({
   }
 
   const isOwner = member.role === "owner";
+  // Assigning is the owner's and any super admin's (Ayma, the MD).
+  const manages = canManageClients(member);
   const canSendReport = member.canSendReport;
   const [answers, emails, reports, reviews, members, reportsWritten] =
     await Promise.all([
@@ -106,7 +108,7 @@ export default async function CustomerDetailPage({
       listCustomerEmails(customer.id),
       listCustomerReports(customer.id),
       listCustomerReviews(customer.id),
-      isOwner ? listStudioMembers() : Promise.resolve([]),
+      manages ? listStudioMembers() : Promise.resolve([]),
       // Drives whether the writing guidelines start expanded.
       user ? countReportsByAuthor(user.id) : Promise.resolve(0),
     ]);
@@ -338,7 +340,7 @@ export default async function CustomerDetailPage({
               notes={customer.notes ?? ""}
             />
           </div>
-          {isOwner ? (
+          {manages ? (
             <div className="rounded-2xl border border-brand-lavender/70 bg-white p-5">
               <h2 className="mb-4 font-serif text-xl text-brand-primary">
                 Assign to team
