@@ -889,6 +889,19 @@ export type Database = {
         };
         Relationships: [];
       };
+      /** Email 2FA (20 October 2026). Service role only. */
+      studio_verified_sessions: {
+        Row: { session_id: string; user_id: string; method: "code" | "trusted_device" | "invite"; verified_at: string; expires_at: string };
+        Insert: { session_id: string; user_id: string; method: "code" | "trusted_device" | "invite"; verified_at?: string; expires_at: string };
+        Update: { expires_at?: string };
+        Relationships: [];
+      };
+      studio_login_codes: {
+        Row: { id: string; user_id: string; session_id: string; code_hash: string; attempts: number; expires_at: string; used_at: string | null; created_at: string };
+        Insert: { user_id: string; session_id: string; code_hash: string; expires_at: string };
+        Update: { attempts?: number; used_at?: string | null };
+        Relationships: [];
+      };
       /** Payment records (19 October 2026). Read for the client history. */
       payments: {
         Row: {

@@ -20,10 +20,16 @@ export default async function StudioAppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, member } = await requireStudioMember();
+  const { user, member, needsVerification } = await requireStudioMember();
 
   if (!user) {
     redirect("/studio/login");
+  }
+
+  // Email 2FA (20 October 2026): a new session, or one verified over 30 days ago.
+  if (needsVerification) {
+    const path = (await headers()).get(STUDIO_PATH_HEADER) ?? "/studio";
+    redirect(`/studio/verify?next=${encodeURIComponent(path)}`);
   }
 
   if (!member) {

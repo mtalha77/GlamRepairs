@@ -8,7 +8,7 @@ import {
   slugifyFilename,
   type MediaRole,
 } from "@/lib/studio/mediaProcess";
-import { getStudioMember, getStudioUser } from "@/lib/studio/member";
+import { requireStudioMember } from "@/lib/studio/member";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 /**
@@ -40,9 +40,8 @@ function storageCredentials() {
 }
 
 export async function POST(request: Request) {
-  const user = await getStudioUser();
+  const { user, member } = await requireStudioMember();
   if (!user) return fail("Not signed in.", 401);
-  const member = await getStudioMember(user.id);
   if (!member) return fail("Not a studio member.", 403);
 
   const form = await request.formData().catch(() => null);

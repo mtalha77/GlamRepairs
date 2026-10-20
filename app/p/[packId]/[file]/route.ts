@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createSignedPhotoUrl } from "@/lib/leads/signedPhotoUrl";
 import { storagePathFromShortParts } from "@/lib/leads/photoShortLink";
-import { getStudioMember, getStudioUser } from "@/lib/studio/member";
+import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 type RouteContext = {
@@ -47,10 +47,8 @@ export async function GET(_request: Request, context: RouteContext) {
   const storagePath = storagePathFromShortParts(packId, file);
   if (!storagePath) return notFound();
 
-  const user = await getStudioUser();
+  const { user, member } = await requireStudioMember();
   if (!user) return notFound();
-
-  const member = await getStudioMember(user.id);
   if (!member) return notFound();
 
   const admin = createAdminSupabaseClient();

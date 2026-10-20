@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { storeProfilePhoto } from "@/lib/practitioners/photo";
 import { ownPractitionerProfile } from "@/lib/practitioners/roster";
-import { getStudioMember, getStudioUser } from "@/lib/studio/member";
+import { requireStudioMember } from "@/lib/studio/member";
 
 /**
  * A practitioner's profile photograph — HANDOVER-52 §2.6, §4.1 step 4.
@@ -16,9 +16,8 @@ const MAX_INPUT_BYTES = 4_000_000;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
 
 export async function POST(request: Request) {
-  const user = await getStudioUser();
+  const { user, member } = await requireStudioMember();
   if (!user) return NextResponse.json({ ok: false, error: "Not signed in." }, { status: 401 });
-  const member = await getStudioMember(user.id);
   if (!member) return NextResponse.json({ ok: false, error: "Not a studio member." }, { status: 403 });
 
   const form = await request.formData().catch(() => null);

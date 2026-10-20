@@ -30,6 +30,13 @@ import {
 } from "@/lib/studio/report";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
 import {
+  currentStudioSession,
+  ensureVerified,
+  markSessionVerified,
+  rememberDevice,
+  sendSignInCode,
+} from "@/lib/studio/twoFactor";
+import {
   deletePhotosForLead,
   isPhotoDeletionReason,
   readPhotoPaths,
@@ -90,6 +97,16 @@ export async function signInAction(formData: FormData) {
     nextPath.startsWith("/studio") && !nextPath.startsWith("//")
       ? nextPath
       : "/studio";
+
+  // Email 2FA (20 October 2026): straight in on a device verified within 30
+  // days; otherwise a code goes to the account's email first.
+  const session = await currentStudioSession();
+  if (session && !(await ensureVerified(session))) {
+    const sent = await sendSignInCode(session);
+    redirect(
+      `/studio/verify?next=${encodeURIComponent(safeNext)}${sent.ok ? "&sent=1" : `&error=${encodeURIComponent(sent.error)}`}`,
+    );
+  }
   redirect(safeNext);
 }
 
@@ -347,6 +364,13 @@ export async function acceptStudioInviteAction(formData: FormData) {
   if (error) {
     console.error("[acceptStudioInviteAction]", error.message);
     redirect("/studio/login?error=expired");
+  }
+
+  // The emailed link proves the inbox, which is what a sign-in code proves.
+  const session = await currentStudioSession();
+  if (session) {
+    await markSessionVerified(session, "invite");
+    await rememberDevice(session.userId);
   }
 
   redirect("/studio/set-password");
