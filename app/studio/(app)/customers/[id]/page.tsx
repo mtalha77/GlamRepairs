@@ -10,6 +10,7 @@ import ComposeEmailForm from "@/components/studio/ComposeEmailForm";
 import CreateReportForm from "@/components/studio/CreateReportForm";
 import ReportGuidelines from "@/components/studio/ReportGuidelines";
 import CustomerStatusForm from "@/components/studio/CustomerStatusForm";
+import ClientTimeline from "@/components/studio/ClientTimeline";
 import EmailHistory from "@/components/studio/EmailHistory";
 import DeletePhotosButton from "@/components/studio/DeletePhotosButton";
 import GiftCodePanel from "@/components/studio/GiftCodePanel";
@@ -33,6 +34,7 @@ import {
   getStudioCustomer,
 } from "@/lib/studio/customers";
 import { visiblePhotoCount } from "@/lib/studio/customerTypes";
+import { clientTimeline } from "@/lib/studio/clientTimeline";
 import { listCustomerEmails } from "@/lib/studio/emails";
 import { formatStudioDateTime } from "@/lib/studio/formatDate";
 import { canManageClients, listStudioMembers, requireStudioMember } from "@/lib/studio/member";
@@ -121,6 +123,7 @@ export default async function CustomerDetailPage({
     outstandingGiftCode,
     giftCapacity,
     consultation,
+    timeline,
   ] = await Promise.all([
     getPersonHistory(customer.personKey),
     listSiblingSubmissions(customer.personKey, customer.id),
@@ -129,6 +132,9 @@ export default async function CustomerDetailPage({
     getGiftCapacity(),
     // HANDOVER-50 — shown first on the page; null for plans without a call.
     getLeadConsultation(customer.id),
+    // 20 October 2026 — the whole record on one line. The lead was read
+    // through RLS above, so this viewer may see this client.
+    clientTimeline(customer.id, { includeContactEdits: member.isSuperAdmin }),
   ]);
 
   // Only fetched for non-super-admins: the redacted copy comes from the
@@ -433,6 +439,11 @@ export default async function CustomerDetailPage({
           </h2>
           <EmailHistory emails={emails} />
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-brand-lavender/70 bg-white p-5">
+        <h2 className="mb-4 font-serif text-xl text-brand-primary">History</h2>
+        <ClientTimeline events={timeline} />
       </section>
 
       {member.isSuperAdmin ? (
