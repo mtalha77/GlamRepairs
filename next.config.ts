@@ -46,6 +46,21 @@ const nextConfig: NextConfig = {
       : [],
   },
   serverExternalPackages: ["pdf-lib"],
+  /*
+   * 19 October 2026 — sharp's native library was missing from the deployed
+   * functions. The tracer packed Next's own nested copy of libvips (8.17.3)
+   * but not the 8.18.3 that the app's sharp 0.35 links against, so every
+   * route that loaded sharp failed with ERR_DLOPEN_FAILED: the media library
+   * and, through an import, the application decision buttons. Ship it
+   * explicitly. (The callers also load sharp lazily now, so a failure here
+   * breaks an image resize, never a page.)
+   */
+  outputFileTracingIncludes: {
+    "/**": [
+      "./node_modules/@img/sharp-libvips-linux-x64/lib/**/*",
+      "./node_modules/@img/sharp-linux-x64/lib/**/*",
+    ],
+  },
   turbopack: {
     root: __dirname,
   },

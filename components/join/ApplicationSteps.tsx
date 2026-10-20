@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { WhatsAppHelpBlock, WhatsAppHelpLine } from "@/components/join/PractitionerWhatsApp";
 import { formInputClassName, formLabelClassName } from "@/components/ui/fieldStyles";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 
@@ -168,11 +169,14 @@ export default function ApplicationSteps({
 
   if (done) {
     return (
-      <div role="status" className="rounded-2xl bg-brand-purple-soft p-6">
-        <h2 className="font-serif text-2xl italic text-brand-primary">Submitted</h2>
-        <p className="mt-2 text-sm leading-relaxed text-brand-ink">
-          Thank you. We read every application ourselves and reply within 3 working days, by email to {email}.
-        </p>
+      <div className="space-y-4">
+        <div role="status" className="rounded-2xl bg-brand-purple-soft p-6">
+          <h2 className="font-serif text-2xl italic text-brand-primary">Your application is in</h2>
+          <p className="mt-2 text-sm leading-relaxed text-brand-ink">
+            Thank you. We read every application ourselves and reply within three working days, by email to {email}.
+          </p>
+        </div>
+        <WhatsAppHelpBlock context="confirmation" heading="Anything urgent?" body="Message us on WhatsApp." />
       </div>
     );
   }
@@ -473,10 +477,14 @@ export default function ApplicationSteps({
             </button>
           ) : null}
         </div>
+        {step === 5 ? (
+          <WhatsAppHelpBlock context="submitted" heading="Need help, or want to check it arrived?" body="Message us on WhatsApp." />
+        ) : null}
         <p className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-gray">
           <span>Saved after every step. The link in your email brings you back here.</span>
           {justSaved ? <span className="font-medium text-brand-success-strong">✓ Saved</span> : null}
         </p>
+        {step !== 5 ? <WhatsAppHelpLine context={step === 3 ? "documents" : "help"} /> : null}
       </div>
     </div>
   );

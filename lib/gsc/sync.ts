@@ -164,44 +164,69 @@ export async function syncBackfill(from?: string, to?: string): Promise<SyncResu
 }
 
 /**
- * Weekly URL Inspection of every URL in the sitemap (§3.5). Sequential:
- * the API allows 600 a minute and this site has a few dozen URLs, so there
- * is nothing to gain from parallel calls and a rate-limit error to lose.
+ * Weekly URL Inspection of every URL in the sitemap (§3.5).
+ *
+ * 19 October 2026: run one by one, the growing sitemap took longer than the
+ * function's 300 seconds, so the run was killed before it logged anything
+ * (three timeouts that day). Now five at a time (the API allows 600 a
+ * minute), the least recently checked first, and it stops starting new
+ * inspections at a time budget and saves what it has. A run that does not
+ * finish is logged as partial and the next one carries on from the stalest.
  */
+const INSPECT_CONCURRENCY = 5;
+const INSPECT_BUDGET_MS = 240_000;
+
 export async function syncIndexStatus(): Promise<SyncResult> {
   if (!gscConfigured()) return notConfigured("index");
+  const startedAt = Date.now();
   const supabase = createAdminSupabaseClient();
-  const urls = [...new Set((await sitemap()).map((e) => e.url))].slice(0, 1500);
+  const all = [...new Set((await sitemap()).map((e) => e.url))].slice(0, 1500);
+  const { data: checked } = await supabase.from("gsc_index_status").select("url, checked_at");
+  const lastChecked = new Map((checked ?? []).map((c) => [c.url, c.checked_at ?? ""]));
+  const urls = [...all].sort((a, b) => (lastChecked.get(a) ?? "").localeCompare(lastChecked.get(b) ?? ""));
+
   let written = 0;
+  let next = 0;
+  let stopped = false;
   const failures: string[] = [];
-  for (const url of urls) {
-    try {
-      const r = await inspectUrl(url);
-      const { error } = await supabase.from("gsc_index_status").upsert({
-        url,
-        verdict: r.verdict,
-        coverage_state: r.coverageState,
-        robots_state: r.robotsTxtState,
-        indexing_state: r.indexingState,
-        last_crawled: r.lastCrawlTime,
-        checked_at: new Date().toISOString(),
-      });
-      if (error) throw new Error(error.message);
-      written++;
-    } catch (err) {
-      failures.push(`${url}: ${(err as Error).message}`);
-      // A permissions error will fail every URL the same way.
-      if (/403|refused access/.test((err as Error).message)) break;
+
+  async function worker() {
+    while (!stopped && next < urls.length) {
+      if (Date.now() - startedAt > INSPECT_BUDGET_MS) return;
+      const url = urls[next++];
+      try {
+        const r = await inspectUrl(url);
+        const { error } = await supabase.from("gsc_index_status").upsert({
+          url,
+          verdict: r.verdict,
+          coverage_state: r.coverageState,
+          robots_state: r.robotsTxtState,
+          indexing_state: r.indexingState,
+          last_crawled: r.lastCrawlTime,
+          checked_at: new Date().toISOString(),
+        });
+        if (error) throw new Error(error.message);
+        written++;
+      } catch (err) {
+        failures.push(`${url}: ${(err as Error).message}`);
+        // A permissions error will fail every URL the same way.
+        if (/403|refused access/.test((err as Error).message)) stopped = true;
+      }
     }
   }
+  await Promise.all(Array.from({ length: INSPECT_CONCURRENCY }, () => worker()));
+  const complete = next >= urls.length && !stopped;
+
   // URLs no longer in the sitemap would otherwise sit in the panel forever.
-  if (urls.length > 0 && failures.length === 0) {
-    const { data: stored } = await supabase.from("gsc_index_status").select("url");
-    const gone = (stored ?? []).map((s) => s.url).filter((u) => !urls.includes(u));
+  if (complete && all.length > 0 && failures.length === 0) {
+    const gone = (checked ?? []).map((s) => s.url).filter((u) => !all.includes(u));
     if (gone.length > 0) await supabase.from("gsc_index_status").delete().in("url", gone);
   }
   const ok = failures.length === 0;
-  const error = ok ? null : `${failures.length} of ${urls.length} failed. ${failures.slice(0, 3).join(" | ")}`.slice(0, 1000);
+  const partial = complete ? "" : ` Partial: ${written} of ${urls.length} inspected before the time budget; the next run continues with the rest.`;
+  const error = ok && complete
+    ? null
+    : `${failures.length ? `${failures.length} of ${urls.length} failed. ${failures.slice(0, 3).join(" | ")}` : ""}${partial}`.trim().slice(0, 1000);
   await log({ kind: "index", rows_written: written, ok, error });
   return { kind: "index", rows: written, ok, ...(error ? { error } : {}) };
 }

@@ -1,6 +1,6 @@
 import "server-only";
 
-import sharp from "sharp";
+import type SharpModule from "sharp";
 
 /**
  * Image processing for the media library — HANDOVER-45 §3.1.
@@ -49,7 +49,17 @@ export async function processImage(
   role: MediaRole,
   focal: { x: number; y: number } = { x: 0.5, y: 0.5 },
 ): Promise<ProcessedImage | { error: string }> {
-  let base: sharp.Sharp;
+  // Loaded here, not at the top of the file: this module also exports the
+  // role list the media page renders, and a native image library that fails
+  // to load must break an upload, never the page (19 October 2026).
+  let sharp: typeof SharpModule;
+  try {
+    sharp = (await import("sharp")).default;
+  } catch (err) {
+    console.error("[processImage] sharp failed to load", err);
+    return { error: "Image processing is unavailable right now. Please try again later." };
+  }
+  let base: SharpModule.Sharp;
   try {
     base = sharp(input, { failOn: "error" }).rotate(); // honour EXIF orientation
     const meta = await base.metadata();

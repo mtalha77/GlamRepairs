@@ -299,7 +299,7 @@ async function carryOverToProfile(
   if (!photo) return;
   const { data: file } = await admin.storage.from(DOCS_BUCKET).download(photo.storage_path);
   if (!file) return;
-  const stored = await storeProfilePhoto(profileId, Buffer.from(await file.arrayBuffer()));
+  const stored = await storeProfilePhoto(profileId, Buffer.from(await file.arrayBuffer()), file.type || "image/jpeg");
   if (!stored.ok) console.error("[approve] photo", stored.error);
 }
 

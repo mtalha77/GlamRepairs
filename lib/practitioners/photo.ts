@@ -1,6 +1,6 @@
 import "server-only";
 
-import sharp from "sharp";
+import type SharpModule from "sharp";
 
 import { MEDIA_BUCKET } from "@/lib/studio/media";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -16,21 +16,39 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 export async function storeProfilePhoto(
   profileId: string,
   input: Buffer,
+  mime = "image/jpeg",
 ): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
-  let output: Buffer;
+  // Loaded on use, never at import: every server action in a file that
+  // imported this used to fail with it when the native library was missing
+  // (the application decision buttons, 19 October 2026).
+  let output = input;
+  let contentType = mime;
+  let ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+  let sharp: typeof SharpModule | null = null;
   try {
-    output = await sharp(input, { failOn: "error" })
-      .rotate()
-      .resize(800, 1000, { fit: "cover", position: "attention" })
-      .webp({ quality: 82 })
-      .toBuffer();
-  } catch {
-    return { ok: false, error: "That image could not be read." };
+    sharp = (await import("sharp")).default;
+  } catch (err) {
+    // Keep the photograph as uploaded rather than fail an approval over a
+    // resize. It is checked by a person before it goes live either way.
+    console.error("[storeProfilePhoto] sharp failed to load; storing the original", err);
+  }
+  if (sharp) {
+    try {
+      output = await sharp(input, { failOn: "error" })
+        .rotate()
+        .resize(800, 1000, { fit: "cover", position: "attention" })
+        .webp({ quality: 82 })
+        .toBuffer();
+      contentType = "image/webp";
+      ext = "webp";
+    } catch {
+      return { ok: false, error: "That image could not be read." };
+    }
   }
 
   const admin = createAdminSupabaseClient();
-  const path = `practitioners/${profileId}/${Date.now()}.webp`;
-  const { error: upError } = await admin.storage.from(MEDIA_BUCKET).upload(path, output, { contentType: "image/webp", upsert: false });
+  const path = `practitioners/${profileId}/${Date.now()}.${ext}`;
+  const { error: upError } = await admin.storage.from(MEDIA_BUCKET).upload(path, output, { contentType, upsert: false });
   if (upError) return { ok: false, error: "Upload failed. Please try again." };
   const { data: pub } = admin.storage.from(MEDIA_BUCKET).getPublicUrl(path);
 
