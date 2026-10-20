@@ -463,6 +463,7 @@ export const PRACTITIONER_WHATSAPP_TEXT = {
   // Ends with "My name is " so the cursor sits where they type their name.
   submitted: "Hi, I have just submitted my practitioner application to GlamRepairs. My name is ",
   confirmation: "Hi, I have submitted my practitioner application to GlamRepairs and wanted to check it came through.",
+  assessment: "Hi, I am having trouble with the GlamRepairs practitioner assessment.",
 } as const;
 
 export function practitionerWhatsAppLink(context: keyof typeof PRACTITIONER_WHATSAPP_TEXT): string {

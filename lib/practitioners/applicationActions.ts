@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { sendPractitionerEmail } from "@/lib/email/sendPractitionerEmail";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 import { DOCS_BUCKET, OPEN_STATUSES } from "@/lib/practitioners/applications";
+import { ASSESSMENT_MINUTES, ASSESSMENT_QUESTIONS, assessmentUrl } from "@/lib/practitioners/assessment";
 import { REVISION_FIELDS, signApplicationEdit } from "@/lib/practitioners/join";
 import { storeProfilePhoto } from "@/lib/practitioners/photo";
 import { requireStudioMember } from "@/lib/studio/member";
@@ -39,6 +40,8 @@ function plainError(message: string): string {
   if (message.includes("rejection_needs_note") || message.includes("needs a reason")) {
     return "A rejection needs a reason of at least six characters; it is emailed to the applicant.";
   }
+  if (message.includes("degree document has not been verified")) return "Verify the degree before approving.";
+  if (message.includes("photograph has not been checked")) return "Verify the photograph before approving.";
   return message;
 }
 
@@ -119,7 +122,47 @@ export async function setApplicationStage(input: {
   if (!data?.length) return { ok: false, error: "This application is already decided." };
   revalidatePath(PATH);
   revalidatePath(`${PATH}/${input.id}`);
-  return { ok: true, message: "Stage saved." };
+  return {
+    ok: true,
+    message: input.status === "test_assessment" ? "Stage saved. Send them the assessment link from the Assessment section below." : "Stage saved.",
+  };
+}
+
+/**
+ * Email the screening assessment link — spec 20 October §6.3. Moves the
+ * application to the test stage if it is not there already. Each send
+ * allows one start; sending again is how a second attempt is granted.
+ */
+export async function sendAssessmentLink(input: { id: string }): Promise<ApplicationActionResult> {
+  const g = await guard();
+  if ("error" in g) return { ok: false, error: g.error as string };
+  const admin = createAdminSupabaseClient();
+  const now = new Date().toISOString();
+  const { data: app, error } = await admin
+    .from("practitioner_applications")
+    .update({ status: "test_assessment", assessment_sent_at: now, updated_at: now })
+    .eq("id", input.id)
+    .in("status", OPEN_STATUSES)
+    .is("deleted_at", null)
+    .select("id, full_name, email")
+    .maybeSingle();
+  if (error) return { ok: false, error: plainError(error.message) };
+  if (!app) return { ok: false, error: "This application is already decided." };
+
+  const url = assessmentUrl(app.id);
+  const sent = await sendPractitionerEmail({
+    kind: "assessment",
+    toEmail: app.email,
+    name: app.full_name,
+    assessmentUrl: url,
+    questions: ASSESSMENT_QUESTIONS,
+    minutes: ASSESSMENT_MINUTES,
+  });
+  revalidatePath(PATH);
+  revalidatePath(`${PATH}/${app.id}`);
+  return sent.ok
+    ? { ok: true, message: `Assessment link emailed to ${app.email}.` }
+    : { ok: true, message: `The link is ready, but the email failed (${sent.message}). Send them this link: ${url}` };
 }
 
 export async function verifyApplicationDocument(input: {

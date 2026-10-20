@@ -405,6 +405,7 @@ export type Database = {
           payout_bank: string | null;
           payout_account_title: string | null;
           payout_reference: string | null;
+          assessment_sent_at: string | null;
         };
         Insert: {
           full_name: string;
@@ -455,6 +456,86 @@ export type Database = {
           payout_bank?: string | null;
           payout_account_title?: string | null;
           payout_reference?: string | null;
+          assessment_sent_at?: string | null;
+        };
+        Relationships: [];
+      };
+      /** HANDOVER-56 — the screening test. Service role only; RLS on, no policies. */
+      assessment_questions: {
+        Row: {
+          id: string;
+          code: string;
+          category: "scope" | "safety" | "ingredients" | "climate" | "ethics" | "process";
+          prompt: string;
+          options: Record<string, string>;
+          correct_key: string;
+          rationale: string;
+          difficulty: number;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      assessment_attempts: {
+        Row: {
+          id: string;
+          application_id: string;
+          question_ids: string[];
+          started_at: string;
+          expires_at: string;
+          submitted_at: string | null;
+          score: number | null;
+          max_score: number;
+          passed: boolean | null;
+          pass_mark: number;
+          blur_events: number;
+          paste_events: number;
+          longest_gap_seconds: number | null;
+          total_seconds: number | null;
+          flagged: boolean;
+          flag_reason: string | null;
+          attempt_no: number;
+          invalidated_at: string | null;
+          invalidated_by: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: {
+          blur_events?: number;
+          paste_events?: number;
+          longest_gap_seconds?: number | null;
+          total_seconds?: number | null;
+          invalidated_at?: string | null;
+          invalidated_by?: string | null;
+          flag_reason?: string | null;
+        };
+        Relationships: [];
+      };
+      assessment_answers: {
+        Row: {
+          attempt_id: string;
+          question_id: string;
+          chosen_key: string | null;
+          correct: boolean | null;
+          seconds_spent: number | null;
+          changed_count: number;
+          answered_at: string | null;
+        };
+        Insert: {
+          attempt_id: string;
+          question_id: string;
+          chosen_key?: string | null;
+          seconds_spent?: number | null;
+          changed_count?: number;
+          answered_at?: string | null;
+        };
+        Update: {
+          chosen_key?: string | null;
+          seconds_spent?: number | null;
+          changed_count?: number;
+          answered_at?: string | null;
         };
         Relationships: [];
       };
@@ -2311,6 +2392,15 @@ export type Database = {
       reject_practitioner_application: {
         Args: { p_app: string; p_by: string; p_note: string; p_keep_days?: number };
         Returns: undefined;
+      };
+      /** HANDOVER-56 — service role only. Starts the clock; refuses a second open attempt or a third submission. */
+      start_assessment: {
+        Args: { p_app: string; p_minutes?: number; p_count?: number };
+        Returns: { out_attempt_id: string; out_expires_at: string; out_question_ids: string[] }[];
+      };
+      submit_assessment: {
+        Args: { p_attempt: string };
+        Returns: { out_score: number; out_max: number; out_passed: boolean; out_flagged: boolean }[];
       };
       /** HANDOVER-50 — service role only. Returns the hold token, or null when the slot is gone. */
       hold_slot: {
