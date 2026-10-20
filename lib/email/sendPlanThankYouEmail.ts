@@ -1,3 +1,4 @@
+import { logClientEmail } from "@/lib/email/logClientEmail";
 import { escapeHtml, getResendConfig } from "@/lib/email/resendClient";
 import {
   getWhatsAppChatLink,
@@ -22,6 +23,8 @@ export type PlanThankYouPayload = {
    * still be sent, it just carries no reference.
    */
   sessionId?: string | null;
+  /** Puts the email on the client's record (20 October 2026). */
+  leadId?: string | null;
   /**
    * HANDOVER-28 §1.1 — the confirmation email is one of the four places the
    * bank block must not reach a gifted client.
@@ -147,10 +150,31 @@ export async function sendPlanThankYouEmail(
 
   const { resend, from } = config;
 
-  const { error } = await resend.emails.send({
+  const subject = `Your ${planName} plan is confirmed | GlamRepairs`;
+  const textBody = [
+      `Hi ${name},`,
+      "",
+      "Thank you for completing your skin assessment with GlamRepairs.",
+      "",
+      `Your selected plan: ${planLineText}`,
+      "",
+      ...(paymentBlockText ? [paymentBlockText, ""] : []),
+      "Our experts will carefully review your answers and photos, then share personalized guidance for your skin journey.",
+      "We will be in touch with you soon with the next steps.",
+      "",
+      isPaidPlan
+        ? `Send your payment screenshot on WhatsApp: ${whatsappDisplay}`
+        : `Need help? Message us on WhatsApp: ${whatsappDisplay}`,
+      whatsappLink,
+      "",
+      "Warm regards,",
+      "The GlamRepairs Team",
+    ].join("\n");
+
+  const { data: sent, error } = await resend.emails.send({
     from,
     to: [email],
-    subject: `Your ${planName} plan is confirmed | GlamRepairs`,
+    subject,
     html: `
       <div style="font-family: Arial, Helvetica, sans-serif; line-height: 1.65; color: #2b2b2b; max-width: 560px;">
         <h2 style="color: #662d91; margin: 0 0 12px; font-size: 22px;">Hi ${safeName},</h2>
@@ -180,25 +204,18 @@ export async function sendPlanThankYouEmail(
         </p>
       </div>
     `,
-    text: [
-      `Hi ${name},`,
-      "",
-      "Thank you for completing your skin assessment with GlamRepairs.",
-      "",
-      `Your selected plan: ${planLineText}`,
-      "",
-      ...(paymentBlockText ? [paymentBlockText, ""] : []),
-      "Our experts will carefully review your answers and photos, then share personalized guidance for your skin journey.",
-      "We will be in touch with you soon with the next steps.",
-      "",
-      isPaidPlan
-        ? `Send your payment screenshot on WhatsApp: ${whatsappDisplay}`
-        : `Need help? Message us on WhatsApp: ${whatsappDisplay}`,
-      whatsappLink,
-      "",
-      "Warm regards,",
-      "The GlamRepairs Team",
-    ].join("\n"),
+    text: textBody,
+  });
+
+  await logClientEmail({
+    leadId: payload.leadId,
+    toEmail: email,
+    subject,
+    body: textBody,
+    kind: "welcome",
+    templateKey: "plan_thank_you",
+    resendId: sent?.id ?? null,
+    error: error?.message ?? null,
   });
 
   if (error) {

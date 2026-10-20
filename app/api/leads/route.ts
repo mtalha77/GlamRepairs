@@ -232,6 +232,7 @@ export async function POST(request: Request) {
       selectedPlan: body.selectedPlan,
       sessionId: body.sessionId,
       showBankDetails: includeBankDetails,
+      leadId: lead.leadId,
     });
     if (!emailResult.ok) {
       console.error(

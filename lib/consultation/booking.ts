@@ -89,6 +89,7 @@ export async function bookConsultationForLead(
       kind: "no_time",
       toEmail: lead.email,
       name: lead.full_name,
+      leadId,
       pickUrl: repickUrl(opts.appBase, leadId),
     });
     await notifyStudio({
@@ -115,6 +116,7 @@ export async function bookConsultationForLead(
       kind: "repick",
       toEmail: lead.email,
       name: lead.full_name,
+      leadId,
       pickUrl: repickUrl(opts.appBase, leadId),
     });
     await notifyStudio({
@@ -196,6 +198,11 @@ export async function bookConsultationForLead(
 
   await supabase.from("availability_slots").update({ appointment_id: appt.id }).eq("id", slot.slotId);
 
+  // Her diary changed: tell her now (the hourly job retries if this fails).
+  // Imported here, not at the top: practitionerNotices uses notifyStudio.
+  const { notifyPractitionerOfBooking } = await import("@/lib/consultation/practitionerNotices");
+  await notifyPractitionerOfBooking(appt.id).catch((err) => console.error("[booking] practitioner notice", err));
+
   if (!bridge) {
     await notifyStudio({
       title: "Consultation booked: add a video link",
@@ -210,6 +217,7 @@ export async function bookConsultationForLead(
     kind: "confirmed",
     toEmail: lead.email,
     name: lead.full_name,
+    leadId,
     startsAt: slot.startsAt,
     joinUrl: bridge?.joinUrl ?? null,
     password: bridge?.password ?? null,

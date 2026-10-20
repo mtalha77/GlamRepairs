@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { notifyStudio } from "@/lib/consultation/booking";
 import { formatSlot } from "@/lib/consultation/format";
+import { notifyPractitionerOfBooking } from "@/lib/consultation/practitionerNotices";
 import { repickUrl } from "@/lib/consultation/slots";
 import { sendConsultationEmail } from "@/lib/email/sendConsultationEmail";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
@@ -171,6 +172,9 @@ export async function reassignAppointment(input: { appointmentId: string; toPrac
     return { ok: false, error: error.message };
   }
   revalidate();
+  // The new practitioner hears about it the same way as a fresh booking.
+  await createAdminSupabaseClient().from("appointments").update({ practitioner_notified_at: null }).eq("id", input.appointmentId);
+  await notifyPractitionerOfBooking(input.appointmentId).catch((err) => console.error("[reassign] practitioner notice", err));
   return { ok: true, message: "Reassigned. The video link is unchanged." };
 }
 
@@ -239,6 +243,7 @@ export async function cannotAttend(appointmentId: string): Promise<PractitionerA
       kind: "repick",
       toEmail: lead?.email ?? null,
       name: lead?.full_name ?? null,
+      leadId: appt.lead_id,
       pickUrl: repickUrl(getPublicAppUrl(), appt.lead_id),
     });
     emailed = sent.ok;

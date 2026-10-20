@@ -5,6 +5,7 @@ import { formatSlot } from "@/lib/consultation/format";
 import { deleteBridge, ringCentralConfigured } from "@/lib/consultation/ringcentral";
 import { getConsultationSettings } from "@/lib/consultation/slots";
 import { feedbackUrl } from "@/lib/consultation/feedback";
+import { runPractitionerNotices } from "@/lib/consultation/practitionerNotices";
 import { sendConsultationEmail } from "@/lib/email/sendConsultationEmail";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 import { practitionerName } from "@/lib/practitioners/authorship";
@@ -21,6 +22,8 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
  *                              past link can never open a live room again
  *   5. feedback                one request per consultation, an hour or
  *                              more after it ends (HANDOVER-52 §3.6)
+ *   6. practitioner notices    booking, 24h/1h reminders, and the note
+ *                              chase at 2h and 24h (20 October 2026)
  *
  * Called by .github/workflows/consultations.yml, since Vercel cron does not
  * fire on this project (see app/api/cron/gsc/route.ts). Safe to run twice:
@@ -98,6 +101,7 @@ export async function GET(request: Request) {
         when,
         toEmail: lead?.email ?? null,
         name: lead?.full_name ?? null,
+        leadId: appt.lead_id,
         startsAt: appt.starts_at,
         joinUrl: appt.join_url,
         guidelinesMarkdown: settings.guidelinesMarkdown,
@@ -158,6 +162,7 @@ export async function GET(request: Request) {
       kind: "feedback",
       toEmail: lead.email,
       name: lead.full_name,
+      leadId: appt.lead_id,
       startsAt: appt.starts_at,
       practitionerName: profile?.full_name ?? "your practitioner",
       feedbackUrl: feedbackUrl(getPublicAppUrl(), appt.id),
@@ -193,6 +198,9 @@ export async function GET(request: Request) {
   if (bridges.failed) errors.push(`${bridges.failed} RingCentral rooms could not be deleted; retried next hour.`);
   if (bridges.skipped) errors.push(`${bridges.skipped} rooms are due for deletion but RingCentral is not configured.`);
 
+  const practitioner = await runPractitionerNotices();
+  errors.push(...practitioner.errors);
+
   const body = {
     ok: errors.length === 0,
     released: released.data ?? 0,
@@ -200,6 +208,7 @@ export async function GET(request: Request) {
     reminders,
     feedback,
     bridges,
+    practitioner: { booked: practitioner.booked, reminders: practitioner.reminders, notes: practitioner.notes, escalated: practitioner.escalated },
     errors,
   };
   if (errors.length) console.error("[cron/consultations]", errors.join(" | "));
