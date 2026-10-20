@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { cleanupExpiredPhotos } from "@/lib/leads/cleanupExpiredPhotos";
+import { sweepOrphanPhotos } from "@/lib/leads/sweepOrphanPhotos";
 
 /**
  * Daily job: remove Storage photographs older than 30 days. Questionnaire
@@ -70,6 +71,9 @@ export async function GET(request: Request) {
   }
 
   const result = await cleanupExpiredPhotos();
+  // Files no lead points to (20 October 2026). Reported, never blocking.
+  const orphans = await sweepOrphanPhotos();
+  if (orphans.error) console.error("[cron/cleanup-photos] orphan sweep", orphans.error);
 
   if (result.error) {
     console.error("[cron/cleanup-photos]", result.error);
@@ -83,11 +87,11 @@ export async function GET(request: Request) {
       "[cron/cleanup-photos] partial failure",
       JSON.stringify(result.failures),
     );
-    return NextResponse.json({ ok: false, ...result }, { status: 500 });
+    return NextResponse.json({ ok: false, ...result, orphans }, { status: 500 });
   }
 
   console.log(
     `[cron/cleanup-photos] processed ${result.leadsProcessed} leads, deleted ${result.filesDeleted} files`,
   );
-  return NextResponse.json({ ok: true, ...result });
+  return NextResponse.json({ ok: true, ...result, orphans });
 }

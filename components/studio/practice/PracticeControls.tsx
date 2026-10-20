@@ -145,6 +145,7 @@ export function LeaveButton() {
       <p className="text-sm leading-relaxed text-brand-ink">
         Your hours close and no new times are offered. Every consultation you have booked is handed to Ayma, who will
         attend it or give it to someone else. Your notes stay as the record, and anything you have earned is still paid.
+        Your sign-in stops working straight away, so save any payout statements you want first.
       </p>
       <label className="block text-sm">
         <span className="text-brand-gray">Anything you would like us to know (optional)</span>

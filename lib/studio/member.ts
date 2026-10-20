@@ -23,6 +23,15 @@ export type StudioMember = {
   createdAt: string;
 };
 
+/**
+ * Sees every client and assigns them — 20 October 2026. The owner, and any
+ * super admin (Ayma, the MD). Practitioners never choose their own clients.
+ * Matches private.can_manage_clients() in the leads policies.
+ */
+export function canManageClients(member: Pick<StudioMember, "role" | "isSuperAdmin"> | null | undefined): boolean {
+  return Boolean(member && (member.role === "owner" || member.isSuperAdmin));
+}
+
 function getOwnerEmail() {
   return process.env.STUDIO_OWNER_EMAIL?.trim().toLowerCase() ?? "";
 }

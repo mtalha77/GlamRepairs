@@ -246,9 +246,11 @@ export default async function PracticePage() {
             <TimeOffControls blocks={timeOff} />
           </Card>
 
-          <Card title="Leaving GlamRepairs">
-            <LeaveButton />
-          </Card>
+          {member.isSuperAdmin ? null : (
+            <Card title="Leaving GlamRepairs">
+              <LeaveButton />
+            </Card>
+          )}
         </>
       ) : null}
     </div>

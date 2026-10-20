@@ -262,10 +262,26 @@ export async function leaveGlamRepairs(reason: string): Promise<PractitionerActi
 
 async function offboard(profileId: string, by: string, reason: string): Promise<PractitionerActionResult> {
   const admin = createAdminSupabaseClient();
+  const { data: leaving } = await admin.from("practitioner_profiles").select("user_id").eq("id", profileId).maybeSingle();
+  if (leaving?.user_id) {
+    const { data: seat } = await admin.from("studio_members").select("is_super_admin").eq("user_id", leaving.user_id).maybeSingle();
+    if (seat?.is_super_admin) return { ok: false, error: "A super admin cannot be offboarded here. Remove super admin first." };
+  }
   const to = await defaultPractitionerId(profileId);
   if (!to) return { ok: false, error: "There is nobody to hand the bookings to." };
   const { data, error } = await admin.rpc("offboard_practitioner", { p_profile: profileId, p_to: to, p_by: by, p_reason: reason });
   if (error) return { ok: false, error: error.message };
+
+  // Talha, 20 October 2026: a practitioner who leaves has no access to
+  // anything. Her clients go back to the unassigned list for Ayma, the
+  // studio seat goes, and the sign-in is blocked. The profile, notes and
+  // earnings stay, for the record and the final payout.
+  if (leaving?.user_id) {
+    await admin.from("leads").update({ assigned_to: null }).eq("assigned_to", leaving.user_id);
+    await admin.from("studio_members").delete().eq("user_id", leaving.user_id);
+    const { error: banError } = await admin.auth.admin.updateUserById(leaving.user_id, { ban_duration: "876000h" });
+    if (banError) console.error("[offboard] block sign-in", banError.message);
+  }
 
   const { data: profile } = await admin.from("practitioner_profiles").select("full_name").eq("id", profileId).maybeSingle();
   const failed = data?.failed ?? [];

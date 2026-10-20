@@ -3,7 +3,7 @@ import Link from "next/link";
 import CustomerList from "@/components/studio/CustomerList";
 import CustomerSearch from "@/components/studio/CustomerSearch";
 import { listStudioCustomers } from "@/lib/studio/customers";
-import { listStudioMembers, requireStudioMember } from "@/lib/studio/member";
+import { canManageClients, listStudioMembers, requireStudioMember } from "@/lib/studio/member";
 
 type CustomersPageProps = {
   searchParams: Promise<{
@@ -25,18 +25,18 @@ export default async function StudioCustomersPage({
 }: CustomersPageProps) {
   const params = await searchParams;
   const { member } = await requireStudioMember();
-  const isOwner = member?.role === "owner";
+  const manages = canManageClients(member);
   const [customers, members] = await Promise.all([
     listStudioCustomers({
       search: params.q,
       plan: params.plan,
       payment: params.payment,
-      assigned: isOwner ? params.assigned : undefined,
+      assigned: manages ? params.assigned : undefined,
       funnel: params.funnel,
       showTest: params.showTest === "1",
       showDuplicates: params.showDuplicates === "1",
     }),
-    isOwner ? listStudioMembers() : Promise.resolve([]),
+    manages ? listStudioMembers() : Promise.resolve([]),
   ]);
 
   return (
@@ -45,9 +45,9 @@ export default async function StudioCustomersPage({
         <div>
           <h1 className="font-serif text-3xl text-brand-primary">Customers</h1>
           <p className="mt-1 text-sm text-brand-gray">
-            {isOwner
+            {manages
               ? "Select customers and assign them to a team member."
-              : "Customers assigned to you by the owner."}
+              : "Customers assigned to you by Ayma."}
           </p>
         </div>
         <Link
@@ -59,7 +59,7 @@ export default async function StudioCustomersPage({
       </div>
       {params.added ? (
         <p className="mt-6 rounded-xl bg-brand-success/15 px-4 py-3 text-sm text-brand-success-strong">
-          Customer saved. The owner will assign it to a team member.
+          Customer saved. Ayma will assign it to a team member.
         </p>
       ) : null}
       {params.bulk ? (
@@ -82,17 +82,17 @@ export default async function StudioCustomersPage({
           initialShowTest={params.showTest === "1"}
           initialShowDuplicates={params.showDuplicates === "1"}
           members={members}
-          showAssignmentFilter={isOwner}
+          showAssignmentFilter={manages}
         />
       </div>
       <div className="mt-6">
         <CustomerList
           customers={customers}
-          showAssignment={isOwner}
-          canAssign={isOwner}
+          showAssignment={manages}
+          canAssign={manages}
           members={members}
           emptyMessage={
-            isOwner
+            manages
               ? "No customers match this search yet."
               : "No customers have been assigned to you yet."
           }
