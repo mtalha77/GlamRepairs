@@ -11,6 +11,7 @@ import { escapeHtml, getResendConfig } from "@/lib/email/resendClient";
  *   rejected   the decision, with the reviewer's note (never blank: the
  *              database refuses a rejection without one)
  *   sign_in    approved: set a password for the studio
+ *   assessment the screening test link (spec 20 October §6.3)
  *
  * No claims about the applicant beyond what they told us, and nothing
  * that promises paid work: approval starts a probation, not a job.
@@ -24,7 +25,8 @@ export type PractitionerEmail =
   | (Base & { kind: "received" })
   | (Base & { kind: "rejected"; note: string })
   | (Base & { kind: "changes"; message: string; fields: string[]; editUrl: string })
-  | (Base & { kind: "sign_in"; signInUrl: string });
+  | (Base & { kind: "sign_in"; signInUrl: string })
+  | (Base & { kind: "assessment"; assessmentUrl: string; questions: number; minutes: number });
 
 const BRAND = "#662d91";
 
@@ -100,6 +102,18 @@ function compose(e: PractitionerEmail): { subject: string; html: string; text: s
         subject: "A few changes to your GlamRepairs application",
         html: shell(name, `${lines.map(p).join("")}${p(e.message)}${list ? p(list) : ""}${button(e.editUrl, "Update your application")}`),
         text: [`Hi ${name},`, "", ...lines, "", e.message, list, "", `Update it here: ${e.editUrl}`].join("\n"),
+      };
+    }
+    case "assessment": {
+      const lines = [
+        "Thank you for your application to join GlamRepairs. The next step is a short written assessment.",
+        `It is ${e.questions} multiple choice questions about skin, safety and how we work, and you have ${e.minutes} minutes once you press start. Your answers save as you go.`,
+        "Start it when you have the time free and a steady connection. Please stay on the page while it runs: we can see if the tab is left, and a person reads every result.",
+      ];
+      return {
+        subject: "Your GlamRepairs assessment",
+        html: shell(name, `${lines.map(p).join("")}${button(e.assessmentUrl, "Open the assessment")}`),
+        text: [`Hi ${name},`, "", ...lines, "", `Open it here: ${e.assessmentUrl}`].join("\n"),
       };
     }
     case "sign_in": {

@@ -11,6 +11,7 @@ import {
   requestApplicationChanges,
   resendPractitionerSignIn,
   revokePractitionerInvite,
+  sendAssessmentLink,
   setApplicationStage,
   verifyApplicationDocument,
   type ApplicationActionResult,
@@ -142,22 +143,36 @@ const STAGES: { status: PractitionerApplicationStatus; label: string }[] = [
   { status: "test_assessment", label: "Test assessments" },
 ];
 
+/** The note field says what it is for, and who reads it — spec 20 October §6.2. */
+const NOTE_LABEL = {
+  decide: { label: "Note, optional", hint: "Kept on the application. Not sent to them." },
+  changes: { label: "What needs changing, required", hint: "This is emailed to them. At least 15 characters." },
+  reject: { label: "Reason, required. This is sent to them", hint: "/join promises a reason, so make it one they can use. At least 6 characters." },
+} as const;
+
+const MIN_NOTE = { changes: 15, reject: 6 } as const;
+
 export function ApplicationDecision({
   id,
   status,
-  documentCount,
-  verifiedCount,
+  unverifiedCount,
+  degreeVerified,
+  photoVerified,
 }: {
   id: string;
   status: PractitionerApplicationStatus;
-  documentCount: number;
-  verifiedCount: number;
+  unverifiedCount: number;
+  degreeVerified: boolean;
+  photoVerified: boolean;
 }) {
   const [note, setNote] = useState("");
   const [mode, setMode] = useState<"decide" | "reject" | "changes">("decide");
   const [flagged, setFlagged] = useState<string[]>([]);
   const { result, pending, run } = useAction();
-  const unverified = documentCount - verifiedCount;
+  const canApprove = degreeVerified && photoVerified;
+  const missing = [degreeVerified ? null : "the degree", photoVerified ? null : "the photograph"].filter(Boolean).join(" and ");
+  const length = note.trim().length;
+  const short = mode !== "decide" && length < MIN_NOTE[mode];
 
   return (
     <div className="space-y-4">
@@ -180,14 +195,14 @@ export function ApplicationDecision({
       </div>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-brand-ink">
-          {mode === "reject"
-            ? "Reason (emailed to the applicant)"
-            : mode === "changes"
-              ? "What needs changing (emailed to the applicant)"
-              : "Note (optional for approval)"}
-        </span>
+        <span className="font-medium text-brand-ink">{NOTE_LABEL[mode].label}</span>
+        <span className="text-xs text-brand-gray">{NOTE_LABEL[mode].hint}</span>
         <textarea value={note} rows={3} maxLength={1000} onChange={(e) => setNote(e.target.value)} className={formInputClassName} />
+        {short && length > 0 ? (
+          <span className="text-xs text-brand-error-strong">
+            {MIN_NOTE[mode as "changes" | "reject"] - length} more {MIN_NOTE[mode as "changes" | "reject"] - length === 1 ? "character" : "characters"} needed.
+          </span>
+        ) : null}
       </label>
 
       {mode === "changes" ? (
@@ -208,9 +223,24 @@ export function ApplicationDecision({
         </fieldset>
       ) : null}
 
-      {unverified > 0 ? (
+      {mode === "decide" && !canApprove ? (
+        <div id="approve-blocked" className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-brand-ink">
+          <p className="font-medium">Verify {missing} before approving.</p>
+          {unverifiedCount > 0 ? (
+            <p className="mt-0.5 text-brand-gray">
+              {unverifiedCount} {unverifiedCount === 1 ? "document is" : "documents are"} waiting to be checked.
+            </p>
+          ) : (
+            <p className="mt-0.5 text-brand-gray">
+              {missing.includes("photograph") && missing.includes("degree")
+                ? "Neither has been uploaded."
+                : `No ${missing.replace("the ", "")} has been uploaded.`}
+            </p>
+          )}
+        </div>
+      ) : mode === "decide" && unverifiedCount > 0 ? (
         <p className="text-sm text-brand-gray">
-          {unverified} of {documentCount} {documentCount === 1 ? "document is" : "documents are"} not marked verified yet.
+          {unverifiedCount} {unverifiedCount === 1 ? "document still needs" : "documents still need"} checking.
         </p>
       ) : null}
 
@@ -222,7 +252,8 @@ export function ApplicationDecision({
             <button
               type="button"
               className={primary}
-              disabled={pending}
+              disabled={pending || !canApprove}
+              aria-describedby={canApprove ? undefined : "approve-blocked"}
               onClick={() => {
                 if (!window.confirm("Approve this application? A pending profile and a sign-in account will be created.")) return;
                 run(() => approvePractitionerApplication({ id, note }));
@@ -242,7 +273,7 @@ export function ApplicationDecision({
             <button
               type="button"
               className={primary}
-              disabled={pending || note.trim().length < 15}
+              disabled={pending || short}
               onClick={() => run(() => requestApplicationChanges({ id, fields: flagged, message: note }), () => setMode("decide"))}
             >
               {pending ? "Working…" : "Send request"}
@@ -256,7 +287,7 @@ export function ApplicationDecision({
             <button
               type="button"
               className={danger}
-              disabled={pending || note.trim().length <= 5}
+              disabled={pending || short}
               onClick={() => run(() => rejectPractitionerApplication({ id, note }))}
             >
               {pending ? "Working…" : "Reject and email them"}
@@ -267,6 +298,28 @@ export function ApplicationDecision({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Send, or send again, the screening assessment link — spec 20 October §6.3. */
+export function SendAssessmentButton({ id, sentLabel }: { id: string; sentLabel: string | null }) {
+  const { result, pending, run } = useAction();
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        className={sentLabel ? ghost : primary}
+        disabled={pending}
+        onClick={() => {
+          if (sentLabel && !window.confirm("Send the link again? It allows one more start.")) return;
+          run(() => sendAssessmentLink({ id }));
+        }}
+      >
+        {pending ? "Sending…" : sentLabel ? "Send the link again" : "Send the assessment link"}
+      </button>
+      {sentLabel ? <p className="text-xs text-brand-gray">Last sent {sentLabel}.</p> : null}
+      <Feedback result={result} />
     </div>
   );
 }

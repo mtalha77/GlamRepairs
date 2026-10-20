@@ -1,7 +1,7 @@
 import { PRACTITIONER_WHATSAPP, practitionerWhatsAppLink, PRACTITIONER_WHATSAPP_TEXT } from "@/lib/seo/site";
 
 /**
- * WhatsApp help for applicants, on /join and /join/apply only (the hiring
+ * WhatsApp help for applicants, on /join and the pages under it only (the hiring
  * number; clients use SITE.phone). Plain text and a link they choose to
  * press: no logo, no emoji, never an automatic redirect. The digits are
  * shown as text because on a desktop without WhatsApp the link does
