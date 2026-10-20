@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 
+import { currentStudioSession, ensureVerified } from "@/lib/studio/twoFactor";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { StudioRole } from "@/lib/supabase/database.types";
@@ -82,8 +83,14 @@ export async function bootstrapOwnerIfNeeded(user: User) {
   }
 }
 
+/**
+ * The member row for a signed-in user. Read with the service role, filtered
+ * to the id from the verified session: the members policy only lets staff
+ * read the table, so a practitioner's seat could not see its own row, and
+ * the RLS membership checks now also require a 2FA-verified session.
+ */
 export async function getStudioMember(userId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("studio_members")
     .select(
@@ -112,9 +119,24 @@ export async function getStudioMember(userId: string) {
   } satisfies StudioMember;
 }
 
-export async function requireStudioMember() {
+/**
+ * The signed-in studio member, or null. Since 20 October 2026 a member is
+ * only returned once this session has passed email 2FA (or the device was
+ * verified within 30 days); until then `needsVerification` is set and every
+ * page, action and route that checks for a member refuses.
+ */
+export async function requireStudioMember(): Promise<{
+  user: User | null;
+  member: StudioMember | null;
+  needsVerification?: boolean;
+}> {
   const user = await getStudioUser();
-  if (!user) return { user: null, member: null as StudioMember | null };
+  if (!user) return { user: null, member: null };
+
+  const session = await currentStudioSession();
+  if (!session || session.userId !== user.id || !(await ensureVerified(session))) {
+    return { user, member: null, needsVerification: true };
+  }
 
   await bootstrapOwnerIfNeeded(user);
   const member = await getStudioMember(user.id);
