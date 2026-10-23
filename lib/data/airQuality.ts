@@ -231,11 +231,88 @@ const LAHORE_STATIONS: Series = {
     "Safari Park read 127.8 and Wagha Border read 56.3 in the same hour: a 2.27-fold difference inside one city. Presented as a range, never averaged into a single number.",
 };
 
+/* ── October 2026, from our own hourly readings ─────────────────────── */
+
+/**
+ * The blog post comparing Lahore with ten Pakistani cities (23 October
+ * 2026). Computed by us from the readings the area pages already collect,
+ * so it is a city-wide modelled estimate, not a station reading: lower
+ * than the worst monitoring stations, and the same method in every city,
+ * which is what makes the cities comparable.
+ */
+const OWN_READINGS =
+  "GlamRepairs hourly readings (WeatherAPI.com air quality), 1 to 23 October 2026, about 620 readings per city";
+
+const PAKISTAN_CITIES_OCTOBER_2026: Series = {
+  id: "pakistan-cities-pm25-october-2026",
+  title: "Average PM2.5 in 11 Pakistani cities, October 2026",
+  subtitle: "Mean of every hourly reading from 1 to 23 October.",
+  unit: "pm25",
+  source: OWN_READINGS,
+  points: [
+    { label: "Faisalabad", value: 80.6 },
+    { label: "Lahore", value: 66.4 },
+    { label: "Gujranwala", value: 64.8 },
+    { label: "Sialkot", value: 61.9 },
+    { label: "Multan", value: 49.9 },
+    { label: "Bahawalpur", value: 41.0 },
+    { label: "Peshawar", value: 37.9 },
+    { label: "Islamabad", value: 35.9 },
+    { label: "Karachi", value: 27.6 },
+    { label: "Hyderabad", value: 25.0 },
+    { label: "Quetta", value: 20.1 },
+  ],
+  guideline: { value: 15, label: "WHO 24-hour guideline, 15" },
+  desc: "Faisalabad averaged 80.6 micrograms per cubic metre and Lahore 66.4; Quetta was cleanest at 20.1. Every city is above the WHO 24-hour guideline of 15.",
+  caption:
+    "Faisalabad, not Lahore, had the dirtiest air of the eleven. The four central Punjab cities sit together at the top, between 62 and 81.",
+};
+
+const LAHORE_WEEKLY_AUTUMN_2026: Series = {
+  id: "lahore-weekly-autumn-2026",
+  title: "Lahore, average PM2.5 by week",
+  subtitle: "Week of 23 September to week of 19 October 2026.",
+  unit: "pm25",
+  source: OWN_READINGS.replace("1 to 23 October", "23 September to 23 October"),
+  points: [
+    { label: "23 Sep", value: 75.9, partial: true },
+    { label: "28 Sep", value: 66.7 },
+    { label: "5 Oct", value: 58.4 },
+    { label: "12 Oct", value: 53.8 },
+    { label: "19 Oct", value: 90.0, partial: true },
+  ],
+  partialNote: "The first week starts on 23 September and the last runs to 23 October, five days each.",
+  guideline: { value: 15, label: "WHO 24-hour guideline, 15" },
+  caption: "Three weeks of improvement, then a 67 percent jump in the week the smog season began.",
+};
+
+const LAHORE_HOURS_OCTOBER_2026: Series = {
+  id: "lahore-hours-october-2026",
+  title: "Lahore, average PM2.5 by time of day",
+  subtitle: "Pakistan time, every reading from 1 to 23 October 2026.",
+  unit: "pm25",
+  source: OWN_READINGS,
+  points: [
+    { label: "12am", value: 78.8, note: "to 3am" },
+    { label: "3am", value: 79.6, note: "to 6am" },
+    { label: "6am", value: 84.9, note: "to 9am" },
+    { label: "9am", value: 60.0, note: "to 12pm" },
+    { label: "12pm", value: 42.3, note: "to 3pm" },
+    { label: "3pm", value: 43.6, note: "to 6pm" },
+    { label: "6pm", value: 67.0, note: "to 9pm" },
+    { label: "9pm", value: 73.5, note: "to 12am" },
+  ],
+  caption: "The early morning is twice as dirty as the early afternoon. Cold, still night air holds the smoke near the ground until the sun warms it.",
+};
+
 export const SERIES: Record<string, Series> = {
   [LAHORE_MONTHLY_2026.id]: LAHORE_MONTHLY_2026,
   [LAHORE_SEASON.id]: LAHORE_SEASON,
   [LAHORE_SEPTEMBER.id]: LAHORE_SEPTEMBER,
   [LAHORE_STATIONS.id]: LAHORE_STATIONS,
+  [PAKISTAN_CITIES_OCTOBER_2026.id]: PAKISTAN_CITIES_OCTOBER_2026,
+  [LAHORE_WEEKLY_AUTUMN_2026.id]: LAHORE_WEEKLY_AUTUMN_2026,
+  [LAHORE_HOURS_OCTOBER_2026.id]: LAHORE_HOURS_OCTOBER_2026,
 };
 
 export function getSeries(id: string): Series | undefined {

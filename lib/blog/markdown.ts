@@ -84,8 +84,36 @@ export function renderMarkdown(md: string): string {
     }
   };
 
+  /*
+   * Tables — 23 October 2026. A `| a | b |` header, a `|---|---|` rule,
+   * then rows. Posts already contained them (the AQI scale comparison) and
+   * they rendered as a paragraph of pipes. Wrapped so a wide table scrolls
+   * inside its own box on a phone instead of widening the page.
+   */
+  let table: string[][] = [];
+  const cells = (row: string) => row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+  const flushTable = () => {
+    if (!table.length) return;
+    const [head, ...body] = table;
+    out.push(
+      `<div class="gr-table"><table><thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join("")}</tr></thead><tbody>${body
+        .map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`)
+        .join("")}</tbody></table></div>`,
+    );
+    table = [];
+  };
+
   for (const raw of lines) {
     const line = raw.trimEnd();
+
+    if (/^\s*\|.*\|\s*$/.test(line)) {
+      flushPara();
+      closeList();
+      // The rule under the header carries no content.
+      if (!/^\s*\|[\s:|-]+\|\s*$/.test(line)) table.push(cells(line));
+      continue;
+    }
+    flushTable();
 
     if (!line.trim()) {
       flushPara();
@@ -171,6 +199,7 @@ export function renderMarkdown(md: string): string {
     para.push(line.trim());
   }
 
+  flushTable();
   flushPara();
   closeList();
   return out.join("\n");
