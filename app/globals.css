@@ -1070,6 +1070,40 @@ select:autofill {
 .prose-gr code {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
 }
+/* Tables from markdown. The wrapper scrolls sideways on a phone so a wide
+   table never widens the page. */
+.prose-gr .gr-table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--brand-lavender);
+  border-radius: 12px;
+}
+.prose-gr table {
+  /* One line per row, scrolling sideways in the wrapper, rather than every
+     cell wrapping word by word into a column of fragments on a phone. */
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+.prose-gr th,
+.prose-gr td {
+  padding: 0.6em 0.8em;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--brand-lavender-light);
+}
+.prose-gr th {
+  background: var(--brand-purple-soft);
+  color: var(--brand-primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.prose-gr tbody tr:last-child td {
+  border-bottom: 0;
+}
 
 /* ── The receipts on /compare ─────────────────────────────────────────────
    Three till slips, torn top and bottom. The zigzag is two 45-degree
