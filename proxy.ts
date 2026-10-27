@@ -7,5 +7,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/studio", "/studio/:path*"],
+  // /account: clients' sessions refresh here too (HANDOVER-60). Only
+  // /studio paths are ever redirected by updateStudioSession.
+  matcher: ["/studio", "/studio/:path*", "/account", "/account/:path*"],
 };

@@ -60,6 +60,7 @@ import { buildSkinReportPdf } from "@/lib/studio/reportPdf";
 import { reportSignatureFor } from "@/lib/practitioners/authorship";
 import { bookConsultationForLead } from "@/lib/consultation/booking";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
+import { sendPaymentConfirmedEmail } from "@/lib/clients/paymentConfirmed";
 
 function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "";
@@ -542,6 +543,8 @@ export async function verifyCustomerPaymentAction(formData: FormData) {
   }
 
   const supabase = await createServerSupabaseClient();
+  // Read before the update: the confirmation email goes on the change only.
+  const { data: before } = await supabase.from("leads").select("payment_status").eq("id", id).maybeSingle();
   const { error } = await supabase
     .from("leads")
     .update({
@@ -578,6 +581,9 @@ export async function verifyCustomerPaymentAction(formData: FormData) {
     console.error("[verifyCustomerPaymentAction] booking", (err as Error).message);
     booking = "error";
   }
+
+  // HANDOVER-60 — payment confirmed, with the client's sign-in link.
+  if (before?.payment_status !== "verified") await sendPaymentConfirmedEmail(id, booking);
 
   revalidatePath(`/studio/customers/${id}`);
   revalidatePath("/studio/customers");
