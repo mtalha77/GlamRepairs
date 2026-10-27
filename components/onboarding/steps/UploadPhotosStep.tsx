@@ -12,6 +12,7 @@ import { processPhoto } from "@/lib/funnel/image";
 import {
   PHOTO_CHECKS_ANSWER_KEY,
   PHOTO_HINTS,
+  duplicateOf,
   slotHint,
   type PhotoCheck,
 } from "@/lib/funnel/photoCheck";
@@ -294,7 +295,7 @@ export default function UploadPhotosStep() {
   const subtitle =
     photoLimit === 1
       ? "A clear front-face photo. Taken on your phone is perfect. Turn off any beauty filter or smoothing in your camera settings."
-      : `Front face and concern areas, ${photoLimit} photos. Taken on your phone is perfect. Turn off any beauty filter or smoothing in your camera settings.`;
+      : `Front, and one from each side. Or a close-up of the area you are asking about. Taken on your phone is perfect. Turn off any beauty filter or smoothing in your camera settings.`;
 
   return (
     <div>
@@ -305,7 +306,7 @@ export default function UploadPhotosStep() {
       />
 
       <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-[0.8125rem] text-brand-gray sm:text-sm">
-        {PHOTO_TIPS.map((tip) => (
+        {(photoLimit > 1 ? [...PHOTO_TIPS, "Different angles"] : PHOTO_TIPS).map((tip) => (
           <li key={tip} className="inline-flex items-center gap-1.5">
             <Tick className="h-2.5 w-3 text-brand-success" />
             {tip}
@@ -417,7 +418,9 @@ export default function UploadPhotosStep() {
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-[0.8125rem] font-medium text-brand-ink sm:text-sm">{slot.label}</p>
-            <p className="mt-0.5 text-[0.8125rem] leading-snug text-brand-gray sm:text-sm">{PHOTO_HINTS[hint!]}</p>
+            <p className="mt-0.5 text-[0.8125rem] leading-snug text-brand-gray sm:text-sm">{hint === "duplicate" && duplicateOf(index, checks ?? []) !== null
+                ? `This looks like the same photo as your ${visibleSlots[duplicateOf(index, checks ?? [])!].label} photo. Could you add a different one?`
+                : PHOTO_HINTS[hint!]}</p>
             <div className="mt-2 flex gap-2">
               <button
                 type="button"
