@@ -1,6 +1,6 @@
 const PACK_ID_BYTES = 6;
 const PACK_ID_PATTERN = /^[A-Za-z0-9_-]{8}$/;
-const FILE_PATTERN = /^(\d{2})\.(jpg|png)$/;
+const FILE_PATTERN = /^(\d{2})\.(jpg|png|webp)$/;
 
 function toBase64Url(bytes: Uint8Array) {
   if (typeof Buffer !== "undefined") {

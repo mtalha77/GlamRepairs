@@ -7,7 +7,10 @@ import {
   getPublicAppUrl,
   toShortPhotoUrls,
 } from "@/lib/leads/photoShortLink";
-import { uploadAssessmentPhotos } from "@/lib/leads/uploadAssessmentPhotos";
+import { getPhotosBucket, uploadAssessmentPhotos, type PhotoScan } from "@/lib/leads/uploadAssessmentPhotos";
+import { PHOTO_CHECKS_ANSWER_KEY, type PhotoCheck } from "@/lib/funnel/photoCheck";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { hashIp, recordScan, recordUploadAttempt } from "@/lib/uploads/scans";
 import type { LeadSubmitPayload, LeadSubmitResult } from "@/types/lead";
 import {
   isGiftedLead,
@@ -71,6 +74,65 @@ function collectPhotoDataUrls(payload: LeadSubmitPayload): string[] {
   }
 
   return [];
+}
+
+async function uploadRateExceededFor(ipHash: string | null) {
+  if (!ipHash) return false;
+  const { data, error } = await createAdminSupabaseClient().rpc("upload_rate_exceeded", {
+    p_ip_hash: ipHash,
+    p_lead: null,
+    p_max_files: 60,
+    p_max_bytes: 300 * 1024 * 1024,
+  });
+  if (error) console.error("[api/leads] rate check", error.message);
+  return Boolean(data);
+}
+
+/** The browser's photo check per submitted photo, in submission order. */
+function slotChecks(answers: Record<string, unknown> | undefined): (PhotoCheck | null)[] {
+  const photos = answers?.["onboarding.photos"];
+  const checks = answers?.[PHOTO_CHECKS_ANSWER_KEY];
+  if (!Array.isArray(photos) || !Array.isArray(checks)) return [];
+  const out: (PhotoCheck | null)[] = [];
+  photos.forEach((p, slot) => {
+    if (typeof p === "string" && p.startsWith("data:")) out.push((checks[slot] as PhotoCheck | null) ?? null);
+  });
+  return out;
+}
+
+/**
+ * One upload_scans row per photo, now the lead exists, and one
+ * upload_attempts row for the rate limit. The perceptual hash and skin
+ * ratio come from the browser: they are quality signals, not security
+ * controls, so the client supplying them is acceptable.
+ */
+async function recordPhotoScans(
+  leadId: string,
+  ipHash: string | null,
+  scans: PhotoScan[],
+  checks: (PhotoCheck | null)[],
+) {
+  for (const scan of scans) {
+    const check = checks[scan.index];
+    await recordScan({
+      bucket: getPhotosBucket(),
+      path: scan.path,
+      declaredMime: scan.declaredMime,
+      inspection: scan.inspection,
+      leadId,
+      removed: !scan.stored,
+      phash: check?.phash ?? null,
+      skinRatio: check?.skin ?? null,
+    });
+    await recordUploadAttempt({
+      ipHash,
+      leadId,
+      bucket: getPhotosBucket(),
+      bytes: scan.inspection.bytes,
+      accepted: scan.stored,
+      reason: scan.stored ? null : scan.inspection.failedChecks.join(","),
+    });
+  }
 }
 
 /**
@@ -157,7 +219,25 @@ export async function POST(request: Request) {
     });
   }
 
-  const { packId, photoPaths } = await uploadAssessmentPhotos(
+  /*
+   * HANDOVER-59 Part 3.2 — flooding the bucket is the cheapest attack there
+   * is. Limited per hashed IP, at 60 files an hour rather than the default
+   * 20: Pakistani mobile networks put many people behind one address, and a
+   * client retrying a six-photo submission must never hit this.
+   */
+  const ipHash = hashIp(request);
+  if (photoDataUrls.length > 0 && (await uploadRateExceededFor(ipHash))) {
+    return NextResponse.json<LeadSubmitResult>(
+      {
+        ok: false,
+        reason: "validation",
+        message: "Too many photos have been sent from this connection in the last hour. Please try again a little later, or send us the WhatsApp message.",
+      },
+      { status: 429 },
+    );
+  }
+
+  const { packId, photoPaths, scans } = await uploadAssessmentPhotos(
     body.sessionId,
     photoDataUrls,
   );
@@ -209,6 +289,8 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  await recordPhotoScans(lead.leadId, ipHash, scans, slotChecks(body.answers));
 
   // HANDOVER-50 §1 — a consultation time held mid-funnel is re-armed now,
   // so the payment window runs from when the bank details are shown. A

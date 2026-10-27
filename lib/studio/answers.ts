@@ -1,5 +1,5 @@
 import { BOOKING_ANSWER_LABELS } from "@/lib/funnel/formatBookingSummary";
-import { PHOTO_CHECKS_ANSWER_KEY, type PhotoCheck, type PhotoHintCode } from "@/lib/funnel/photoCheck";
+import { duplicateOf, PHOTO_CHECKS_ANSWER_KEY, type PhotoCheck, type PhotoHintCode } from "@/lib/funnel/photoCheck";
 
 const HIDDEN_KEYS = new Set([
   "onboarding.photos",
@@ -242,6 +242,8 @@ export function formatCustomerAnswers(
 }
 
 const PHOTO_HINT_SHORT: Record<PhotoHintCode, string> = {
+  duplicate: "same photo as another slot",
+  not_skin: "little skin in frame",
   screenshot: "looks like a screenshot",
   dark: "dark",
   soft: "out of focus",
@@ -261,12 +263,15 @@ export function summarisePhotoChecks(
 ): string[] {
   const raw = answers?.[PHOTO_CHECKS_ANSWER_KEY];
   if (!Array.isArray(raw)) return [];
-  return (raw as (PhotoCheck | null)[])
+  const checks = raw as (PhotoCheck | null)[];
+  return checks
     .map((check, index) => {
       if (!check || typeof check !== "object") return null;
       const size = `${check.w}x${check.h}`;
-      if (!check.hint) return `Photo ${index + 1}: fine (${size})`;
-      const what = PHOTO_HINT_SHORT[check.hint] ?? check.hint;
+      const dup = duplicateOf(index, checks);
+      const hint = dup !== null ? "duplicate" : check.hint;
+      if (!hint) return `Photo ${index + 1}: fine (${size})`;
+      const what = dup !== null ? `same photo as photo ${dup + 1}` : PHOTO_HINT_SHORT[hint] ?? hint;
       return `Photo ${index + 1}: ${what}${check.override ? ", used anyway" : ""} (${size})`;
     })
     .filter((line): line is string => line !== null);

@@ -1,0 +1,42 @@
+name: Upload scan
+
+# Calls /api/cron/scan-uploads on GitHub's scheduler, because Vercel cron
+# does not fire on this project (see gsc-sync.yml). Scans any stored file
+# that has no upload_scans row: files from before scanning existed, and any
+# upload whose scan row failed to write. The studio shows only files with a
+# clean scan, so this is what keeps older documents visible (HANDOVER-59).
+# Safe to run twice.
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: scan-uploads
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          URL: https://www.glamrepairs.com/api/cron/scan-uploads
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET is not set in this repository's Actions secrets."
+            exit 1
+          fi
+          code=$(curl --silent --show-error --retry 2 --retry-delay 10 --retry-all-errors \
+            --max-time 150 --write-out '%{http_code}' --output response.json \
+            --header "Authorization: Bearer ${CRON_SECRET}" "${URL}")
+          echo "HTTP ${code}"; cat response.json; echo
+          {
+            echo "### Upload scan"
+            jq -r '"- clean: \(.clean // 0), rejected: \(.rejected // 0), missing: \(.missing // 0), still to scan: \(.remaining // 0)"' response.json
+          } >> "$GITHUB_STEP_SUMMARY" || true
+          [ "${code}" = "200" ] || { echo "::error::Upload scan failed (HTTP ${code})."; exit 1; }

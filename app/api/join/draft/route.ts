@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import { sendPractitionerEmail } from "@/lib/email/sendPractitionerEmail";
 import { DOCS_BUCKET } from "@/lib/practitioners/applications";
+import { scanApplicationDocument } from "@/lib/practitioners/docScan";
 import {
   ALLOWED_MIME,
   DOCUMENT_KINDS,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/practitioners/join";
 import type { PractitionerDocumentKind } from "@/lib/supabase/database.types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { hashIp, recordUploadAttempt, uploadRateExceeded } from "@/lib/uploads/scans";
 
 /**
  * The five-step application, saved after every step — HANDOVER-52 §4.1.
@@ -129,6 +131,9 @@ export async function POST(request: Request) {
       .is("deleted_at", null)
       .neq("kind", "photo");
     if (kind !== "photo" && (count ?? 0) >= MAX_FILES) return fail(`Attach at most ${MAX_FILES} documents. Remove one first.`);
+    if (await uploadRateExceeded(hashIp(request))) {
+      return fail("Too many uploads from this connection in the last hour. Please try again later.", 429);
+    }
     const path = `applications/${applicationId}/${randomUUID()}.${extensionFor(type)}`;
     const { data: signed, error } = await admin.storage.from(DOCS_BUCKET).createSignedUploadUrl(path);
     if (error || !signed) return fail("Could not prepare the upload. Please try again.", 500);
@@ -145,6 +150,23 @@ export async function POST(request: Request) {
     const object = (listing ?? []).find((o) => `${folder}/${o.name}` === path);
     if (!object) return fail("The upload did not arrive. Please try again.");
     const meta = object.metadata as { size?: number; mimetype?: string } | undefined;
+
+    // HANDOVER-59 — read the bytes back and check them before recording.
+    const scan = await scanApplicationDocument({
+      path,
+      kind,
+      applicationId,
+      declaredMime: meta?.mimetype ?? null,
+    });
+    await recordUploadAttempt({
+      ipHash: hashIp(request),
+      applicationId,
+      bucket: DOCS_BUCKET,
+      bytes: meta?.size ?? 0,
+      accepted: scan.ok,
+      reason: scan.ok ? null : "rejected by scan",
+    });
+    if (!scan.ok) return fail(scan.error);
 
     // A new photograph replaces the old one: object first, then the row.
     if (kind === "photo") {
@@ -164,7 +186,8 @@ export async function POST(request: Request) {
         storage_path: path,
         original_name: String(body.name ?? "").slice(0, 200) || null,
         bytes: meta?.size ?? null,
-        mime: meta?.mimetype ?? null,
+        // What the bytes are, not what the browser declared.
+        mime: scan.mime,
       });
       if (error) return fail("The file arrived but could not be recorded.", 500);
     }

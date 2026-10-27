@@ -2,6 +2,7 @@ import "server-only";
 
 import type { PractitionerApplicationStatus, PractitionerDocumentKind } from "@/lib/supabase/database.types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { cleanPaths, scanStatuses } from "@/lib/uploads/scans";
 
 /**
  * Practitioner applications, the read side — HANDOVER-51 §4.2.
@@ -65,7 +66,9 @@ export type ApplicationDocument = {
   verified: boolean;
   verifiedAt: string | null;
   purgeAfter: string | null;
+  /** Signed only when the file's scan is clean (HANDOVER-59 Part 3.1). */
   url: string | null;
+  scan: "clean" | "unchecked" | "pending" | "suspicious" | "rejected" | "quarantined";
 };
 
 export async function getApplication(id: string) {
@@ -84,9 +87,15 @@ export async function getApplication(id: string) {
     : supabase.from("practitioner_documents").select("*").eq("application_id", app.id);
   const { data: docs } = await owner.is("deleted_at", null).order("created_at");
 
+  const paths = (docs ?? []).map((d) => d.storage_path);
+  const [clean, statuses] = await Promise.all([cleanPaths(DOCS_BUCKET, paths), scanStatuses(DOCS_BUCKET, paths)]);
+
   const documents: ApplicationDocument[] = await Promise.all(
     (docs ?? []).map(async (d) => {
-      const { data: signed } = await supabase.storage.from(DOCS_BUCKET).createSignedUrl(d.storage_path, SIGNED_URL_SECONDS);
+      const isClean = clean.has(d.storage_path);
+      const { data: signed } = isClean
+        ? await supabase.storage.from(DOCS_BUCKET).createSignedUrl(d.storage_path, SIGNED_URL_SECONDS)
+        : { data: null };
       return {
         id: d.id,
         kind: d.kind,
@@ -97,6 +106,7 @@ export async function getApplication(id: string) {
         verifiedAt: d.verified_at,
         purgeAfter: d.purge_after,
         url: signed?.signedUrl ?? null,
+        scan: isClean ? "clean" : (statuses.get(d.storage_path) ?? "unchecked"),
       };
     }),
   );
