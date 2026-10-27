@@ -270,9 +270,10 @@ export function summarisePhotoChecks(
       const size = `${check.w}x${check.h}`;
       const dup = duplicateOf(index, checks);
       const hint = dup !== null ? "duplicate" : check.hint;
-      if (!hint) return `Photo ${index + 1}: fine (${size})`;
+      const skin = typeof check.skin === "number" ? `, ${Math.round(check.skin * 100)}% skin` : "";
+      if (!hint) return `Photo ${index + 1}: fine (${size}${skin})`;
       const what = dup !== null ? `same photo as photo ${dup + 1}` : PHOTO_HINT_SHORT[hint] ?? hint;
-      return `Photo ${index + 1}: ${what}${check.override ? ", used anyway" : ""} (${size})`;
+      return `Photo ${index + 1}: ${what}${check.override ? ", used anyway" : ""} (${size}${skin})`;
     })
     .filter((line): line is string => line !== null);
 }
