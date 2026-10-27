@@ -896,6 +896,55 @@ export type Database = {
         Update: { expires_at?: string };
         Relationships: [];
       };
+      /** Country rollout (HANDOVER-58). Service role only. */
+      countries: {
+        Row: {
+          code: string;
+          name: string;
+          currency: string;
+          index_standard: string;
+          gdpr: boolean;
+          clients_enabled: boolean;
+          practitioners_enabled: boolean;
+          regulator_note: string | null;
+          data_law: string | null;
+          research_status: "unverified" | "desk_research" | "legal_advice" | "cleared" | "blocked";
+          researched_at: string | null;
+          diaspora_priority: number;
+          sort_order: number;
+          legal_note: string | null;
+          status_changed_at: string | null;
+          status_changed_by: string | null;
+        };
+        Insert: never;
+        Update: {
+          clients_enabled?: boolean;
+          practitioners_enabled?: boolean;
+          research_status?: "unverified" | "desk_research" | "legal_advice" | "cleared" | "blocked";
+          legal_note?: string | null;
+          status_changed_at?: string | null;
+          status_changed_by?: string | null;
+        };
+        Relationships: [];
+      };
+      country_pricing: {
+        Row: {
+          country_code: string;
+          plan_key: string;
+          amount_minor: number;
+          currency: string;
+          minor_units: number;
+          symbol: string;
+          symbol_before: boolean;
+          active: boolean;
+          updated_at: string;
+          updated_by: string | null;
+          note: string | null;
+        };
+        Insert: never;
+        Update: { amount_minor?: number; note?: string | null; updated_at?: string; updated_by?: string | null };
+        Relationships: [];
+      };
       studio_login_codes: {
         Row: { id: string; user_id: string; session_id: string; code_hash: string; attempts: number; expires_at: string; used_at: string | null; created_at: string };
         Insert: { user_id: string; session_id: string; code_hash: string; expires_at: string };
@@ -2160,6 +2209,32 @@ export type Database = {
       };
     };
     Views: {
+      /** One row per country for the studio panel (HANDOVER-58 Part 12.4). */
+      admin_country_panel: {
+        Row: {
+          code: string;
+          name: string;
+          currency: string;
+          index_standard: string;
+          gdpr: boolean;
+          research_status: string;
+          researched_at: string | null;
+          diaspora_priority: number;
+          clients_enabled: boolean;
+          practitioners_enabled: boolean;
+          data_law: string | null;
+          regulator_note: string | null;
+          amount_minor: number | null;
+          minor_units: number | null;
+          symbol: string | null;
+          price_display: number | null;
+          price_is_placeholder: boolean | null;
+          live_practitioners: number;
+          clients: number;
+          city_pages: number;
+        };
+        Relationships: [];
+      };
       /** Who is due an abandonment email, and which one (19 October 2026). */
       abandon_queue: {
         Row: {

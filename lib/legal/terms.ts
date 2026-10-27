@@ -12,6 +12,11 @@
  * The payment-fraud clause was kept and widened during the channel-neutral
  * rewrite — it now covers impersonation on ANY channel, including ones not
  * adopted yet, rather than one named platform.
+ *
+ * 23 October 2026, HANDOVER-58 Parts 2 and 6, requested by Talha: a fair
+ * treatment (non-discrimination) section, and the urgent-problems paragraph
+ * that the consent step now also shows. Both apply to every country, so
+ * neither names a Pakistani emergency number.
  */
 
 /*
@@ -24,7 +29,7 @@
  * plans without moving the date would leave a reader unable to tell which
  * version they agreed to.
  */
-export const LAST_UPDATED = "2026-09-15";
+export const LAST_UPDATED = "2026-10-23";
 
 export const INTRO = `These terms apply when you use glamrepairs.com or purchase a skin consultation from us. By completing an assessment you agree to them, so please read them first.`;
 
@@ -33,8 +38,14 @@ Glam Repairs provides online skin consultations. You complete a questionnaire, s
 **Glam Repairs is a cosmetic guidance service. It is not a medical service.**
 We do not diagnose conditions, prescribe medication, or provide treatment. Our assessments are not a substitute for consulting a doctor or dermatologist. If you have a skin condition that is painful, spreading, bleeding, rapidly changing, or otherwise concerning, please see a medical professional.
 Where a practitioner believes your concern needs medical attention rather than cosmetic guidance, they will tell you so and we will not proceed with a routine. Where we have not started work, we refund in full.
+**If something is urgent, do not wait for us.** We reply within 24 hours and we are not an emergency service. If your skin is painful, rapidly spreading or blistering, or you feel unwell with it, contact a doctor or your local emergency service straight away.
 ## Who can use the service
 You must be 18 or older to use Glam Repairs. By submitting an assessment you confirm that you are, that the information you give us is accurate to the best of your knowledge, and that the photographs you send are of yourself.
+## Fair treatment
+We serve clients and work with practitioners of every ethnicity, skin tone, nationality, religion, gender, age, disability and background.
+Nobody is refused an assessment, a practitioner or an application on any of those grounds. Practitioners are accepted on verified qualifications and the quality of their work, and nothing else.
+Clients may choose a practitioner for their own reasons, including language, gender or where the practitioner lives. That choice is theirs, and it never changes how a practitioner is assessed or paid.
+If you believe you were treated unfairly, write to us and the managing director will review it personally.
 ## Your account
 You may create an account to see your consultation history, track progress and book appointments.
 - You are responsible for keeping your login details secure and for activity that happens under your account.

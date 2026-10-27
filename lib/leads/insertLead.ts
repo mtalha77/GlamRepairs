@@ -1,4 +1,5 @@
 import { clientNotesFromAnswers } from "@/lib/funnel/clientNotes";
+import { isKnownConsentVersion } from "@/lib/legal/consent";
 import { sanitizeLeadAnswers } from "@/lib/leads/sanitizeLeadAnswers";
 import type { LeadSubmitPayload } from "@/types/lead";
 
@@ -230,6 +231,20 @@ export async function saveFunnelProgress(input: FunnelProgressInput) {
 }
 
 /**
+ * HANDOVER-58 Part 2.3 — which consent wording this client agreed to, and
+ * when. Recorded only when both boxes were ticked and the version is one we
+ * actually published; an unknown version is left null rather than guessed.
+ */
+function consentFields(answers: Record<string, unknown> | undefined) {
+  const agreed =
+    answers?.["onboarding.consentPrivateReview"] === true &&
+    answers?.["onboarding.photoMarketingRestriction"] === true;
+  const version = answers?.["onboarding.consentVersion"];
+  if (!agreed || !isKnownConsentVersion(version)) return {};
+  return { consent_version: version, consent_at: new Date().toISOString() };
+}
+
+/**
  * Insert or update a durable lead row. Photo files expire later; this row stays.
  */
 export async function insertLead(
@@ -261,6 +276,7 @@ export async function insertLead(
     // out of there (see that file) — without this the completed submission
     // would silently drop a note the progressive save had already stored.
     client_notes: clientNotesFromAnswers(input.answers),
+    ...consentFields(input.answers),
     gift_code_used: input.giftCode?.trim() || null,
     image_urls: input.imageUrls,
     photo_paths: input.photoPaths,

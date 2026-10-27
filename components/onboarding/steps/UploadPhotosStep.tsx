@@ -8,7 +8,12 @@ import ClientNotesField from "@/components/onboarding/ClientNotesField";
 import UploadSupportNote from "@/components/onboarding/UploadSupportNote";
 import { StepHeader, StepRequiredError } from "@/components/steps";
 import { resolveUnlockTarget } from "@/lib/funnel/funnelProgress";
-import { fileToCompressedDataUrl } from "@/lib/funnel/image";
+import { processPhoto } from "@/lib/funnel/image";
+import {
+  PHOTO_CHECKS_ANSWER_KEY,
+  PHOTO_HINTS,
+  type PhotoCheck,
+} from "@/lib/funnel/photoCheck";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
 import {
   useStepAnswer,
@@ -52,6 +57,22 @@ const PLAN_PHOTO_LIMITS: Record<PlanId, number> = {
 };
 
 const EMPTY_PHOTOS: (string | null)[] = Array(PHOTO_SLOTS.length).fill(null);
+const EMPTY_CHECKS: (PhotoCheck | null)[] = Array(PHOTO_SLOTS.length).fill(null);
+
+/** A hint the client has not yet answered with Retake or "Use this one". */
+function pendingHint(check: PhotoCheck | null | undefined) {
+  return check?.hint && !check.override ? check.hint : null;
+}
+
+function Tick({ className = "" }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 12 10" className={className} fill="none">
+      <path d="M1 5.2L4.2 8.4L11 1.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+const PHOTO_TIPS = ["Face a window", "No makeup", "Beauty filter off"];
 
 function getPhotoLimit(plan: string | null): number {
   if (plan === "clarity" || plan === "transform" || plan === "free") {
@@ -187,6 +208,14 @@ export default function UploadPhotosStep() {
     "onboarding.photos",
     EMPTY_PHOTOS,
   );
+  // HANDOVER-58 Part 13 — measured values per slot, never shown to the
+  // client. Stored with the answers so the studio can see whether a photo
+  // was flagged and used anyway.
+  const [checks, setChecks] = useStepAnswer<(PhotoCheck | null)[]>(
+    PHOTO_CHECKS_ANSWER_KEY,
+    EMPTY_CHECKS,
+  );
+  const [processingSlot, setProcessingSlot] = useState<number | null>(null);
   const clearStepValidationAttempt = useFunnelStore(
     (state) => state.clearStepValidationAttempt,
   );
@@ -212,7 +241,16 @@ export default function UploadPhotosStep() {
     const trimmed = photos.slice(0, photoLimit);
     while (trimmed.length < photoLimit) trimmed.push(null);
     setPhotos(trimmed);
-  }, [photoLimit, photos, setPhotos]);
+    if (Array.isArray(checks) && checks.length > photoLimit) setChecks(checks.slice(0, photoLimit));
+  }, [photoLimit, photos, setPhotos, checks, setChecks]);
+
+  const setCheck = (slot: number, check: PhotoCheck | null) => {
+    const current = useFunnelStore.getState().answers[PHOTO_CHECKS_ANSWER_KEY];
+    const next = Array.isArray(current) ? [...(current as (PhotoCheck | null)[])] : [];
+    while (next.length < photoLimit) next.push(null);
+    next[slot] = check;
+    setChecks(next.slice(0, photoLimit));
+  };
 
   const openFilePicker = (index: number) => {
     if (index >= photoLimit) return;
@@ -227,21 +265,39 @@ export default function UploadPhotosStep() {
     setActiveSlot(null);
     if (!file || slot === null || slot >= photoLimit) return;
 
+    setProcessingSlot(slot);
     try {
-      const dataUrl = await fileToCompressedDataUrl(file);
-      const next = [...photos];
+      const { dataUrl, check } = await processPhoto(file);
+      const current = useFunnelStore.getState().answers["onboarding.photos"];
+      const next = Array.isArray(current) ? [...(current as (string | null)[])] : [];
       while (next.length < photoLimit) next.push(null);
       next[slot] = dataUrl;
       setPhotos(next.slice(0, photoLimit));
+      setCheck(slot, check);
     } catch {
       // Keep existing photos if compression fails.
+    } finally {
+      setProcessingSlot(null);
     }
   };
 
+  const acceptPhoto = (slot: number) => {
+    const check = Array.isArray(checks) ? checks[slot] : null;
+    if (check) setCheck(slot, { ...check, override: true });
+  };
+
+  const flagged = visibleSlots
+    .map((slot, index) => ({ slot, index, hint: photos[index] ? pendingHint(checks?.[index]) : null }))
+    .filter((item) => item.hint !== null);
+  const allSet = allPhotosUploaded && flagged.length === 0;
+
+  // HANDOVER-58 Part 1.2 — the filter sentence is the single most important
+  // line on this step. Beauty filters are on by default in many camera apps,
+  // and a smoothed photograph cannot be read.
   const subtitle =
     photoLimit === 1
-      ? "Upload a clear front-face photo in natural light. No filters."
-      : `Upload up to ${photoLimit} photos. Front face + concern areas. Clear, natural light. No filters.`;
+      ? "A clear front-face photo. Taken on your phone is perfect. Turn off any beauty filter or smoothing in your camera settings."
+      : `Front face and concern areas, ${photoLimit} photos. Taken on your phone is perfect. Turn off any beauty filter or smoothing in your camera settings.`;
 
   return (
     <div>
@@ -250,6 +306,15 @@ export default function UploadPhotosStep() {
         subtitle={subtitle}
         subtitleClassName="mt-2 text-sm leading-relaxed text-brand-gray sm:mt-2.5 sm:text-[0.9375rem]"
       />
+
+      <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-[0.8125rem] text-brand-gray sm:text-sm">
+        {PHOTO_TIPS.map((tip) => (
+          <li key={tip} className="inline-flex items-center gap-1.5">
+            <Tick className="h-2.5 w-3 text-brand-success" />
+            {tip}
+          </li>
+        ))}
+      </ul>
 
       <input
         ref={inputRef}
@@ -260,7 +325,7 @@ export default function UploadPhotosStep() {
       />
 
       <div
-        className={`mt-6 grid gap-2.5 sm:mt-7 sm:gap-3 ${
+        className={`mt-5 grid gap-2.5 sm:mt-6 sm:gap-3 ${
           photoLimit === 1
             ? "mx-auto max-w-[10.5rem] grid-cols-1"
             : "grid-cols-3"
@@ -278,7 +343,21 @@ export default function UploadPhotosStep() {
                   : "border-brand-border-light/50"
               }`}
             >
+              {processingSlot === index ? (
+                <span className="absolute inset-0 z-[2] flex items-center justify-center bg-white/70 text-[0.6875rem] text-brand-gray">
+                  Checking…
+                </span>
+              ) : null}
               {photos[index] ? (
+                <>
+                <span
+                  className={`absolute right-1.5 top-1.5 z-[1] flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold text-white shadow-sm ${
+                    pendingHint(checks?.[index]) ? "bg-brand-primary" : "bg-brand-success"
+                  }`}
+                  aria-label={pendingHint(checks?.[index]) ? "Worth a look" : "Looks good"}
+                >
+                  {pendingHint(checks?.[index]) ? "!" : <Tick className="h-2 w-2.5" />}
+                </span>
                 <Image
                   src={photos[index]!}
                   alt={`${slot.label} photo`}
@@ -294,6 +373,7 @@ export default function UploadPhotosStep() {
                   className="photo-thumb-in object-cover"
                   unoptimized
                 />
+                </>
               ) : (
                 <>
                   <span className="pointer-events-none absolute left-2 top-2 z-[1]">
@@ -327,6 +407,46 @@ export default function UploadPhotosStep() {
         ))}
       </div>
       <StepRequiredError message={error} />
+
+      {/* One friendly sentence per flagged photo, never a list of problems,
+          and never a block: "Use this one" always works. */}
+      {flagged.map(({ slot, index, hint }) => (
+        <div
+          key={slot.label}
+          className="mt-3 flex items-start gap-3 rounded-2xl border border-brand-border-light/60 bg-brand-cream-card px-3 py-3 sm:px-4"
+        >
+          <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-white">
+            <Image src={photos[index]!} alt="" fill sizes="48px" className="object-cover" unoptimized />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[0.8125rem] font-medium text-brand-ink sm:text-sm">{slot.label}</p>
+            <p className="mt-0.5 text-[0.8125rem] leading-snug text-brand-gray sm:text-sm">{PHOTO_HINTS[hint!]}</p>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => openFilePicker(index)}
+                className="rounded-full border border-brand-border-light bg-white px-3.5 py-1.5 text-xs text-brand-gray"
+              >
+                Retake
+              </button>
+              <button
+                type="button"
+                onClick={() => acceptPhoto(index)}
+                className="rounded-full bg-brand-light px-3.5 py-1.5 text-xs text-white"
+              >
+                Use this one
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {allSet ? (
+        <p className="mt-4 flex items-center gap-2 rounded-2xl bg-brand-success/10 px-4 py-3 text-sm font-medium text-brand-success-strong">
+          <Tick className="h-2.5 w-3" />
+          All set. You can carry on.
+        </p>
+      ) : null}
 
       <ClientNotesField />
 

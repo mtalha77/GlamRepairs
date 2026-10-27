@@ -125,6 +125,10 @@ const FAQ: { q: string; a: React.ReactNode; flag?: string }[] = [
     a: "You are paid in full. You held the time and you were there, so the Rs 2,000 is yours. We do not pass that loss to you.",
   },
   {
+    q: "Who can apply?",
+    a: "Anyone with a genuine aesthetics qualification. We accept practitioners of every ethnicity, skin tone, nationality, religion, gender, age, disability and background, and we judge an application on verified qualifications and the quality of the work, nothing else. If you believe an application was handled unfairly, tell us and the managing director will review it personally.",
+  },
+  {
     q: "Is there any fee to join?",
     a: "No. No joining fee, no platform cut from your Rs 2,000, no charge for training or equipment. If anyone ever asks you for money to work here, it is not us.",
   },

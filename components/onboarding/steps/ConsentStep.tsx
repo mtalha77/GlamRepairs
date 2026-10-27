@@ -19,6 +19,7 @@ import {
 } from "@/lib/funnel/useStepAnswer";
 import { openWhatsAppWithMessage } from "@/lib/funnel/shareWhatsApp";
 import { buildWhatsAppBookingSummaryText } from "@/lib/funnel/whatsapp";
+import { CONSENT_POINTS, CONSENT_VERSION } from "@/lib/legal/consent";
 import { submitLead } from "@/lib/leads/submitLead";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
 import { buildPaymentLines } from "@/lib/leads/paymentDetails";
@@ -219,7 +220,18 @@ function ConsentContent() {
         subtitleClassName="mt-2 text-sm leading-relaxed text-brand-ink sm:mt-2.5 sm:text-[0.9375rem]"
       />
 
-      <div className="mt-6 space-y-3 sm:mt-7 sm:space-y-3.5">
+      {/* HANDOVER-58 Part 2 — what the client is agreeing to, before they
+          agree. Versioned in lib/legal/consent.ts. */}
+      <ul className="mt-6 space-y-2.5 rounded-2xl border border-brand-border-light/60 bg-white px-4 py-4 sm:mt-7 sm:px-5">
+        {CONSENT_POINTS.map((point) => (
+          <li key={point.lead} className="text-[0.8125rem] leading-relaxed text-brand-gray sm:text-sm">
+            <span className="font-medium text-brand-ink">{point.lead}</span>
+            {point.rest}
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-4 space-y-3 sm:mt-5 sm:space-y-3.5">
         <div>
           <ConsentCheckbox
             checked={privateReview}
@@ -306,6 +318,8 @@ export default function ConsentStep({
 
     setIsSubmitting(true);
     ensureSessionId();
+    // The wording on screen right now, recorded on the lead by insertLead.
+    setAnswer("onboarding.consentVersion", CONSENT_VERSION);
 
     const store = useFunnelStore.getState();
     const planId = store.selectedPlan as PlanId | null;
