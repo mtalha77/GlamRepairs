@@ -1006,6 +1006,40 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      /** A paying client's sign-in (HANDOVER-60). user_id fills on first sign-in. */
+      client_accounts: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          email: string;
+          full_name: string | null;
+          phone: string | null;
+          lead_id: string | null;
+          country_code: string | null;
+          locale: string;
+          timezone: string | null;
+          created_reason: string;
+          invited_at: string | null;
+          activated_at: string | null;
+          last_login_at: string | null;
+          login_count: number;
+          last_link_sent_at: string | null;
+          deleted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: {
+          user_id?: string | null;
+          activated_at?: string | null;
+          last_login_at?: string | null;
+          login_count?: number;
+          last_link_sent_at?: string | null;
+          invited_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       studio_login_codes: {
         Row: { id: string; user_id: string; session_id: string; code_hash: string; attempts: number; expires_at: string; used_at: string | null; created_at: string };
         Insert: { user_id: string; session_id: string; code_hash: string; expires_at: string };
@@ -2270,6 +2304,32 @@ export type Database = {
       };
     };
     Views: {
+      /** What a signed-in client sees. Service role only; scope it to the account. */
+      client_portal: {
+        Row: {
+          account_id: string;
+          user_id: string | null;
+          email: string;
+          full_name: string | null;
+          country_code: string | null;
+          locale: string;
+          timezone: string | null;
+          last_login_at: string | null;
+          lead_id: string | null;
+          assessment_status: string | null;
+          payment_status: string | null;
+          report_id: string | null;
+          report_delivered_at: string | null;
+          upcoming_consultations: number;
+          next_consultation_at: string | null;
+          practitioner_name: string | null;
+          practitioner_slug: string | null;
+          practitioner_title: string | null;
+          practitioner_photo: string | null;
+          practitioner_country: string | null;
+        };
+        Relationships: [];
+      };
       /** Clean, undeleted uploads only (HANDOVER-59). What the app may show. */
       safe_uploads: {
         Row: {

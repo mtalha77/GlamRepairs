@@ -56,7 +56,9 @@ export type SkinReportPdfInput = SkinReportContent & {
   followUpDate?: string;
 };
 
-export function buildReportPatient(customer: StudioCustomer): SkinReportPatient {
+export function buildReportPatient(
+  customer: Pick<StudioCustomer, "answers" | "fullName" | "email" | "planName" | "selectedPlan">,
+): SkinReportPatient {
   const answers = customer.answers;
   const age = getCustomerAnswerValue(answers, "onboarding.age");
   const concern =

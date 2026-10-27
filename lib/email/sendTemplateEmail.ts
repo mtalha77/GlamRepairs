@@ -18,7 +18,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 const BRAND = "#662d91";
 
-export type TemplateKey = "abandon_1" | "abandon_2" | "abandon_final" | "followup_15" | "followup_30";
+export type TemplateKey = "abandon_1" | "abandon_2" | "abandon_final" | "followup_15" | "followup_30" | "payment_confirmed";
 
 function fill(template: string, vars: Record<string, string>): string {
   return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, name: string) => vars[name] ?? "");
@@ -30,6 +30,12 @@ export async function sendTemplateEmail(input: {
   toEmail: string;
   fullName: string | null;
   vars?: Record<string, string>;
+  /**
+   * Fixed text added after the template body, for content the template
+   * cannot carry safely (a signed sign-in link). Written by code, not by
+   * the client, and not editable in Studio.
+   */
+  appendMarkdown?: string;
 }): Promise<{ ok: true; subject: string; text: string; resendId: string | null } | { ok: false; message: string }> {
   const config = getResendConfig();
   if (!config) return { ok: false, message: "Email is not configured." };
@@ -45,7 +51,7 @@ export async function sendTemplateEmail(input: {
   const firstName = (input.fullName?.trim().split(/\s+/)[0] ?? "").replace(/[[\]()*_`#<>!]/g, "") || "there";
   const vars = { first_name: firstName, whatsapp: getWhatsAppDisplayNumber(), ...input.vars };
   const subject = fill(template.subject, vars).replace(/[\r\n]+/g, " ").trim();
-  const body = fill(template.body_markdown, vars);
+  const body = [fill(template.body_markdown, vars), input.appendMarkdown ?? ""].filter((part) => part.trim()).join("\n\n");
   const signature = settings?.signature_markdown ?? "**The Glam Repairs Team**";
   const footer = settings?.footer_markdown ?? "";
 
