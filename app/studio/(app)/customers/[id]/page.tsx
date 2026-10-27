@@ -27,7 +27,7 @@ import { getGiftCapacity } from "@/lib/gifts/giftSettings";
 import {
   getOutstandingGiftCode,
 } from "@/lib/gifts/issueGiftCode";
-import { formatCustomerAnswers } from "@/lib/studio/answers";
+import { formatCustomerAnswers, summarisePhotoChecks } from "@/lib/studio/answers";
 import { CUSTOMER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/studio/constants";
 import {
   getRedactedClientNotes,
@@ -304,6 +304,13 @@ export default async function CustomerDetailPage({
           <div>
             <h2 className="mb-3 font-serif text-xl text-brand-primary">Photos</h2>
             <PhotoGallery customer={customer} />
+            {summarisePhotoChecks(customer.answers).length > 0 ? (
+              <ul className="mt-3 space-y-0.5 text-xs text-brand-gray">
+                {summarisePhotoChecks(customer.answers).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
             {/*
               HANDOVER-19 — super admin only, and only while there is
               something to delete. A staff practitioner reviewing a case has

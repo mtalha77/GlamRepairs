@@ -1,7 +1,9 @@
 import { BOOKING_ANSWER_LABELS } from "@/lib/funnel/formatBookingSummary";
+import { PHOTO_CHECKS_ANSWER_KEY, type PhotoCheck, type PhotoHintCode } from "@/lib/funnel/photoCheck";
 
 const HIDDEN_KEYS = new Set([
   "onboarding.photos",
+  PHOTO_CHECKS_ANSWER_KEY,
   "booking.selfie",
   "booking.locationLat",
   "booking.locationLon",
@@ -34,6 +36,7 @@ const ANSWER_QUESTIONS: Record<string, string> = {
   "onboarding.stress": "What is your stress level?",
   "onboarding.diet": "Diet (select all that apply)",
   "onboarding.consentPrivateReview": "Do you consent to a private skin review?",
+  "onboarding.consentVersion": "Consent wording agreed to (version)",
   // HOTFIX-7 §3: this label was backwards — the checkbox is "my photos will
   // NOT be used for marketing", so "Do you consent to marketing updates?"
   // read as the opposite of what was agreed. Renamed key to match.
@@ -68,6 +71,7 @@ const QUESTION_ORDER = [
   "onboarding.consultationTime",
   "onboarding.consentPrivateReview",
   "onboarding.photoMarketingRestriction",
+  "onboarding.consentVersion",
 ];
 
 const VALUE_LABELS: Record<string, string> = {
@@ -152,6 +156,7 @@ function humanizeSlug(value: string) {
 function formatScalar(key: string, value: string): string {
   if (key === "onboarding.sleep") return SLEEP_LABELS[value] ?? value;
   if (key === "onboarding.water") return WATER_LABELS[value] ?? value;
+  if (key === "onboarding.consentVersion") return value;
   if (value === "true" || value === "false") {
     return value === "true" ? "Yes" : "No";
   }
@@ -234,4 +239,35 @@ export function formatCustomerAnswers(
     if (aRank !== bRank) return aRank - bRank;
     return a.key.localeCompare(b.key);
   });
+}
+
+const PHOTO_HINT_SHORT: Record<PhotoHintCode, string> = {
+  screenshot: "looks like a screenshot",
+  dark: "dark",
+  soft: "out of focus",
+  bright: "very bright",
+  compressed: "compressed by a chat app",
+  cast: "strong colour cast",
+  flat: "flat lighting",
+};
+
+/**
+ * HANDOVER-58 Part 13 — one line per photo from the browser check, for the
+ * studio only. "Used anyway" is the recorded override: if an assessment
+ * goes wrong, this is where photo quality shows up as a possible cause.
+ */
+export function summarisePhotoChecks(
+  answers: Record<string, unknown> | null | undefined,
+): string[] {
+  const raw = answers?.[PHOTO_CHECKS_ANSWER_KEY];
+  if (!Array.isArray(raw)) return [];
+  return (raw as (PhotoCheck | null)[])
+    .map((check, index) => {
+      if (!check || typeof check !== "object") return null;
+      const size = `${check.w}x${check.h}`;
+      if (!check.hint) return `Photo ${index + 1}: fine (${size})`;
+      const what = PHOTO_HINT_SHORT[check.hint] ?? check.hint;
+      return `Photo ${index + 1}: ${what}${check.override ? ", used anyway" : ""} (${size})`;
+    })
+    .filter((line): line is string => line !== null);
 }
