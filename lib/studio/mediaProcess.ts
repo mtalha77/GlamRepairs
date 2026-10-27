@@ -2,6 +2,8 @@ import "server-only";
 
 import type SharpModule from "sharp";
 
+import { inspectUpload, MAX_PIXELS } from "@/lib/uploads/inspect";
+
 /**
  * Image processing for the media library — HANDOVER-45 §3.1.
  *
@@ -52,6 +54,16 @@ export async function processImage(
   // Loaded here, not at the top of the file: this module also exports the
   // role list the media page renders, and a native image library that fails
   // to load must break an upload, never the page (19 October 2026).
+  // HANDOVER-59 — real image bytes, and a sane size from the header, before
+  // sharp decodes anything. blog-images is public, so this matters most here.
+  const inspection = inspectUpload({
+    bytes: input,
+    declaredMime: null,
+    allowed: ["image/jpeg", "image/png", "image/webp"],
+    maxBytes: 20 * 1024 * 1024,
+  });
+  if (inspection.status === "rejected") return { error: "That file is not a readable JPG, PNG or WebP image." };
+
   let sharp: typeof SharpModule;
   try {
     sharp = (await import("sharp")).default;
@@ -61,7 +73,7 @@ export async function processImage(
   }
   let base: SharpModule.Sharp;
   try {
-    base = sharp(input, { failOn: "error" }).rotate(); // honour EXIF orientation
+    base = sharp(input, { failOn: "error", limitInputPixels: MAX_PIXELS }).rotate(); // honour EXIF orientation
     const meta = await base.metadata();
     if (!meta.width || !meta.height) return { error: "That file is not a readable image." };
   } catch {

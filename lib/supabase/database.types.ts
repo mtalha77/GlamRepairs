@@ -945,6 +945,67 @@ export type Database = {
         Update: { amount_minor?: number; note?: string | null; updated_at?: string; updated_by?: string | null };
         Relationships: [];
       };
+      /** One row per uploaded file (HANDOVER-59). Service role only. */
+      upload_scans: {
+        Row: {
+          id: string;
+          bucket: string;
+          storage_path: string;
+          lead_id: string | null;
+          application_id: string | null;
+          practitioner_id: string | null;
+          declared_mime: string;
+          detected_mime: string | null;
+          bytes: number;
+          sha256: string | null;
+          width: number | null;
+          height: number | null;
+          status: "pending" | "clean" | "suspicious" | "rejected" | "quarantined";
+          failed_checks: string[];
+          detail: string | null;
+          scanned_at: string | null;
+          quarantined_at: string | null;
+          deleted_at: string | null;
+          created_at: string;
+          phash: string | null;
+          skin_ratio: number | null;
+          faces_found: number | null;
+          subject_verdict: "face" | "skin_closeup" | "probably_not_skin" | "unknown" | null;
+          duplicate_of: string | null;
+          dup_distance: number | null;
+        };
+        Insert: {
+          bucket: string;
+          storage_path: string;
+          lead_id?: string | null;
+          application_id?: string | null;
+          practitioner_id?: string | null;
+          declared_mime: string;
+          detected_mime?: string | null;
+          bytes: number;
+          sha256?: string | null;
+          width?: number | null;
+          height?: number | null;
+          status?: "pending" | "clean" | "suspicious" | "rejected" | "quarantined";
+          failed_checks?: string[];
+          detail?: string | null;
+          scanned_at?: string | null;
+          deleted_at?: string | null;
+          phash?: string | null;
+          skin_ratio?: number | null;
+          subject_verdict?: "face" | "skin_closeup" | "probably_not_skin" | "unknown" | null;
+          duplicate_of?: string | null;
+          dup_distance?: number | null;
+        };
+        Update: { lead_id?: string | null; deleted_at?: string | null; practitioner_id?: string | null };
+        Relationships: [];
+      };
+      upload_attempts: {
+        Row: { id: number; ip_hash: string | null; lead_id: string | null; application_id: string | null; bucket: string; bytes: number; accepted: boolean; reason: string | null; at: string };
+        Insert: { ip_hash?: string | null; lead_id?: string | null; application_id?: string | null; bucket: string; bytes: number; accepted: boolean; reason?: string | null };
+        Update: never;
+        Relationships: [];
+      };
       studio_login_codes: {
         Row: { id: string; user_id: string; session_id: string; code_hash: string; attempts: number; expires_at: string; used_at: string | null; created_at: string };
         Insert: { user_id: string; session_id: string; code_hash: string; expires_at: string };
@@ -2209,6 +2270,23 @@ export type Database = {
       };
     };
     Views: {
+      /** Clean, undeleted uploads only (HANDOVER-59). What the app may show. */
+      safe_uploads: {
+        Row: {
+          bucket: string;
+          storage_path: string;
+          lead_id: string | null;
+          application_id: string | null;
+          practitioner_id: string | null;
+          detected_mime: string | null;
+          bytes: number;
+          width: number | null;
+          height: number | null;
+          sha256: string | null;
+          created_at: string;
+        };
+        Relationships: [];
+      };
       /** One row per country for the studio panel (HANDOVER-58 Part 12.4). */
       admin_country_panel: {
         Row: {
@@ -2581,6 +2659,11 @@ export type Database = {
       };
     };
     Functions: {
+      /** HANDOVER-59 — true when this uploader is over 20 files or 100 MB in the last hour. */
+      upload_rate_exceeded: {
+        Args: { p_ip_hash: string | null; p_lead: string | null; p_max_files?: number; p_max_bytes?: number };
+        Returns: boolean;
+      };
       /** HANDOVER-52 §4.6 — service role only. Approves a run; returns how many practitioners it covers. */
       create_payout_run: {
         Args: { p_start: string; p_end: string; p_by: string };

@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 import { createSignedPhotoUrl } from "@/lib/leads/signedPhotoUrl";
 import { storagePathFromShortParts } from "@/lib/leads/photoShortLink";
 import { requireStudioMember } from "@/lib/studio/member";
+import { getPhotosBucket } from "@/lib/leads/uploadAssessmentPhotos";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { cleanPaths } from "@/lib/uploads/scans";
 
 type RouteContext = {
   params: Promise<{ packId: string; file: string }>;
@@ -66,6 +68,9 @@ export async function GET(_request: Request, context: RouteContext) {
 
   const allowed = member.isSuperAdmin || lead.assigned_to === user.id;
   if (!allowed) return notFound();
+
+  // HANDOVER-59 Part 3.1 — only a photo whose scan is clean is ever shown.
+  if (!(await cleanPaths(getPhotosBucket(), [storagePath])).has(storagePath)) return notFound();
 
   const signedUrl = await createSignedPhotoUrl(
     storagePath,

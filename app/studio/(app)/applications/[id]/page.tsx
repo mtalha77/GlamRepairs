@@ -174,6 +174,13 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
           Documents
         </h2>
         <p className="mt-1 text-sm text-brand-gray">Links expire after 10 minutes; reload the page for fresh ones.</p>
+        {/* HANDOVER-59 Part 1.2 — a malicious PDF attacks the machine that
+            opens it. The link opens the browser's own viewer, on the
+            storage domain rather than ours; downloading and opening in a
+            desktop reader is the risk. */}
+        <p className="mt-1 text-sm text-brand-gray">
+          Open documents in the browser only. Do not download a PDF and open it in Adobe Reader or another desktop app.
+        </p>
         {documents.length === 0 ? (
           <p className="mt-3 text-sm text-brand-gray">No documents uploaded.</p>
         ) : (
@@ -193,10 +200,14 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                 <span className="flex items-center gap-3">
                   {d.url ? (
                     <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-brand-primary underline underline-offset-2">
-                      Open
+                      Open in browser
                     </a>
-                  ) : (
+                  ) : d.scan === "clean" ? (
                     <span className="text-brand-error-strong">File missing</span>
+                  ) : d.scan === "unchecked" || d.scan === "pending" ? (
+                    <span className="text-brand-gray">Being checked</span>
+                  ) : (
+                    <span className="text-brand-error-strong">Failed the safety check, not opened</span>
                   )}
                   <DocumentVerifyToggle id={d.id} applicationId={app.id} verified={d.verified} />
                 </span>

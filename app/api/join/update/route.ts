@@ -15,6 +15,7 @@ import {
 } from "@/lib/practitioners/join";
 import type { PractitionerDocumentKind } from "@/lib/supabase/database.types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { hashIp, uploadRateExceeded } from "@/lib/uploads/scans";
 
 /**
  * An applicant updating their application after "request changes" —
@@ -105,6 +106,12 @@ export async function POST(request: Request) {
   }
 
   const uploads = [];
+  if (files.length && (await uploadRateExceeded(hashIp(request)))) {
+    return NextResponse.json(
+      { ok: false, error: "Your changes are saved, but there have been too many uploads from this connection in the last hour. Please add the files later." },
+      { status: 429 },
+    );
+  }
   for (const f of files) {
     const path = `applications/${applicationId}/${randomUUID()}.${extensionFor(f.type)}`;
     const { data: signed, error: signError } = await admin.storage.from(DOCS_BUCKET).createSignedUploadUrl(path);

@@ -12,6 +12,7 @@ import { processPhoto } from "@/lib/funnel/image";
 import {
   PHOTO_CHECKS_ANSWER_KEY,
   PHOTO_HINTS,
+  slotHint,
   type PhotoCheck,
 } from "@/lib/funnel/photoCheck";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
@@ -59,10 +60,6 @@ const PLAN_PHOTO_LIMITS: Record<PlanId, number> = {
 const EMPTY_PHOTOS: (string | null)[] = Array(PHOTO_SLOTS.length).fill(null);
 const EMPTY_CHECKS: (PhotoCheck | null)[] = Array(PHOTO_SLOTS.length).fill(null);
 
-/** A hint the client has not yet answered with Retake or "Use this one". */
-function pendingHint(check: PhotoCheck | null | undefined) {
-  return check?.hint && !check.override ? check.hint : null;
-}
 
 function Tick({ className = "" }: { className?: string }) {
   return (
@@ -287,7 +284,7 @@ export default function UploadPhotosStep() {
   };
 
   const flagged = visibleSlots
-    .map((slot, index) => ({ slot, index, hint: photos[index] ? pendingHint(checks?.[index]) : null }))
+    .map((slot, index) => ({ slot, index, hint: photos[index] ? slotHint(index, checks) : null }))
     .filter((item) => item.hint !== null);
   const allSet = allPhotosUploaded && flagged.length === 0;
 
@@ -352,11 +349,11 @@ export default function UploadPhotosStep() {
                 <>
                 <span
                   className={`absolute right-1.5 top-1.5 z-[1] flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold text-white shadow-sm ${
-                    pendingHint(checks?.[index]) ? "bg-brand-primary" : "bg-brand-success"
+                    slotHint(index, checks) ? "bg-brand-primary" : "bg-brand-success"
                   }`}
-                  aria-label={pendingHint(checks?.[index]) ? "Worth a look" : "Looks good"}
+                  aria-label={slotHint(index, checks) ? "Worth a look" : "Looks good"}
                 >
-                  {pendingHint(checks?.[index]) ? "!" : <Tick className="h-2 w-2.5" />}
+                  {slotHint(index, checks) ? "!" : <Tick className="h-2 w-2.5" />}
                 </span>
                 <Image
                   src={photos[index]!}
