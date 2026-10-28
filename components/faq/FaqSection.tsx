@@ -139,9 +139,9 @@ function Timeline({ data }: { data: NonNullable<FaqProofData["timeline"]> }) {
 export default function FaqSection({
   faqs,
   proofs,
-  heading = "Questions,",
-  headingEmphasis = "answered",
-  subheading = "Everything people usually want to know before they start.",
+  heading = "Frequently Asked",
+  headingEmphasis = "Questions",
+  subheading = "Straight answers to what people ask before they trust us with their skin.",
 }: {
   faqs: ResolvedFaq[];
   proofs?: FaqProofData;
@@ -204,19 +204,22 @@ export default function FaqSection({
 
   if (faqs.length === 0) return null;
   const noMatch = words.length > 0 && visibleIds.size === 0;
+  // A. B. C. down whatever is showing, so the letters never skip.
+  const letterOf = new Map(faqs.filter((f) => visibleIds.has(f.id)).map((f, i) => [f.id, String.fromCharCode(65 + (i % 26))]));
 
   return (
     <section className="gr-section-glow px-6 pb-[72px] pt-[60px]">
-      <div className="mx-auto max-w-[780px]">
-        <header className="mb-[22px] text-center">
-          <p className="gr-eyebrow gr-eyebrow--center mb-3">Before you ask</p>
-          <h2 className="font-serif text-[1.7rem] font-semibold leading-[1.18] tracking-[-0.015em] text-brand-ink sm:text-[2.1rem]">
-            {heading} <em className="italic text-brand-primary">{headingEmphasis}</em>
+      {/* HANDOVER-61 §3d: a centred, narrow column. The narrowness is most
+          of the calm. */}
+      <div className="mx-auto max-w-[720px]">
+        <header className="mb-9 text-center">
+          <h2 className="font-sans text-[2.1rem] font-light leading-[1.1] tracking-[-0.03em] text-brand-ink sm:text-[2.75rem]">
+            {heading} <em className="font-serif font-normal italic text-brand-primary">{headingEmphasis}</em>
           </h2>
-          <p className="mt-2 font-sans text-[0.9375rem] text-brand-gray">{subheading}</p>
+          <p className="mx-auto mt-3 max-w-[50ch] font-sans text-[0.9375rem] leading-relaxed text-brand-gray">{subheading}</p>
         </header>
 
-        <div className="relative mx-auto mb-5 max-w-[520px]">
+        <div className="relative mx-auto mb-4 max-w-[480px]">
           <label htmlFor="faq-search" className="sr-only">
             Search the questions
           </label>
@@ -234,7 +237,7 @@ export default function FaqSection({
             }}
             placeholder="Search, for example refund, filter, photos"
             autoComplete="off"
-            className="min-h-12 w-full rounded-full border border-brand-lavender bg-white px-5 pr-12 font-sans text-[0.9375rem] text-brand-ink placeholder:text-brand-gray/70 focus:border-brand-primary focus:outline-none"
+            className="min-h-11 w-full rounded-full border border-brand-lavender/70 bg-white/80 px-5 pr-12 font-sans text-[0.875rem] text-brand-ink placeholder:text-brand-gray/60 focus:border-brand-accent focus:outline-none"
           />
           <kbd
             aria-hidden
@@ -245,17 +248,17 @@ export default function FaqSection({
         </div>
 
         {groups.length > 1 && !words.length ? (
-          <div role="group" aria-label="Filter questions by topic" className="mb-[22px] flex flex-wrap justify-center gap-2">
+          <div role="group" aria-label="Filter questions by topic" className="mb-7 flex flex-wrap justify-center gap-1.5">
             {(["all", ...groups] as FilterValue[]).map((value) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setFilter(value)}
                 aria-pressed={filter === value}
-                className={`gr-btn min-h-11 rounded-full border px-4 py-2 font-sans text-[0.8125rem] font-medium ${
+                className={`min-h-11 rounded-full px-4 font-sans text-[0.8125rem] transition-colors motion-reduce:transition-none ${
                   filter === value
-                    ? "border-brand-primary bg-brand-primary text-white"
-                    : "border-brand-lavender bg-white text-brand-gray hover:border-brand-accent hover:text-brand-primary"
+                    ? "bg-brand-primary text-white"
+                    : "text-brand-gray hover:bg-brand-purple-soft hover:text-brand-primary"
                 }`}
               >
                 {value === "all" ? "All" : FAQ_GROUP_LABEL[value]}
@@ -288,18 +291,28 @@ export default function FaqSection({
                   else rows.current.delete(faq.id);
                 }}
                 style={{ scrollMarginTop: "6rem" }}
-                className="group mb-[9px] rounded-2xl border border-transparent bg-brand-cream-card transition-[transform,background-color,border-color] duration-300 ease-[cubic-bezier(0.22,0.75,0.28,1)] [transform-style:preserve-3d] hover:bg-brand-purple-soft open:border-brand-lavender open:bg-white open:[transform:translateZ(34px)] motion-reduce:transition-none"
+                /* At rest: flat, borderless, very light. Open: white, a
+                   hairline border, lifted on a soft purple shadow. The
+                   contrast between one raised card and a column of flat
+                   ones is the whole design (HANDOVER-61 §3d). */
+                className="group mb-[10px] rounded-2xl border border-transparent bg-brand-purple-soft/55 transition-[transform,background-color,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.22,0.75,0.28,1)] [transform-style:preserve-3d] open:border-brand-lavender/80 open:bg-white open:shadow-[0_24px_48px_-24px_color-mix(in_srgb,var(--color-brand-primary)_35%,transparent)] open:[transform:translateZ(34px)] motion-reduce:transition-none"
               >
-                <summary className="flex min-h-[56px] cursor-pointer list-none items-start justify-between gap-4 px-[22px] py-[18px] font-serif text-[1rem] font-medium italic leading-[1.4] text-brand-ink group-open:text-brand-primary sm:text-[1.0625rem] [&::-webkit-details-marker]:hidden">
-                  <h3 className="font-[inherit]">{highlight(faq.q, words)}</h3>
+                <summary className="flex min-h-[60px] cursor-pointer list-none items-start gap-4 px-6 py-5 font-sans text-[1rem] font-medium leading-[1.45] text-brand-ink [&::-webkit-details-marker]:hidden">
+                  <span aria-hidden className="w-5 shrink-0 text-[0.9375rem] text-brand-gray/60 transition-colors group-open:text-brand-primary motion-reduce:transition-none">
+                    {letterOf.get(faq.id)}.
+                  </span>
+                  <h3 className="flex-1 font-[inherit]">{highlight(faq.q, words)}</h3>
+                  {/* A plus that becomes a minus: two 1.6px bars, the
+                      vertical one fading as the whole mark turns 180deg. */}
                   <span
                     aria-hidden
-                    className="mt-0.5 flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full border border-brand-accent font-sans text-[0.8125rem] not-italic text-brand-accent transition-[transform,background-color,color] duration-300 group-open:rotate-[360deg] group-open:border-brand-primary group-open:bg-brand-primary group-open:text-white motion-reduce:transition-none"
+                    className="relative mt-1 h-4 w-4 shrink-0 text-brand-gray transition-transform duration-300 group-open:rotate-180 group-open:text-brand-primary motion-reduce:transition-none"
                   >
-                    ?
+                    <span className="absolute left-0 top-1/2 h-[1.6px] w-4 -translate-y-1/2 rounded-full bg-current" />
+                    <span className="absolute left-1/2 top-0 h-4 w-[1.6px] -translate-x-1/2 rounded-full bg-current transition-opacity duration-300 group-open:opacity-0 motion-reduce:transition-none" />
                   </span>
                 </summary>
-                <div className="px-[22px] pb-5">
+                <div className="pb-6 pl-[3.75rem] pr-6">
                   <p className="max-w-[60ch] font-sans text-[0.9375rem] leading-[1.72] text-brand-gray">{renderAnswer(faq, words)}</p>
                   {proof}
                 </div>

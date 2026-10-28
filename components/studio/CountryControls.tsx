@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { setCountryPrice, setCountryResearch, setCountrySwitch } from "@/lib/studio/countryActions";
+import { setCountryPaymentMethod, setCountryPrice, setCountryResearch, setCountrySwitch } from "@/lib/studio/countryActions";
 import { RESEARCH_STATUSES, RESEARCH_STATUS_LABEL, type ResearchStatus } from "@/lib/studio/countryStatus";
 
 const ghost =
@@ -18,7 +18,31 @@ type Props = {
   legalNote: string | null;
   price: { display: string; symbol: string; minorUnits: number; placeholder: boolean } | null;
   currency: string;
+  paymentMethod: string | null;
 };
+
+const PAYMENT_LABEL: Record<string, string> = {
+  bank_transfer_pk: "Bank transfer to the Pakistan account",
+  merchant_of_record: "Merchant of record (Paddle, Lemon Squeezy)",
+  wise: "Wise collection account",
+  payoneer: "Payoneer collection account",
+};
+
+/** What the typed price will look like to a client, so a miscounted zero shows before it ships. */
+function preview(amount: string, currency: string, minorUnits: number): string | null {
+  const n = Number(amount.trim().replace(/,/g, ""));
+  if (!amount.trim() || !Number.isFinite(n) || n <= 0) return null;
+  try {
+    return new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: Number.isInteger(n) ? 0 : minorUnits,
+      maximumFractionDigits: minorUnits,
+    }).format(n);
+  } catch {
+    return null;
+  }
+}
 
 /** Switches, research status with the lawyer's note, and the price, for one country. */
 export default function CountryControls(p: Props) {
@@ -115,7 +139,29 @@ export default function CountryControls(p: Props) {
         >
           Set price
         </button>
+        {preview(amount, p.currency, p.price?.minorUnits ?? 2) ? (
+          <span className="pb-2.5 text-sm text-brand-gray">
+            Clients will see <span className="font-medium text-brand-ink">{preview(amount, p.currency, p.price?.minorUnits ?? 2)}</span>
+          </span>
+        ) : null}
       </div>
+
+      <label className="block text-xs text-brand-gray">
+        How clients here pay (required before clients can be switched on)
+        <select
+          className={`${input} mt-1 block w-full sm:w-80`}
+          value={p.paymentMethod ?? ""}
+          disabled={pending}
+          onChange={(e) => run(() => setCountryPaymentMethod({ code: p.code, method: e.target.value }))}
+        >
+          <option value="">Not set</option>
+          {Object.entries(PAYMENT_LABEL).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
 
       {error ? <p className="text-sm text-brand-error-strong">{error}</p> : null}
     </div>

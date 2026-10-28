@@ -70,6 +70,7 @@ export async function updatePractitionerDetails(input: {
       payout_detail_ref: input.payoutDetailRef.trim() || null,
       max_per_day: input.maxPerDay,
       max_per_week: input.maxPerWeek,
+      edited_by: g.userId,
       updated_at: new Date().toISOString(),
     })
     .eq("id", input.id);
@@ -124,7 +125,7 @@ export async function makePractitionerLive(id: string): Promise<PractitionerActi
   const now = new Date().toISOString();
   const { error } = await createAdminSupabaseClient()
     .from("practitioner_profiles")
-    .update({ status: "approved", approved_at: now, approved_by: g.userId, accepting_clients: true, can_review: true, updated_at: now })
+    .update({ status: "approved", approved_at: now, approved_by: g.userId, accepting_clients: true, can_review: true, edited_by: g.userId, updated_at: now })
     .eq("id", id);
   if (error) {
     const m = error.message;
@@ -146,7 +147,7 @@ export async function suspendPractitioner(input: { id: string; reason: string })
   const now = new Date().toISOString();
   const { error } = await createAdminSupabaseClient()
     .from("practitioner_profiles")
-    .update({ status: "suspended", suspended_at: now, suspended_reason: input.reason.trim(), accepting_clients: false, can_review: false, updated_at: now })
+    .update({ status: "suspended", suspended_at: now, suspended_reason: input.reason.trim(), accepting_clients: false, can_review: false, edited_by: g.userId, updated_at: now })
     .eq("id", input.id);
   if (error) return { ok: false, error: error.message };
   revalidate();
@@ -188,7 +189,7 @@ export async function updateOwnBio(bio: string): Promise<PractitionerActionResul
   if (text.length > 1200) return { ok: false, error: "Keep it under 1,200 characters." };
   const { error } = await createAdminSupabaseClient()
     .from("practitioner_profiles")
-    .update({ bio: text, updated_at: new Date().toISOString() })
+    .update({ bio: text, edited_by: g.userId, updated_at: new Date().toISOString() })
     .eq("id", g.profile.id);
   if (error) return { ok: false, error: error.message };
   revalidate();
@@ -327,7 +328,7 @@ export async function setOwnDailyLimit(limit: number): Promise<PractitionerActio
   if (!Number.isInteger(limit) || limit < 1 || limit > 15) return { ok: false, error: "Choose between 1 and 15 a day." };
   const { error } = await createAdminSupabaseClient()
     .from("practitioner_profiles")
-    .update({ max_per_day: limit, updated_at: new Date().toISOString() })
+    .update({ max_per_day: limit, edited_by: g.userId, updated_at: new Date().toISOString() })
     .eq("id", g.profile.id);
   if (error) return { ok: false, error: error.message };
   await refreshOpenSlots();
@@ -421,6 +422,7 @@ export async function saveOwnPublicProfile(input: {
   const { error } = await createAdminSupabaseClient()
     .from("practitioner_profiles")
     .update({
+      edited_by: g.userId,
       city: input.city.trim().slice(0, 80) || null,
       years_experience: years,
       specialisms: list(input.specialisms),

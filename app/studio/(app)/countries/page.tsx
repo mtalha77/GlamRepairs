@@ -60,7 +60,14 @@ function Country({ c }: { c: CountryRow }) {
         legalNote={c.legalNote}
         price={c.price}
         currency={c.currency}
+        paymentMethod={c.paymentMethod}
       />
+      {c.priceHistory.length ? (
+        <p className="mt-2 text-xs text-brand-gray">
+          Price history:{" "}
+          {c.priceHistory.map((h) => `${c.price?.symbol ?? ""}${h.amount} on ${formatStudioDateTime(h.at)}`).join(" · ")}
+        </p>
+      ) : null}
     </li>
   );
 }
