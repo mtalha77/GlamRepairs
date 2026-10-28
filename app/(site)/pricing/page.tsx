@@ -22,6 +22,7 @@ import PricingSection from "@/components/pricing/PricingSection";
 import TestimonialsSection from "@/components/reviews/TestimonialsSection";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
+import { faqProofsFromPlan } from "@/lib/faqProofs";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 import { formatPlanPrice, getPaidPlan } from "@/lib/plans/plansPublic";
 import { faqSchema, graph } from "@/lib/seo/schema";
@@ -91,7 +92,7 @@ export default async function PricingPage() {
         */}
         {/* HANDOVER-12 §5 — after the price comparison, before the FAQ. */}
         <TestimonialsSection />
-        <FaqSection faqs={faqs} />
+        <FaqSection faqs={faqs} proofs={faqProofsFromPlan(paidPlan)} />
       </main>
     </>
   );

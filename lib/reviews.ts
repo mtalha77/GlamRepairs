@@ -1,8 +1,9 @@
 /**
  * Client reviews — HANDOVER-12 §4.
  *
- * Data, not JSX. The deck reads `REVIEWS.length` and derives everything from
- * it, so adding a seventh review is one object here and no component change.
+ * Data, not JSX. The drum (HANDOVER-61) always has six faces and repaints
+ * them as it turns, so adding a seventh review, or a hundredth, is one object
+ * here and changes nothing about the geometry.
  *
  * ── Two things to keep true ──────────────────────────────────────────────
  * 1. These are real clients' words, supplied by Talha. Nothing here is
@@ -11,16 +12,21 @@
  *    and do not add an entry that is not a review someone actually left.
  *    A fabricated testimonial is a false statement about a named person on
  *    a YMYL site, which is a different order of problem from a typo.
- * 2. Keep quotes to roughly 30 words. The deck's cards are absolutely
- *    positioned inside a fixed-height container — that is what stops the
- *    section jolting as cards of different lengths cycle through — so a
- *    much longer quote will overflow its card rather than grow it.
+ * 2. Keep quotes to roughly 30 words. The drum's faces are a fixed height,
+ *    which is what stops the section jolting as reviews of different
+ *    lengths come round, so a much longer quote will be clipped.
  */
 export type Review = {
   quote: string;
   name: string;
   /** City only. Never a full address, and never a surname the client did not give. */
   city: string;
+  /**
+   * ISO country code, for the filter chips (HANDOVER-61 Part 2). The chips
+   * only appear once reviews come from more than one country: two chips
+   * where one is empty is worse than none.
+   */
+  country: string;
 };
 
 export const REVIEWS: Review[] = [
@@ -31,6 +37,7 @@ export const REVIEWS: Review[] = [
       "noticeably fewer breakouts.",
     name: "Areeba Siddiqui",
     city: "Lahore",
+    country: "PK",
   },
   {
     quote:
@@ -39,6 +46,7 @@ export const REVIEWS: Review[] = [
       "already doing.",
     name: "Komal Rauf",
     city: "Karachi",
+    country: "PK",
   },
   {
     quote:
@@ -47,6 +55,7 @@ export const REVIEWS: Review[] = [
       "manage.",
     name: "Saba H.",
     city: "Karachi",
+    country: "PK",
   },
   {
     quote:
@@ -55,6 +64,7 @@ export const REVIEWS: Review[] = [
       "congested now.",
     name: "Hania Shah",
     city: "Lahore",
+    country: "PK",
   },
   {
     quote:
@@ -63,6 +73,7 @@ export const REVIEWS: Review[] = [
       "my routine.",
     name: "Alina Javed",
     city: "Faisalabad",
+    country: "PK",
   },
   {
     quote:
@@ -71,5 +82,6 @@ export const REVIEWS: Review[] = [
       "few weeks.",
     name: "Rabia Nadeem",
     city: "Rawalpindi",
+    country: "PK",
   },
 ];
