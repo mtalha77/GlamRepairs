@@ -29,6 +29,9 @@ function plain(message: string, name: string): string {
   if (message.includes("countries_clearance_needs_note")) {
     return `Write down what the lawyer said (at least a sentence) before marking ${name} as reviewed.`;
   }
+  if (message.includes("no payment method")) {
+    return `Cannot open ${name} to clients: choose how they will pay first. A price nobody can pay is not a real price.`;
+  }
   if (message.includes("placeholder")) {
     return `Cannot open ${name} to clients: its price is still a placeholder. Set a real price first.`;
   }
@@ -137,6 +140,31 @@ export async function setCountryPrice(input: { code: string; amount: string }): 
     })
     .eq("country_code", input.code)
     .eq("plan_key", "transform");
+  if (error) return { ok: false, error: plain(error.message, await countryName(input.code)) };
+  revalidatePath("/studio/countries");
+  return { ok: true };
+}
+
+const PAYMENT_METHODS = ["bank_transfer_pk", "merchant_of_record", "wise", "payoneer"] as const;
+
+/**
+ * How clients in this country pay (HANDOVER-62 Part 1). Required by the
+ * database before clients_enabled can go on. Clearing it is refused while
+ * the country is open to clients.
+ */
+export async function setCountryPaymentMethod(input: { code: string; method: string }): Promise<Result> {
+  if (!(await guard())) return { ok: false, error: "Not allowed." };
+  if (!CODE.test(input.code)) return { ok: false, error: "Unknown country." };
+  const method = input.method === "" ? null : input.method;
+  if (method !== null && !(PAYMENT_METHODS as readonly string[]).includes(method)) {
+    return { ok: false, error: "Unknown payment method." };
+  }
+  const admin = createAdminSupabaseClient();
+  if (method === null) {
+    const { data } = await admin.from("countries").select("name, clients_enabled").eq("code", input.code).maybeSingle();
+    if (data?.clients_enabled) return { ok: false, error: `Switch ${data.name} off for clients before removing its payment method.` };
+  }
+  const { error } = await admin.from("countries").update({ payment_method: method }).eq("code", input.code);
   if (error) return { ok: false, error: plain(error.message, await countryName(input.code)) };
   revalidatePath("/studio/countries");
   return { ok: true };

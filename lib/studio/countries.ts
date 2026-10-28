@@ -26,6 +26,9 @@ export type CountryRow = {
   dataLaw: string | null;
   regulatorNote: string | null;
   legalNote: string | null;
+  paymentMethod: string | null;
+  /** The last few price changes, newest first. */
+  priceHistory: { amount: string; at: string }[];
   statusChangedAt: string | null;
   diasporaPriority: number;
   price: { amountMinor: number; minorUnits: number; symbol: string; display: string; placeholder: boolean } | null;
@@ -45,10 +48,22 @@ export function formatMinor(amountMinor: number, minorUnits: number): string {
 
 export async function listCountries(): Promise<CountryRow[]> {
   const admin = createAdminSupabaseClient();
-  const [{ data: panel }, { data: notes }] = await Promise.all([
+  const [{ data: panel }, { data: notes }, { data: changes }] = await Promise.all([
     admin.from("admin_country_panel").select("*"),
-    admin.from("countries").select("code, legal_note, status_changed_at"),
+    admin.from("countries").select("code, legal_note, status_changed_at, payment_method"),
+    admin
+      .from("country_price_changes")
+      .select("country_code, new_amount_minor, minor_units, changed_at")
+      .eq("plan_key", "transform")
+      .order("changed_at", { ascending: false })
+      .limit(500),
   ]);
+  const historyBy = new Map<string, { amount: string; at: string }[]>();
+  for (const c of changes ?? []) {
+    const list = historyBy.get(c.country_code) ?? [];
+    if (list.length < 3) list.push({ amount: formatMinor(c.new_amount_minor, c.minor_units), at: c.changed_at });
+    historyBy.set(c.country_code, list);
+  }
   const noteBy = new Map((notes ?? []).map((n) => [n.code, n]));
   return (panel ?? []).map((r) => ({
     code: r.code,
@@ -62,6 +77,8 @@ export async function listCountries(): Promise<CountryRow[]> {
     dataLaw: r.data_law,
     regulatorNote: r.regulator_note,
     legalNote: noteBy.get(r.code)?.legal_note ?? null,
+    paymentMethod: noteBy.get(r.code)?.payment_method ?? null,
+    priceHistory: historyBy.get(r.code) ?? [],
     statusChangedAt: noteBy.get(r.code)?.status_changed_at ?? null,
     diasporaPriority: r.diaspora_priority,
     price:

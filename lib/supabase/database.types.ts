@@ -130,6 +130,7 @@ export type Database = {
           timezone?: string;
           created_at?: string;
           updated_at?: string;
+          edited_by?: string | null;
           max_per_day?: number;
           max_per_week?: number;
           payout_method?: string | null;
@@ -915,6 +916,7 @@ export type Database = {
           legal_note: string | null;
           status_changed_at: string | null;
           status_changed_by: string | null;
+          payment_method: string | null;
         };
         Insert: never;
         Update: {
@@ -924,6 +926,7 @@ export type Database = {
           legal_note?: string | null;
           status_changed_at?: string | null;
           status_changed_by?: string | null;
+          payment_method?: string | null;
         };
         Relationships: [];
       };
@@ -1064,6 +1067,25 @@ export type Database = {
           note: string | null;
           is_test: boolean;
           created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /** Every price change (HANDOVER-62 Part 6a). Written by a trigger. */
+      country_price_changes: {
+        Row: {
+          id: number;
+          country_code: string;
+          plan_key: string;
+          currency: string;
+          minor_units: number;
+          old_amount_minor: number | null;
+          new_amount_minor: number;
+          old_note: string | null;
+          new_note: string | null;
+          changed_by: string | null;
+          changed_at: string;
         };
         Insert: never;
         Update: never;
