@@ -22,6 +22,7 @@ import PricingSection from "@/components/pricing/PricingSection";
 import TestimonialsSection from "@/components/reviews/TestimonialsSection";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
+import { faqProofsFromPlan } from "@/lib/faqProofs";
 import { hasReviewingTeam } from "@/lib/practitioners/authorship";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 import { formatPlanPrice, getPaidPlan } from "@/lib/plans/plansPublic";
@@ -96,7 +97,7 @@ export default async function Home() {
         showCompareStrip
       />
       <TrustPrivacySection />
-      <FaqSection faqs={faqs} />
+      <FaqSection faqs={faqs} proofs={faqProofsFromPlan(paidPlan)} />
       {/* HOTFIX-10 §1a — sits above the footer CTA so the blog finally has
           an internal route in from the highest-authority page on the site. */}
       <LatestPostsSection />

@@ -16,12 +16,11 @@ import { PRACTITIONER } from "@/lib/seo/authors";
  * from paying. The payment question in particular was missing entirely —
  * people reached the end of a 25-step form with no idea how to pay.
  *
- * ── Two answers are deliberately NOT here ────────────────────────────────
- * 1. `photo-deletion` ("what happens to my photos afterwards?"). The
- *    handover gates it on the cleanup job being verified. It has not run:
- *    checked against production, `photos_deleted_at` is null on all 36 lead
- *    rows and 22 are past the 30-day mark. Claiming automatic deletion today
- *    would be false. Add the entry once a purge has actually run.
+ * ── Two claims that had to be earned first ───────────────────────────────
+ * 1. `photo-deletion` ("what happens to my photos afterwards?") was held
+ *    back until the cleanup job had actually run. Checked against
+ *    production on 28 October 2026: photographs deleted on 34 leads, and
+ *    none past their 30 days still held. It is in now (HANDOVER-61).
  * 2. (Shipped, HOTFIX-43.) The `photo-privacy` answer now says the photos
  *    are held in private storage with no public address and opened only
  *    through a signed-in portal. That became true on 25 September 2026,
@@ -33,7 +32,7 @@ import { PRACTITIONER } from "@/lib/seo/authors";
  * disprove in one request is worth less than a smaller one that holds.
  */
 
-export type FaqGroup = "money" | "trust" | "practical";
+export type FaqGroup = "money" | "trust" | "privacy" | "practical";
 export type FaqTag = "home" | "about" | "contact" | "pricing";
 
 /**
@@ -66,6 +65,13 @@ export type Faq = {
   group: FaqGroup;
   tags: FaqTag[];
   /**
+   * HANDOVER-61 Part 3a: words people actually type, so the search finds
+   * "refund" under "What if I am not satisfied?". Search only; never shown.
+   */
+  keywords?: string[];
+  /** A small visual under the answer, drawn from live data (Part 3b). */
+  proof?: "receipt" | "timeline";
+  /**
    * When set, `a` is ignored and this builds the answer from live prices.
    * An entry marked this way is omitted entirely when no pricing context is
    * passed — a price question rendering without live prices is worse than
@@ -75,20 +81,35 @@ export type Faq = {
 };
 
 export const FAQ_GROUP_LABEL: Record<FaqGroup, string> = {
-  money: "Pricing and process",
-  trust: "Trust and privacy",
+  money: "Money",
+  trust: "Trust",
+  privacy: "Privacy",
   practical: "Practical",
 };
 
 /** Render order. Money first: it is what blocks a purchase. */
-const GROUP_ORDER: FaqGroup[] = ["money", "trust", "practical"];
+const GROUP_ORDER: FaqGroup[] = ["money", "trust", "privacy", "practical"];
+
+/**
+ * The revision window in the Terms ("tell us within 14 days of delivery").
+ * Change both together.
+ */
+export const REVISION_DAYS = 14;
+
+/** Live figures for the proof blocks. Pages without a pricing region pass none and the blocks are omitted. */
+export type FaqProofData = {
+  receipt?: { planLabel: string; price: string; lines: string[] };
+  timeline?: { checkIns: boolean; supportDays: number | null };
+};
 
 export const FAQS: Faq[] = [
   /* ── Money and process ─────────────────────────────────────────────── */
   {
     id: "how-much",
+    keywords: ["price", "cost", "fee", "expensive", "cheap", "rupees", "how much", "worth it"],
     q: "How much does it cost?",
     group: "money",
+    proof: "receipt",
     // Only the two pages that already resolve a pricing region. Tagging this
     // onto /about or /contact would drag those pages from static to dynamic
     // rendering for one sentence.
@@ -106,6 +127,7 @@ export const FAQS: Faq[] = [
   },
   {
     id: "how-to-pay",
+    keywords: ["payment", "bank", "transfer", "card", "jazzcash", "easypaisa", "screenshot"],
     q: "How do I pay?",
     group: "money",
     tags: ["home", "pricing", "contact"],
@@ -116,6 +138,7 @@ export const FAQS: Faq[] = [
   },
   {
     id: "how-long",
+    keywords: ["time", "fast", "quick", "when", "delivery", "hours", "wait"],
     q: "How long does it take?",
     group: "money",
     tags: ["home", "pricing", "contact", "about"],
@@ -125,6 +148,7 @@ export const FAQS: Faq[] = [
   },
   {
     id: "do-i-buy-products",
+    keywords: ["commission", "brands", "sell", "products", "affiliate", "sponsored", "buy"],
     q: "Do I have to buy the products you recommend?",
     group: "money",
     tags: ["home", "pricing", "about"],
@@ -137,6 +161,7 @@ export const FAQS: Faq[] = [
   /* ── Trust ─────────────────────────────────────────────────────────── */
   {
     id: "is-this-ai",
+    keywords: ["ai", "bot", "automated", "chatgpt", "human", "real person"],
     q: "Is this an AI tool?",
     group: "trust",
     tags: ["home", "about", "pricing"],
@@ -147,6 +172,7 @@ export const FAQS: Faq[] = [
   },
   {
     id: "who-reviews",
+    keywords: ["practitioner", "qualified", "credentials", "who", "ayma", "expert"],
     q: "Who reviews my photographs?",
     group: "trust",
     tags: ["home", "about"],
@@ -162,8 +188,9 @@ export const FAQS: Faq[] = [
   },
   {
     id: "photo-privacy",
+    keywords: ["photos", "pictures", "private", "safe", "leak", "shared", "face"],
     q: "Are my photographs private?",
-    group: "trust",
+    group: "privacy",
     tags: ["home", "about", "contact"],
     // ⚠️ Every clause here is checked against the system, not the intent.
     // See the file header before strengthening it: the previous homepage
@@ -179,6 +206,7 @@ export const FAQS: Faq[] = [
   },
   {
     id: "is-this-medical",
+    keywords: ["doctor", "dermatologist", "medicine", "prescription", "diagnose"],
     q: "Is this a medical consultation?",
     group: "trust",
     tags: ["home", "about"],
@@ -190,8 +218,10 @@ export const FAQS: Faq[] = [
   },
   {
     id: "not-satisfied",
+    keywords: ["refund", "money back", "not working", "guarantee", "unhappy", "revise", "rewrite"],
     q: "What if I am not satisfied?",
     group: "trust",
+    proof: "timeline",
     tags: ["home", "about", "pricing", "contact"],
     // Bounded on purpose. An earlier version promised responsibility "until
     // you're confident in your routine", which is an open-ended commitment
@@ -203,9 +233,40 @@ export const FAQS: Faq[] = [
       "it at no cost.",
   },
 
+  {
+    id: "see-a-doctor",
+    keywords: ["doctor", "urgent", "emergency", "painful", "spreading", "infection", "rash", "mole"],
+    q: "When should I see a doctor instead?",
+    group: "trust",
+    tags: ["home", "about", "contact"],
+    // The same wording as the consent step and the Terms (HANDOVER-58).
+    a:
+      "If your skin is painful, spreading quickly, bleeding or blistering, or " +
+      "you feel unwell with it, see a doctor, and if it is urgent contact your " +
+      "local emergency service rather than waiting for us. We give cosmetic " +
+      "guidance and do not diagnose. If what we see needs a doctor, we tell " +
+      "you so and refund you rather than write a routine.",
+  },
+
+  /* ── Privacy ───────────────────────────────────────────────────────── */
+  {
+    id: "photo-deletion",
+    keywords: ["delete", "deleted", "keep", "stored", "how long", "photos", "data"],
+    q: "What happens to my photographs afterwards?",
+    group: "privacy",
+    tags: ["home", "about", "contact"],
+    // See the file header: true since the cleanup job's first runs, checked
+    // on 28 October 2026. If the job stops, this sentence stops being true.
+    a:
+      "They are deleted automatically 30 days after you send them. Your " +
+      "written report is kept, so you can refer back to it. If you want " +
+      "everything deleted sooner, tell us and we will do it.",
+  },
+
   /* ── Practical ─────────────────────────────────────────────────────── */
   {
     id: "what-photos",
+    keywords: ["selfie", "camera", "filter", "makeup", "lighting", "angles"],
     q: "What photos do I need?",
     group: "practical",
     tags: ["home", "contact"],
@@ -216,6 +277,7 @@ export const FAQS: Faq[] = [
   },
   {
     id: "ask-questions-after",
+    keywords: ["follow up", "whatsapp", "support", "check in", "questions", "video call"],
     q: "Can I ask questions after I get my report?",
     group: "practical",
     tags: ["home", "pricing", "about"],
@@ -229,6 +291,7 @@ export const FAQS: Faq[] = [
   },
   {
     id: "outside-pakistan",
+    keywords: ["abroad", "overseas", "uk", "dubai", "usa", "international", "currency"],
     q: "Do you work with clients outside Pakistan?",
     group: "practical",
     tags: ["home", "pricing", "contact"],
@@ -239,6 +302,7 @@ export const FAQS: Faq[] = [
   },
   {
     id: "men",
+    keywords: ["male", "man", "boys", "gender"],
     q: "Is this only for women?",
     group: "practical",
     tags: ["home", "about"],

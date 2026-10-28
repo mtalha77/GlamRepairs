@@ -1,5 +1,11 @@
-import TestimonialDeck from "@/components/reviews/TestimonialDeck";
+import ReviewsDrum from "@/components/reviews/ReviewsDrum";
 import { REVIEWS } from "@/lib/reviews";
+
+/** Country names for the filter chips, from the codes the reviews carry. */
+function countryNames(): Record<string, string> {
+  const names = new Intl.DisplayNames(["en"], { type: "region" });
+  return Object.fromEntries([...new Set(REVIEWS.map((r) => r.country))].map((c) => [c, names.of(c) ?? c]));
+}
 
 /**
  * HANDOVER-12 §5 — the section wrapper.
@@ -40,7 +46,7 @@ export default function TestimonialsSection() {
           </p>
         </header>
 
-        <TestimonialDeck />
+        <ReviewsDrum reviews={REVIEWS} countryNames={countryNames()} />
       </div>
     </section>
   );
