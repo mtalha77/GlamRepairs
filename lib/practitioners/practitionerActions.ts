@@ -11,6 +11,7 @@ import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 import { defaultPractitionerId, ownPractitionerProfile } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { isValidTimeZone } from "@/lib/consultation/format";
 
 /**
  * Practitioner management — HANDOVER-52 §2.6, §3.3, §3.5, §4.3.
@@ -53,6 +54,8 @@ export async function updatePractitionerDetails(input: {
   payoutDetailRef: string;
   maxPerDay: number;
   maxPerWeek: number;
+  countryCode: string;
+  timezone: string;
 }): Promise<PractitionerActionResult> {
   const g = await superAdmin();
   if ("error" in g) return { ok: false, error: g.error as string };
@@ -62,6 +65,16 @@ export async function updatePractitionerDetails(input: {
   if (!Number.isInteger(input.maxPerWeek) || input.maxPerWeek < input.maxPerDay) {
     return { ok: false, error: "Weekly cap must be at least the daily cap." };
   }
+  // Country only, never city (it is what the directory shows). The timezone
+  // is what their availability is generated in, so it must be real.
+  const countryCode = input.countryCode.trim().toUpperCase();
+  if (countryCode && !/^[A-Z]{2}$/.test(countryCode)) {
+    return { ok: false, error: "Country must be a two-letter code, for example NG or PK." };
+  }
+  if (!isValidTimeZone(input.timezone.trim())) {
+    return { ok: false, error: "That timezone is not recognised. Use a name like Africa/Lagos or Asia/Karachi." };
+  }
+  const countryName = countryCode ? new Intl.DisplayNames(["en"], { type: "region" }).of(countryCode) ?? countryCode : null;
   const { error } = await createAdminSupabaseClient()
     .from("practitioner_profiles")
     .update({
@@ -70,6 +83,9 @@ export async function updatePractitionerDetails(input: {
       payout_detail_ref: input.payoutDetailRef.trim() || null,
       max_per_day: input.maxPerDay,
       max_per_week: input.maxPerWeek,
+      country_code: countryCode || null,
+      country_name: countryName,
+      timezone: input.timezone.trim(),
       edited_by: g.userId,
       updated_at: new Date().toISOString(),
     })

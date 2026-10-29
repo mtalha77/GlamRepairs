@@ -60,6 +60,7 @@ import { reportSignatureFor } from "@/lib/practitioners/authorship";
 import { bookConsultationForLead } from "@/lib/consultation/booking";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 import { sendPaymentConfirmedEmail } from "@/lib/clients/paymentConfirmed";
+import { discardNewAuthUser } from "@/lib/studio/discardNewAuthUser";
 
 function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "";
@@ -323,6 +324,9 @@ export async function inviteTeamMemberAction(formData: FormData) {
 
   if (memberError) {
     console.error("[inviteTeamMemberAction] member", memberError.message);
+    // Nothing points at a user minted by this request; remove it so a failed
+    // invite never leaves an orphaned auth user behind. Retryable.
+    await discardNewAuthUser(userId, otpType === "invite", "inviteTeamMemberAction");
     redirect("/studio/team?error=invite");
   }
 

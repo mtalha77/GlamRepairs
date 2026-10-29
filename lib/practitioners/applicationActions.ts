@@ -9,6 +9,7 @@ import { ASSESSMENT_MINUTES, ASSESSMENT_QUESTIONS, assessmentUrl } from "@/lib/p
 import { REVISION_FIELDS, signApplicationEdit } from "@/lib/practitioners/join";
 import { storeProfilePhoto } from "@/lib/practitioners/photo";
 import { formatMoney } from "@/lib/pricing/money";
+import { discardNewAuthUser } from "@/lib/studio/discardNewAuthUser";
 import { requireStudioMember } from "@/lib/studio/member";
 import type { PractitionerApplicationStatus } from "@/lib/supabase/database.types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -396,6 +397,10 @@ async function createPractitionerLogin(profileId: string): Promise<ApplicationAc
     return { ok: false, error: "This profile is already linked to a different account." };
   }
 
+  // The invite link (not the magic-link fallback) means this request created
+  // the auth user; if linking it fails below, it is removed again.
+  const createdNow = generated.data.properties?.verification_type !== "magiclink";
+
   const { data: existing } = await admin.from("studio_members").select("user_id").eq("user_id", userId).maybeSingle();
   if (!existing) {
     const { error } = await admin.from("studio_members").insert({
@@ -407,11 +412,17 @@ async function createPractitionerLogin(profileId: string): Promise<ApplicationAc
       can_send_report: false,
       is_super_admin: false,
     });
-    if (error) return { ok: false, error: error.message };
+    if (error) {
+      await discardNewAuthUser(userId, createdNow, "sendPractitionerSignIn");
+      return { ok: false, error: `${error.message}. Nothing was sent; try again.` };
+    }
   }
   if (!profile.user_id) {
     const { error } = await admin.from("practitioner_profiles").update({ user_id: userId }).eq("id", profileId).is("user_id", null);
-    if (error) return { ok: false, error: error.message };
+    if (error) {
+      await discardNewAuthUser(userId, createdNow, "sendPractitionerSignIn");
+      return { ok: false, error: `${error.message}. Nothing was sent; try again.` };
+    }
   }
 
   const type = generated.data.properties?.verification_type === "magiclink" ? "magiclink" : "invite";
