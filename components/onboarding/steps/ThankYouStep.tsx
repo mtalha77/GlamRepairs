@@ -7,6 +7,7 @@ import OnboardingShell from "@/components/onboarding/OnboardingShell";
 import { ONBOARDING_TOTAL_STEPS } from "@/components/onboarding/onboardingConfig";
 import { getOnboardingFirstName } from "@/components/onboarding/onboardingStorage";
 import PaymentDetails from "@/components/onboarding/PaymentDetails";
+import TestMarkPaid from "@/components/testPortal/TestMarkPaid";
 import ConsultationAfterSubmit from "@/components/consultation/ConsultationAfterSubmit";
 import { StepHeader } from "@/components/steps";
 import { ONBOARDING_COMPLETE_UNLOCK } from "@/lib/funnel/funnelProgress";
@@ -106,12 +107,15 @@ type ThankYouStepProps = {
   region: PricingRegion;
   /** HANDOVER-50 — plans with a video call (plan → minutes) and the guidelines. */
   consultation?: { videoPlans: Record<string, number>; guidelinesHtml: string };
+  /** Handover 63 — a test portal session: offers "mark paid" under the real bank block. */
+  testMode?: boolean;
 };
 
 export default function ThankYouStep({
   currentStep = ONBOARDING_TOTAL_STEPS,
   region,
   consultation,
+  testMode = false,
 }: ThankYouStepProps) {
   // The name lives in sessionStorage, which does not exist on the server.
   // useSyncExternalStore renders the empty server snapshot first and swaps
@@ -154,6 +158,7 @@ export default function ThankYouStep({
             do, so it sits directly under the header, above the reassurance
             copy, rather than below it. */}
         <PaymentDetails region={region} />
+        {testMode ? <TestMarkPaid /> : null}
 
         {consultation ? (
           <ConsultationAfterSubmit

@@ -80,6 +80,11 @@ export type Database = {
           offboarded_at: string | null;
           suspended_reason: string | null;
           probation_reports_remaining: number | null;
+          country_code: string | null;
+          country_name: string | null;
+          assessments_count: number | null;
+          practitioner_quote: string | null;
+          credential_ref: string | null;
         };
         Insert: {
           id?: string;
@@ -146,6 +151,9 @@ export type Database = {
           approved_by?: string | null;
           suspended_at?: string | null;
           suspended_reason?: string | null;
+          assessments_count?: number | null;
+          practitioner_quote?: string | null;
+          credential_ref?: string | null;
         };
         Relationships: [];
       };
@@ -948,6 +956,55 @@ export type Database = {
         Update: { amount_minor?: number; note?: string | null; updated_at?: string; updated_by?: string | null };
         Relationships: [];
       };
+      /** Handover 63 — invented profiles for the test portal only. Service role only. */
+      practitioner_samples: {
+        Row: {
+          slug: string;
+          display_name: string;
+          role_title: string;
+          country_code: string;
+          country_name: string;
+          avatar: unknown;
+          years_practising: number;
+          assessments_count: number;
+          rating: number | null;
+          rating_count: number;
+          focus_areas: string[];
+          practitioner_quote: string;
+          credential_title: string;
+          credential_ref: string;
+          languages: string[];
+          next_in_days: number;
+          sort_order: number;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /** Handover 63 — one row: the hashed passphrase and its version. Service role only. */
+      test_portal_settings: {
+        Row: {
+          id: boolean;
+          passphrase_hash: string | null;
+          version: number;
+          rotated_at: string | null;
+          rotated_by: string | null;
+        };
+        Insert: {
+          id?: boolean;
+          passphrase_hash?: string | null;
+          version?: number;
+          rotated_at?: string | null;
+          rotated_by?: string | null;
+        };
+        Update: {
+          passphrase_hash?: string | null;
+          version?: number;
+          rotated_at?: string | null;
+          rotated_by?: string | null;
+        };
+        Relationships: [];
+      };
       /** One row per uploaded file (HANDOVER-59). Service role only. */
       upload_scans: {
         Row: {
@@ -1584,6 +1641,8 @@ export type Database = {
           // this shipped are test data; default false so any new insert
           // that doesn't explicitly set it is treated as a real customer.
           is_test: boolean;
+          test_session: string | null;
+          preferred_practitioner_id: string | null;
           test_reason: string | null;
           // HOTFIX-7 §1 — "record what was quoted": the pricing_regions.code
           // and currency the visitor actually saw/chose at submission, and
@@ -1637,6 +1696,7 @@ export type Database = {
           assigned_to?: string | null;
           report_sender_id?: string | null;
           is_test?: boolean;
+          test_session?: string | null;
           test_reason?: string | null;
           pricing_region?: string | null;
           currency?: string | null;
@@ -1681,6 +1741,7 @@ export type Database = {
           assigned_to?: string | null;
           report_sender_id?: string | null;
           is_test?: boolean;
+          test_session?: string | null;
           test_reason?: string | null;
           pricing_region?: string | null;
           currency?: string | null;
@@ -2341,6 +2402,31 @@ export type Database = {
         Relationships: [];
       };
       /** Approved practitioners who agreed to be shown (migration 20261013174559). */
+      /** Handover 61 Part 1 / 63 — the practitioner card's only source. Service role only. */
+      practitioner_public: {
+        Row: {
+          id: string;
+          slug: string;
+          display_name: string;
+          role_title: string;
+          country_code: string | null;
+          country_name: string | null;
+          photo_path: string | null;
+          avatar_initials: string | null;
+          years_practising: number | null;
+          assessments_count: number | null;
+          rating: number | null;
+          rating_count: number;
+          focus_areas: string[] | null;
+          practitioner_quote: string | null;
+          credential_title: string | null;
+          credential_ref: string | null;
+          languages: string[] | null;
+          next_available_at: string | null;
+          bio: string | null;
+        };
+        Relationships: [];
+      };
       practitioners_public: {
         Row: {
           id: string;
@@ -2679,6 +2765,11 @@ export type Database = {
         Returns: boolean;
       };
       /** HANDOVER-52 §4.6 — service role only. Approves a run; returns how many practitioners it covers. */
+      /** Handover 63 — service role only. Rows of photo-less test portal leads. */
+      purge_test_portal_leads: {
+        Args: { p_session: string | null; p_idle: string };
+        Returns: number;
+      };
       create_payout_run: {
         Args: { p_start: string; p_end: string; p_by: string };
         Returns: number;

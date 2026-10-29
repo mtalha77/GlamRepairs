@@ -5,6 +5,7 @@ import { renderMarkdown } from "@/lib/blog/markdown";
 import { getConsultationSettings } from "@/lib/consultation/slots";
 import { getPlanSettings } from "@/lib/plans/planSettings";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
+import { getTestSession } from "@/lib/testPortal/session";
 
 // Suffix-free: the root layout template appends "| GlamRepairs", so the
 // old value rendered "Thank You | GlamRepairs | GlamRepairs" — the same
@@ -21,19 +22,23 @@ export const metadata: Metadata = {
  * cache, same as /pricing (see PricingSection.tsx).
  */
 export default async function OnboardingCompletePage() {
-  const [region, planSettings, consultation] = await Promise.all([
+  const [region, planSettings, consultation, test] = await Promise.all([
     getServerPricingRegion(),
     getPlanSettings(),
     getConsultationSettings(),
+    getTestSession(),
   ]);
+  // Handover 63 — no consultation in a test session; a "mark paid" button
+  // stands in for the bank transfer instead.
   const videoPlans = Object.fromEntries(
     Object.values(planSettings)
-      .filter((plan) => plan.includesVideoCall)
+      .filter((plan) => plan.includesVideoCall && !test)
       .map((plan) => [plan.planKey, plan.videoMinutes ?? 15]),
   );
   return (
     <ThankYouStep
       region={region}
+      testMode={Boolean(test)}
       consultation={{
         videoPlans,
         guidelinesHtml: consultation.guidelinesMarkdown ? renderMarkdown(consultation.guidelinesMarkdown) : "",

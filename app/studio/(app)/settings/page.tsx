@@ -1,6 +1,8 @@
 import Link from "next/link";
 import ChangePasswordForm from "@/components/studio/ChangePasswordForm";
+import TestPortalPassphrase from "@/components/studio/TestPortalPassphrase";
 import { requireStudioMember } from "@/lib/studio/member";
+import { testPortalStatus } from "@/lib/testPortal/session";
 
 type SettingsPageProps = {
   searchParams: Promise<{ error?: string; saved?: string }>;
@@ -70,6 +72,17 @@ export default async function StudioSettingsPage({
             </Link>
             . A change takes effect immediately and is logged with who made it.
           </p>
+        </section>
+      ) : null}
+
+      {member.isSuperAdmin ? (
+        <section>
+          <h2 className="mb-1 font-serif text-xl text-brand-primary">Test portal</h2>
+          <p className="mb-3 max-w-lg text-sm text-brand-gray">
+            <Link href="/test" className="text-brand-primary underline underline-offset-2">/test</Link> walks someone through the
+            whole journey without a real lead, payment or photograph. Everything it writes is marked as test and deleted nightly.
+          </p>
+          <TestPortalPassphrase {...await testPortalStatus()} />
         </section>
       ) : null}
     </div>

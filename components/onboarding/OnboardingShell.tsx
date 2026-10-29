@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import FunnelStepGuard from "@/components/funnel/FunnelStepGuard";
 import ApplyPlanFromQuery from "@/components/onboarding/ApplyPlanFromQuery";
+import ApplyPractitionerFromQuery from "@/components/onboarding/ApplyPractitionerFromQuery";
 import OnboardingNav from "@/components/onboarding/OnboardingNav";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import { ONBOARDING_TOTAL_STEPS } from "@/components/onboarding/onboardingConfig";
@@ -97,6 +98,7 @@ export default function OnboardingShell({
     <div className="flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-brand-purple-soft via-white to-brand-lavender/30 px-4 py-10 sm:px-6">
       <Suspense fallback={null}>
         <ApplyPlanFromQuery />
+        <ApplyPractitionerFromQuery />
       </Suspense>
       {funnelFlow && typeof guardStep === "number" && guardStep >= 1 ? (
         <FunnelStepGuard flow={funnelFlow} step={guardStep} />

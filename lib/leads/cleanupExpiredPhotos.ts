@@ -30,7 +30,15 @@ export type CleanupResult = {
  * the studio button and the bulk action cannot drift on the one thing that
  * matters: files first, row only on success.
  */
-export async function cleanupExpiredPhotos(): Promise<CleanupResult> {
+export async function cleanupExpiredPhotos(options: {
+  /**
+   * Handover 63 — the test portal's purge goes through this same sweep
+   * rather than a second deletion path. With this set, the candidates are
+   * the portal's own leads (one session's, or every session's when null),
+   * whatever their expiry, and the reason recorded is `test_data`.
+   */
+  testPortal?: { session: string | null };
+} = {}): Promise<CleanupResult> {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!base || !key) {
@@ -42,11 +50,18 @@ export async function cleanupExpiredPhotos(): Promise<CleanupResult> {
     };
   }
 
+  const { testPortal } = options;
+  const selection = testPortal
+    ? `&is_test=eq.true` +
+      (testPortal.session
+        ? `&test_session=eq.${encodeURIComponent(testPortal.session)}`
+        : `&test_session=not.is.null`)
+    : `&photos_expire_at=lt.${encodeURIComponent(new Date().toISOString())}`;
   const query =
     `${base}/rest/v1/leads` +
     `?select=id,photo_paths` +
     `&photos_deleted_at=is.null` +
-    `&photos_expire_at=lt.${encodeURIComponent(new Date().toISOString())}` +
+    selection +
     `&photo_paths=neq.{}` +
     `&limit=50`;
 
@@ -80,7 +95,7 @@ export async function cleanupExpiredPhotos(): Promise<CleanupResult> {
       paths: lead.photo_paths ?? [],
       // The sweep is not a person's decision, so it gets its own reason
       // rather than borrowing one of the studio's.
-      reason: "expired",
+      reason: testPortal ? "test_data" : "expired",
       deletedBy: null,
     });
 

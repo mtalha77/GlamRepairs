@@ -40,7 +40,9 @@ export async function listStudioLogs(limit = 100): Promise<StudioLog[]> {
       supabase
         .from("leads")
         .select("id, full_name, email, created_at")
-        .is("deleted_at", null),
+        .is("deleted_at", null)
+        // Handover 63 — test leads (and the test portal's) stay out of the log.
+        .eq("is_test", false),
       supabase
         .from("studio_reviews")
         .select("id, lead_id, author_name, decision, created_at"),
@@ -87,6 +89,7 @@ export async function listStudioLogs(limit = 100): Promise<StudioLog[]> {
   }
 
   for (const row of reviewsResult.data ?? []) {
+    if (!names.has(row.lead_id)) continue; // a test or archived lead
     const decision = REVIEW_DECISION_LABELS[row.decision as ReviewDecision];
     logs.push({
       id: `review-${row.id}`,
@@ -99,6 +102,7 @@ export async function listStudioLogs(limit = 100): Promise<StudioLog[]> {
   }
 
   for (const row of reportsResult.data ?? []) {
+    if (!names.has(row.lead_id)) continue; // a test or archived lead
     logs.push({
       id: `report-${row.id}`,
       createdAt: row.created_at,
@@ -110,6 +114,7 @@ export async function listStudioLogs(limit = 100): Promise<StudioLog[]> {
   }
 
   for (const row of emailsResult.data ?? []) {
+    if (!names.has(row.lead_id)) continue; // a test or archived lead
     logs.push({
       id: `email-${row.id}`,
       createdAt: row.created_at,
