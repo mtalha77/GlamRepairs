@@ -236,7 +236,7 @@ export const AUTHORS: Record<string, Author> = {
       "Skincare",
       "Cosmetic dermatology science",
       "Dermoscopy",
-      "Teledermatology",
+      "Remote skin assessment",
     ],
     credentialIds: CREDENTIALS.map((c) => c.id),
     canReview: true,
