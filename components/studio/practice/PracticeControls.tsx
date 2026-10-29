@@ -181,6 +181,8 @@ export function PractitionerDetailsForm(props: {
   payoutDetailRef: string | null;
   maxPerDay: number;
   maxPerWeek: number;
+  countryCode: string | null;
+  timezone: string;
 }) {
   const [v, setV] = useState({
     profilePhotoVerified: props.profilePhotoVerified,
@@ -188,6 +190,8 @@ export function PractitionerDetailsForm(props: {
     payoutDetailRef: props.payoutDetailRef ?? "",
     maxPerDay: props.maxPerDay,
     maxPerWeek: props.maxPerWeek,
+    countryCode: props.countryCode ?? "",
+    timezone: props.timezone,
   });
   const { result, pending, run } = useAction();
   return (
@@ -212,6 +216,14 @@ export function PractitionerDetailsForm(props: {
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-brand-gray">Most a week</span>
           <input type="number" min={1} value={v.maxPerWeek} onChange={(e) => setV({ ...v, maxPerWeek: Number(e.target.value) })} className={formInputClassName} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-brand-gray">Country (two letters, shown publicly)</span>
+          <input value={v.countryCode} maxLength={2} placeholder="e.g. NG" onChange={(e) => setV({ ...v, countryCode: e.target.value.toUpperCase() })} className={formInputClassName} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-brand-gray">Timezone (their hours are set in this)</span>
+          <input value={v.timezone} placeholder="e.g. Africa/Lagos" onChange={(e) => setV({ ...v, timezone: e.target.value })} className={formInputClassName} />
         </label>
       </div>
       <Feedback result={result} />

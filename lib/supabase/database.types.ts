@@ -154,6 +154,8 @@ export type Database = {
           assessments_count?: number | null;
           practitioner_quote?: string | null;
           credential_ref?: string | null;
+          country_code?: string | null;
+          country_name?: string | null;
         };
         Relationships: [];
       };

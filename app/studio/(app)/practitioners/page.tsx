@@ -115,6 +115,8 @@ export default async function PractitionersPage() {
                     payoutDetailRef={p.payoutDetailRef}
                     maxPerDay={p.maxPerDay}
                     maxPerWeek={p.maxPerWeek}
+                    countryCode={p.countryCode}
+                    timezone={p.timezone}
                   />
                 </div>
               </div>

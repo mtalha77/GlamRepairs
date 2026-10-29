@@ -21,6 +21,8 @@ export type PractitionerRow = {
   payoutDetailRef: string | null;
   maxPerDay: number;
   maxPerWeek: number;
+  countryCode: string | null;
+  timezone: string;
   hasAccount: boolean;
   hasVerifiedDegree: boolean;
   feeMinor: number;
@@ -96,6 +98,8 @@ export async function listPractitioners(): Promise<PractitionerRow[]> {
         payoutDetailRef: p.payout_detail_ref,
         maxPerDay: p.max_per_day,
         maxPerWeek: p.max_per_week,
+        countryCode: p.country_code,
+        timezone: p.timezone,
         hasAccount: Boolean(p.user_id),
         hasVerifiedDegree: degreeSet.has(p.id),
         feeMinor: rate?.[0]?.practitioner_fee_minor ?? 0,
