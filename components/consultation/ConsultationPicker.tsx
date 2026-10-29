@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import LocalTimeNote from "@/components/consultation/LocalTimeNote";
 import { formatDay, formatSlot, formatTime, groupByDay, TZ_LABEL, type PublicSlot } from "@/lib/consultation/format";
 
 /**
@@ -172,13 +173,15 @@ export default function ConsultationPicker(props: Props) {
         <div className="mt-4 rounded-xl border border-brand-primary/30 bg-brand-lavender/20 p-4 text-sm text-brand-ink" role="status">
           {activeHold.status === "booked" ? (
             <p>
-              <strong className="font-medium">Booked:</strong> {formatSlot(activeHold.startsAt)}. Your confirmation and video link
+              <strong className="font-medium">Booked:</strong> {formatSlot(activeHold.startsAt)}
+              <LocalTimeNote iso={activeHold.startsAt} />. Your confirmation and video link
               are on their way by email.
             </p>
           ) : (
             <>
               <p>
-                <strong className="font-medium">Held for you:</strong> {formatSlot(activeHold.startsAt)}.
+                <strong className="font-medium">Held for you:</strong> {formatSlot(activeHold.startsAt)}
+                <LocalTimeNote iso={activeHold.startsAt} />.
               </p>
               {activeHold.heldUntil ? (
                 <p className="mt-1">
@@ -240,7 +243,15 @@ export default function ConsultationPicker(props: Props) {
             </button>
           ) : null}
 
-          <p className="mt-4 text-xs text-brand-gray">All times Pakistan Standard Time ({TZ_LABEL}).</p>
+          <p className="mt-4 text-xs text-brand-gray">
+            All times Pakistan Standard Time ({TZ_LABEL}).
+            {chosenSlot ? (
+              <>
+                {" "}You chose {formatTime(chosenSlot.startsAt)} {TZ_LABEL}
+                <LocalTimeNote iso={chosenSlot.startsAt} />.
+              </>
+            ) : null}
+          </p>
 
           {message ? (
             <p className="mt-3 text-sm text-red-700" role="alert">

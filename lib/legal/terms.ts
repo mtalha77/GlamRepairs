@@ -17,6 +17,10 @@
  * treatment (non-discrimination) section, and the urgent-problems paragraph
  * that the consent step now also shows. Both apply to every country, so
  * neither names a Pakistani emergency number.
+ *
+ * 29 October 2026, requested by Talha ("do all of this", on the audit item):
+ * who pays international transfer fees. The sender does, so the full price
+ * arrives; a short transfer is raised before work starts.
  */
 
 /*
@@ -29,7 +33,7 @@
  * plans without moving the date would leave a reader unable to tell which
  * version they agreed to.
  */
-export const LAST_UPDATED = "2026-10-23";
+export const LAST_UPDATED = "2026-10-29";
 
 export const INTRO = `These terms apply when you use glamrepairs.com or purchase a skin consultation from us. By completing an assessment you agree to them, so please read them first.`;
 
@@ -62,6 +66,7 @@ How we handle photographs is set out in our Privacy Policy.
 We offer two plans. Skin Starter is complimentary and available for a limited period. Skin Transform is paid, and includes a 15 minute video consultation with your practitioner.
 **Paid plans are charged as a single one-time fee. They are not subscriptions and do not renew automatically.**
 - Prices are shown in Pakistani Rupees and include any applicable taxes unless stated otherwise.
+- **Paying from outside Pakistan:** an international bank transfer works. Message us first and we will send the account details. You pay the fees charged by your bank and by any intermediary bank, so that the full price arrives in our account: ask your bank to send it with all charges paid by the sender (often shown as "OUR"). Your consultation begins once the full amount has arrived. If a transfer arrives short because of fees, we will tell you the difference before we start, and nothing is lost if you would rather have a refund.
 - We will give you payment instructions when you book. Your consultation begins once we have confirmed payment and received your completed questionnaire and usable photographs.
 - **Only send payment using the details we give you directly through an official Glam Repairs channel.** We will never ask you to send payment to a different account or number than the one in your official confirmation, and we will never ask for payment through an unexpected channel. If anything looks unusual, stop and contact us at glamrepairs@gmail.com before sending anything.
 - We may change our prices at any time, but the price you were shown at purchase is the price that applies to you.

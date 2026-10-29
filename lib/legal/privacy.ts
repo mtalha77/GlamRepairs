@@ -16,9 +16,16 @@
  * substantive disclosure is unchanged — clients are still told plainly that a
  * copy persists in their own account on any third-party service and that we
  * cannot delete it.
+ *
+ * 29 October 2026, requested by Talha ("do all of this", on the audit item):
+ * a section for people in the United Kingdom and the European Union, ahead
+ * of clients there. It states the lawful bases, the transfer to Pakistan,
+ * the full set of UK/EU rights and where to complain. It does not claim a
+ * UK or EU representative, because none is appointed; that needs doing
+ * (UK GDPR and GDPR Article 27) before either market is switched on.
  */
 
-export const LAST_UPDATED = "2026-09-03";
+export const LAST_UPDATED = "2026-10-29";
 
 export const INTRO = `Glam Repairs asks you for photographs of your face and details about your health and lifestyle. That is sensitive information and we treat it that way. This policy explains exactly what we collect, who sees it, how long we keep it, and how you can have it deleted.`;
 
@@ -109,6 +116,20 @@ Subject to applicable law, you may ask us to:
 - Stop or restrict how we use it.
 - Withdraw a consent you previously gave.
 Email glamrepairs@gmail.com and we will respond within 30 days. We may ask you to confirm your identity first, so that nobody else can access your information.
+## If you are in the United Kingdom or the European Union
+If you live in the United Kingdom, the UK GDPR and the Data Protection Act 2018 apply to how we handle your information. If you live in the European Union or the European Economic Area, the GDPR applies. This section adds to the rest of this policy; where they differ, this section applies to you.
+**Why we are allowed to use your information**
+- **To provide the assessment you asked for:** because it is necessary to perform our contract with you.
+- **Your photographs and anything health-related:** only with your explicit consent, which you give at the end of the assessment and can withdraw at any time.
+- **Keeping payment and account records:** because the law requires it.
+- **Keeping the service secure and preventing fraud, and improving it using aggregated information that does not identify you:** because we have a legitimate interest in doing so, which does not override your rights.
+- **Marketing:** only with your consent.
+**Sending your information outside the UK and EU**
+Glam Repairs is based in Pakistan, so your information is sent to Pakistan to provide your assessment, and some of our service providers store data in other countries, including the United States. Pakistan does not have an adequacy decision from the UK or the EU. We send your information there because it is necessary to provide the service you have asked for, and where our providers offer them we rely on their standard data protection terms, including standard contractual clauses. You can ask us for more detail about these safeguards.
+**Your rights**
+As well as the rights listed above, you have the right to receive the information you gave us in a portable format, and to object to any use based on our legitimate interests. We will respond within one month. Exercising your rights is free.
+**Complaints**
+Please tell us first at glamrepairs@gmail.com so we can try to put it right. You also have the right to complain to a supervisory authority: in the United Kingdom, the Information Commissioner's Office (ico.org.uk); in the European Union, the data protection authority in the country where you live or work.
 ## Children
 Glam Repairs is intended for adults. We do not knowingly collect information or photographs from anyone under 18. If you believe a minor has submitted an assessment, contact us and we will delete it.
 ## Mobile applications

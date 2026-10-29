@@ -1,6 +1,6 @@
 import "server-only";
 
-import { CONSULTATION_TZ, formatSlot } from "@/lib/consultation/format";
+import { CONSULTATION_TZ, formatSlot, isValidTimeZone } from "@/lib/consultation/format";
 import { createBridge, deleteBridge } from "@/lib/consultation/ringcentral";
 import {
   getConsultationSettings,
@@ -67,10 +67,13 @@ export async function bookConsultationForLead(
 
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, full_name, email, client_account_id")
+    .select("id, full_name, email, client_account_id, answers")
     .eq("id", leadId)
     .maybeSingle();
   if (!lead) return { kind: "not_applicable" };
+  // The client's own timezone, recorded by the funnel. PKT when unknown.
+  const recordedZone = (lead.answers as Record<string, unknown> | null)?.["onboarding.timezone"];
+  const clientTimezone = isValidTimeZone(recordedZone) ? recordedZone : CONSULTATION_TZ;
 
   const { data: existing } = await supabase
     .from("appointments")
@@ -171,7 +174,7 @@ export async function bookConsultationForLead(
       join_url: bridge?.joinUrl ?? null,
       provider_ref: bridge?.bridgeId ?? null,
       notes: bridge?.password ? `Meeting password: ${bridge.password}` : null,
-      client_timezone: CONSULTATION_TZ,
+      client_timezone: clientTimezone,
       created_by: opts.actorId ?? null,
       practitioner_fee_minor: rate.practitioner_fee_minor,
       platform_fee_minor: rate.platform_fee_minor,
@@ -218,6 +221,7 @@ export async function bookConsultationForLead(
     toEmail: lead.email,
     name: lead.full_name,
     leadId,
+    clientTimezone,
     startsAt: slot.startsAt,
     joinUrl: bridge?.joinUrl ?? null,
     password: bridge?.password ?? null,

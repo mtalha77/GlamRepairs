@@ -1,7 +1,7 @@
 import "server-only";
 
 import { renderMarkdown } from "@/lib/blog/markdown";
-import { formatSlot } from "@/lib/consultation/format";
+import { formatSlotFor } from "@/lib/consultation/format";
 import { logClientEmail } from "@/lib/email/logClientEmail";
 import { escapeHtml, getResendConfig } from "@/lib/email/resendClient";
 import { getWhatsAppChatLink } from "@/lib/funnel/whatsapp";
@@ -21,7 +21,13 @@ import { getWhatsAppChatLink } from "@/lib/funnel/whatsapp";
  */
 
 /** leadId puts the email on the client's record (20 October 2026). */
-type Base = { toEmail: string | null; name: string | null; leadId?: string | null };
+type Base = {
+  toEmail: string | null;
+  name: string | null;
+  leadId?: string | null;
+  /** The client's timezone, for "(2:20 pm your time)" beside PKT. */
+  clientTimezone?: string | null;
+};
 
 const LOG_KIND = {
   confirmed: "consultation_booked",
@@ -62,7 +68,7 @@ function compose(e: ConsultationEmail): { subject: string; html: string; text: s
   const whatsapp = getWhatsAppChatLink();
   switch (e.kind) {
     case "confirmed": {
-      const when = formatSlot(e.startsAt);
+      const when = formatSlotFor(e.startsAt, e.clientTimezone);
       const link = e.joinUrl
         ? `${button(e.joinUrl, "Join your consultation")}<p style="margin: 0 0 12px; font-size: 14px; color: #4a4a4a;">Open this link at the time above and type your name to join; there is nothing to install or sign in to. Your practitioner joins you in the same room. The link is for you alone and stops working after your call.${e.password ? ` Meeting password: <strong>${escapeHtml(e.password)}</strong>.` : ""}</p>`
         : `<p style="margin: 0 0 12px;">Your video link will follow before the call.</p>`;
@@ -100,7 +106,7 @@ function compose(e: ConsultationEmail): { subject: string; html: string; text: s
       };
     }
     case "reminder": {
-      const when = formatSlot(e.startsAt);
+      const when = formatSlotFor(e.startsAt, e.clientTimezone);
       const soon = e.when === "1h" ? "in about an hour" : "tomorrow";
       return {
         subject: `Reminder: your consultation ${soon}, ${when}`,
@@ -113,7 +119,7 @@ function compose(e: ConsultationEmail): { subject: string; html: string; text: s
       };
     }
     case "feedback": {
-      const when = formatSlot(e.startsAt);
+      const when = formatSlotFor(e.startsAt, e.clientTimezone);
       return {
         subject: "How was your consultation?",
         html: shell(name, `

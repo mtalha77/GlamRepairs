@@ -92,6 +92,16 @@ export default function OnboardingShell({
 
   useEffect(() => {
     ensureSessionId();
+    // The client's own timezone, so consultation emails can show their
+    // local time beside PKT (audit, 29 October 2026). Recorded once.
+    const store = useFunnelStore.getState();
+    if (!store.answers["onboarding.timezone"]) {
+      try {
+        store.setAnswer("onboarding.timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
+      } catch {
+        // No Intl timezone support: emails simply show PKT alone.
+      }
+    }
   }, [ensureSessionId]);
 
   return (
