@@ -1,10 +1,13 @@
 import { OfferedPlansProvider } from "@/components/onboarding/OfferedPlansContext";
+import TestBanner from "@/components/testPortal/TestBanner";
+import { TestModeProvider } from "@/components/testPortal/TestModeContext";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 import {
   listOfferedPlans,
   PAID_PLAN_KEY,
   type PlanKey,
 } from "@/lib/plans/plansPublic";
+import { getTestSession } from "@/lib/testPortal/session";
 
 /**
  * Funnel layout — HANDOVER-27 §1.3 and §1.4.
@@ -40,6 +43,8 @@ export default async function OnboardingLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const region = await getServerPricingRegion();
   const plans = await listOfferedPlans(region.code);
+  // Handover 63 — the test portal runs through this same funnel, flagged.
+  const test = Boolean(await getTestSession());
 
   const offered: PlanKey[] = plans.map((p) => p.planKey);
 
@@ -51,7 +56,11 @@ export default async function OnboardingLayout({
       offered={offered.length ? offered : [PAID_PLAN_KEY]}
       fallback={PAID_PLAN_KEY}
     >
-      {children}
+      <TestModeProvider value={test}>
+        <TestBanner />
+        {test ? <div aria-hidden className="h-10" /> : null}
+        {children}
+      </TestModeProvider>
     </OfferedPlansProvider>
   );
 }

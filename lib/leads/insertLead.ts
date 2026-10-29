@@ -8,7 +8,17 @@ const PHOTO_TTL_DAYS = 30;
 export type InsertLeadInput = LeadSubmitPayload & {
   imageUrls: string[];
   photoPaths: string[];
+  /** Handover 63 — the test portal session that wrote this row, if any. */
+  testSession?: string | null;
 };
+
+/**
+ * Handover 63 — a test portal lead says so on every write, so it is marked
+ * from its first insert and can never be counted as a real client.
+ */
+function testFields(testSession: string | null | undefined) {
+  return testSession ? { is_test: true, test_session: testSession } : {};
+}
 
 export type InsertLeadResult = {
   leadId: string;
@@ -59,6 +69,8 @@ export type FunnelProgressInput = {
    * dropped and grants nothing, so this is safe to write unvalidated.
    */
   giftCode?: string | null;
+  /** Handover 63 — the test portal session that wrote this row, if any. */
+  testSession?: string | null;
 };
 
 function restConfig() {
@@ -170,6 +182,7 @@ export async function saveFunnelProgress(input: FunnelProgressInput) {
      */
     last_seen_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    ...testFields(input.testSession),
   };
 
   /**
@@ -287,6 +300,7 @@ export async function insertLead(
     payment_status: "pending" as const,
     funnel_complete: true,
     updated_at: new Date().toISOString(),
+    ...testFields(input.testSession),
   };
 
   const existing = await findLeadBySession(input.sessionId);

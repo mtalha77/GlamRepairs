@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import CameraUploadIcon from "@/components/onboarding/CameraUploadIcon";
 import ClientNotesField from "@/components/onboarding/ClientNotesField";
 import UploadSupportNote from "@/components/onboarding/UploadSupportNote";
+import SamplePhotosButton from "@/components/testPortal/SamplePhotosButton";
 import { StepHeader, StepRequiredError } from "@/components/steps";
 import { resolveUnlockTarget } from "@/lib/funnel/funnelProgress";
 import { processPhoto } from "@/lib/funnel/image";
@@ -262,7 +263,11 @@ export default function UploadPhotosStep() {
     event.target.value = "";
     setActiveSlot(null);
     if (!file || slot === null || slot >= photoLimit) return;
+    await addPhoto(slot, file);
+  };
 
+  /** One path for a picked file and a test-mode sample, so both are checked. */
+  const addPhoto = async (slot: number, file: File) => {
     setProcessingSlot(slot);
     try {
       const { dataUrl, check } = await processPhoto(file);
@@ -313,6 +318,8 @@ export default function UploadPhotosStep() {
           </li>
         ))}
       </ul>
+
+      <SamplePhotosButton slots={photoLimit} onFile={addPhoto} />
 
       <input
         ref={inputRef}

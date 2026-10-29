@@ -20,6 +20,7 @@ import { listOfferedPlans } from "@/lib/plans/plansPublic";
 import { getPlanSettings } from "@/lib/plans/planSettings";
 import { getConsultationSettings } from "@/lib/consultation/slots";
 import { renderMarkdown } from "@/lib/blog/markdown";
+import { getTestSession } from "@/lib/testPortal/session";
 
 const TOTAL_STEPS = ONBOARDING_TOTAL_STEPS;
 
@@ -228,14 +229,17 @@ export default async function OnboardingStepPage({ params }: StepPageProps) {
     // time here, the last step before submission (never skipped, unlike the
     // plan steps, which a pricing CTA jumps over). Submission then re-arms
     // the hold, so the payment window runs from the bank details.
-    const [region, planSettings, consultation] = await Promise.all([
+    const [region, planSettings, consultation, test] = await Promise.all([
       getServerPricingRegion(),
       getPlanSettings(),
       getConsultationSettings(),
+      getTestSession(),
     ]);
+    // Handover 63 — a test session holds no consultation time: a held slot
+    // is a real hour out of a real practitioner's calendar.
     const videoPlans = Object.fromEntries(
       Object.values(planSettings)
-        .filter((plan) => plan.includesVideoCall)
+        .filter((plan) => plan.includesVideoCall && !test)
         .map((plan) => [plan.planKey, plan.videoMinutes ?? 15]),
     );
     return (

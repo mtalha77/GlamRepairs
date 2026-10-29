@@ -64,6 +64,17 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  /*
+   * Handover 63 — the test portal is never indexed. The header backs up the
+   * meta tag in app/test/layout.tsx, because one is easy to lose.
+   */
+  async headers() {
+    const noindex = [{ key: "X-Robots-Tag", value: "noindex, nofollow" }];
+    return [
+      { source: "/test", headers: noindex },
+      { source: "/test/:path*", headers: noindex },
+    ];
+  },
   async redirects() {
     return [
       // Legacy static site → current routes. `permanent: true` emits a 308,

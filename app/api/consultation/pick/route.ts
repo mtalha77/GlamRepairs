@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { bookConsultationForLead } from "@/lib/consultation/booking";
 import { holdForLeadId, leadFactsById, slotForLead, verifyLeadSignature } from "@/lib/consultation/slots";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
+import { getTestSession } from "@/lib/testPortal/session";
 
 /**
  * Choosing a time from a signed link — HANDOVER-50 §1, the row that "will
@@ -13,6 +14,10 @@ import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
  * one only holds, exactly as in the funnel.
  */
 export async function POST(request: Request) {
+  // Handover 63 — never from a test session; see the hold route.
+  if (await getTestSession()) {
+    return NextResponse.json({ ok: false, message: "Consultation times are not booked in test mode." }, { status: 403 });
+  }
   let body: { l?: string; s?: string; slotId?: string };
   try {
     body = await request.json();

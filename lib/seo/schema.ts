@@ -454,3 +454,55 @@ export function breadcrumbSchema(trail: { name: string; path: string }[]) {
     })),
   };
 }
+
+/**
+ * Handover 63 — a practitioner on /practitioners/[slug]. Country only,
+ * never city: a profile targeting a city would compete with the city pages.
+ * The credential carries its published reference number as the identifier.
+ */
+export function practitionerPersonSchema(p: {
+  slug: string;
+  name: string;
+  role: string;
+  photo: string | null;
+  countryCode: string | null;
+  countryName: string | null;
+  languages: string[];
+  credentialTitle: string | null;
+  credentialRef: string | null;
+  description?: string | null;
+}) {
+  const reference = p.credentialRef?.match(/Ref\.\s*(.+)$/)?.[1]?.trim() ?? p.credentialRef;
+  return {
+    "@type": "Person",
+    "@id": abs(`/practitioners/${p.slug}#person`),
+    name: p.name,
+    jobTitle: p.role,
+    url: abs(`/practitioners/${p.slug}`),
+    ...(p.description ? { description: p.description } : {}),
+    ...(p.photo ? { image: abs(p.photo) } : {}),
+    ...(p.languages.length ? { knowsLanguage: p.languages } : {}),
+    ...(p.countryCode
+      ? {
+          workLocation: {
+            "@type": "Place",
+            name: p.countryName ?? p.countryCode,
+            address: { "@type": "PostalAddress", addressCountry: p.countryCode },
+          },
+        }
+      : {}),
+    worksFor: { "@id": abs("/#organization") },
+    ...(p.credentialTitle
+      ? {
+          hasCredential: [
+            {
+              "@type": "EducationalOccupationalCredential",
+              credentialCategory: "degree",
+              name: p.credentialTitle,
+              ...(reference ? { identifier: reference } : {}),
+            },
+          ],
+        }
+      : {}),
+  };
+}

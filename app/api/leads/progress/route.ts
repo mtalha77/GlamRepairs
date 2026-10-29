@@ -7,6 +7,7 @@ import { normaliseGiftCode } from "@/lib/gifts/giftCodes";
 import { getRequestPricingRegion } from "@/lib/pricing/geo";
 import { formatRegionPrice } from "@/lib/pricing/regions";
 import { PLAN_OPTIONS } from "@/lib/studio/constants";
+import { getTestSession, scopedSessionId } from "@/lib/testPortal/session";
 
 type ProgressBody = {
   sessionId?: string;
@@ -49,8 +50,11 @@ export async function POST(request: Request) {
     plan && isFunnelPlanId(plan.id)
       ? formatRegionPrice(await getRequestPricingRegion(request), plan.id)
       : undefined;
+  // Handover 63 — a test portal session writes under its own prefix, marked.
+  const test = await getTestSession();
   const leadId = await saveFunnelProgress({
-    sessionId,
+    sessionId: scopedSessionId(sessionId, test),
+    testSession: test?.sid ?? null,
     fullName,
     email,
     phone: body.phone?.trim() ?? "",
@@ -66,7 +70,7 @@ export async function POST(request: Request) {
     // Normalised but not validated here. The database trigger is the only
     // thing that decides whether a code grants anything, so a forged value
     // in this payload buys nothing.
-    giftCode: body.giftCode ? normaliseGiftCode(body.giftCode) : null,
+    giftCode: !test && body.giftCode ? normaliseGiftCode(body.giftCode) : null,
   });
 
   return NextResponse.json({ ok: true, leadId });

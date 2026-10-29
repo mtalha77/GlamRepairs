@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { holdForSession } from "@/lib/consultation/slots";
+import { getTestSession } from "@/lib/testPortal/session";
 
 /**
  * Hold a consultation time for this funnel session — HANDOVER-50 §5.
@@ -11,6 +12,11 @@ import { holdForSession } from "@/lib/consultation/slots";
  * shows ("That time was just taken, please choose another.").
  */
 export async function POST(request: Request) {
+  // Handover 63 — a test session must not reach a practitioner, and a held
+  // time is a real slot out of a real calendar.
+  if (await getTestSession()) {
+    return NextResponse.json({ ok: false, message: "Consultation times are not held in test mode." }, { status: 403 });
+  }
   let body: { sessionId?: string; slotId?: string; fullName?: string; email?: string; selectedPlan?: string | null };
   try {
     body = await request.json();

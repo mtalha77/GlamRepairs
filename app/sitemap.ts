@@ -3,6 +3,7 @@ import { abs } from "@/lib/seo/site";
 import { listAuthors } from "@/lib/seo/authors";
 import { listPublishedForSitemap } from "@/lib/studio/blog";
 import { listPublishedAreaPages } from "@/lib/airQuality/areaPages";
+import { DIRECTORY_MIN_PRACTITIONERS, listPublicPractitioners } from "@/lib/practitioners/directory";
 
 /**
  * sitemap.xml
@@ -97,6 +98,24 @@ async function airQualityEntries(): Promise<MetadataRoute.Sitemap> {
   ];
 }
 
+/**
+ * Handover 63 — the directory and every profile, but only while the
+ * directory exists (three approved practitioners). Below that both routes
+ * 404, and a sitemap must not list a 404.
+ */
+async function practitionerEntries(): Promise<MetadataRoute.Sitemap> {
+  const practitioners = await listPublicPractitioners(null);
+  if (practitioners.length < DIRECTORY_MIN_PRACTITIONERS) return [];
+  return [
+    { url: abs("/practitioners"), changeFrequency: "weekly", priority: 0.8 },
+    ...practitioners.map((p) => ({
+      url: abs(`/practitioners/${p.slug}`),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
+  ];
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((r) => ({
     url: abs(r.path),
@@ -126,6 +145,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...staticEntries,
     ...await airQualityEntries(),
+    ...await practitionerEntries(),
     ...authorEntries,
     ...postEntries,
   ];

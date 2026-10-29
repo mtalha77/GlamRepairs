@@ -18,6 +18,8 @@ import {
 } from "@/lib/leads/paymentVisibility";
 import { deleteUnreferencedPhotos } from "@/lib/leads/deleteLeadPhotos";
 import { extendHoldOnSubmit } from "@/lib/consultation/slots";
+import { logSuppressedEmail } from "@/lib/testPortal/email";
+import { getTestSession, scopedSessionId } from "@/lib/testPortal/session";
 
 function isConfigured() {
   return Boolean(
@@ -161,6 +163,16 @@ export async function POST(request: Request) {
     );
   }
 
+  /*
+   * Handover 63 — a test portal session. Its leads live under their own
+   * session-id prefix and carry is_test from the first write; it holds no
+   * consultation time and sends no email. Decided here from the signed
+   * cookie, never from anything in the body.
+   */
+  const test = await getTestSession();
+  body.sessionId = scopedSessionId(body.sessionId, test);
+  if (test) body.giftCode = null;
+
   const photoDataUrls = collectPhotoDataUrls(body);
 
   if (photoDataUrls.length > 0 && !hasRecordedConsent(body.answers)) {
@@ -252,6 +264,7 @@ export async function POST(request: Request) {
     ...body,
     imageUrls,
     photoPaths,
+    testSession: test?.sid ?? null,
   });
 
   /*
@@ -295,9 +308,11 @@ export async function POST(request: Request) {
   // HANDOVER-50 §1 — a consultation time held mid-funnel is re-armed now,
   // so the payment window runs from when the bank details are shown. A
   // no-op when nothing is held; never fails the submission.
-  await extendHoldOnSubmit(lead.leadId).catch((err) =>
-    console.error("[api/leads] extend hold", (err as Error).message),
-  );
+  if (!test) {
+    await extendHoldOnSubmit(lead.leadId).catch((err) =>
+      console.error("[api/leads] extend hold", (err as Error).message),
+    );
+  }
 
   const paymentFacts = {
     paymentStatus: lead?.paymentStatus,
@@ -305,7 +320,15 @@ export async function POST(request: Request) {
   };
   const includeBankDetails = computeShowBankDetails(paymentFacts);
 
-  if (isResendConfigured()) {
+  if (test) {
+    await logSuppressedEmail({
+      leadId: lead.leadId,
+      toEmail: body.email ?? "",
+      subject: `Your ${body.planName ?? "assessment"} plan is confirmed | GlamRepairs`,
+      kind: "welcome",
+      templateKey: "plan_thank_you",
+    });
+  } else if (isResendConfigured()) {
     const emailResult = await sendPlanThankYouEmail({
       fullName: body.fullName,
       email: body.email,

@@ -18,6 +18,7 @@ import ProblemSection from "@/components/home/ProblemSection";
 import SkinAssessment from "@/components/home/SkinAssessment";
 import TrustPrivacySection from "@/components/home/TrustPrivacySection";
 import WhatWeDoSection from "@/components/home/WhatWeDoSection";
+import PractitionerStrip from "@/components/practitioners/PractitionerStrip";
 import PricingSection from "@/components/pricing/PricingSection";
 import TestimonialsSection from "@/components/reviews/TestimonialsSection";
 import JsonLd from "@/components/seo/JsonLd";
@@ -82,6 +83,10 @@ export default async function Home() {
         (This supersedes the HANDOVER-12 §5 placement, which put the same
         section after the value proposition and before the FAQ.)
       */}
+      {/* Handover 63 Part 1 — directly above the reviews: the people are
+          real, then clients liked them. Renders nothing below three
+          approved practitioners. */}
+      <PractitionerStrip />
       <TestimonialsSection />
       <PricingSection
         /*
