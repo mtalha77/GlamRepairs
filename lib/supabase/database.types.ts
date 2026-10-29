@@ -1593,6 +1593,7 @@ export type Database = {
           pricing_region: string | null;
           currency: string | null;
           list_price: number | null;
+          final_price: number | null;
           // HANDOVER-50 — set from plan_settings by trigger; client account if linked.
           includes_video_call: boolean | null;
           client_account_id: string | null;
@@ -1759,79 +1760,7 @@ export type Database = {
         };
         Relationships: [];
       };
-      pricing_regions: {
-        Row: {
-          code: string;
-          label: string;
-          currency: string;
-          symbol: string;
-          /**
-           * @deprecated HANDOVER-27 §1.2 — STALE. Do not read these.
-           *
-           * Prices moved to `plan_prices`, one row per region per plan,
-           * because a column per plan meant retiring or adding a plan
-           * needed a schema migration. These three columns still exist and
-           * still hold the OLD numbers (2,000 / 3,500), so anything reading
-           * them now renders a price that is not for sale. Read
-           * `plans_public` via lib/plans/plansPublic.ts instead.
-           *
-           * A follow-up migration drops them once nothing references them.
-           */
-          price_free: number;
-          price_clarity: number;
-          price_transform: number;
-          is_default: boolean;
-          active: boolean;
-          updated_at: string;
-        };
-        Insert: {
-          code: string;
-          label: string;
-          currency: string;
-          symbol: string;
-          price_free?: number;
-          price_clarity: number;
-          price_transform: number;
-          is_default?: boolean;
-          active?: boolean;
-          updated_at?: string;
-        };
-        Update: {
-          code?: string;
-          label?: string;
-          currency?: string;
-          symbol?: string;
-          price_free?: number;
-          price_clarity?: number;
-          price_transform?: number;
-          is_default?: boolean;
-          active?: boolean;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       /** One price per region per plan. Replaces pricing_regions.price_*. */
-      plan_prices: {
-        Row: {
-          region_code: string;
-          plan_key: string;
-          price: number;
-          updated_at: string;
-        };
-        Insert: {
-          region_code: string;
-          plan_key: string;
-          price: number;
-          updated_at?: string;
-        };
-        Update: {
-          region_code?: string;
-          plan_key?: string;
-          price?: number;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       /** Ordered feature bullets. The marketing copy lives here, not in TSX. */
       plan_features: {
         Row: {

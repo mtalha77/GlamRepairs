@@ -156,9 +156,6 @@ export default function FaqSection({
   const words = useMemo(() => termWords(term), [term]);
   const searchRef = useRef<HTMLInputElement>(null);
   const rows = useRef(new Map<string, HTMLDetailsElement>());
-  // Fixed at first render. The browser owns `open` after that; changing the
-  // prop later would fight the user's own clicks.
-  const [initialOpen] = useState(() => faqs.find((f) => f.group === groups[0])?.id ?? faqs[0]?.id ?? null);
 
   const visibleIds = useMemo(() => {
     if (words.length) return new Set(faqs.filter((f) => matches(f, words)).map((f) => f.id));
@@ -284,7 +281,8 @@ export default function FaqSection({
                 key={faq.id}
                 id={faq.id}
                 name="gr-faq"
-                open={faq.id === initialOpen}
+                // Talha, 29 October 2026: nothing opens by itself. Every row
+                // starts closed; a deep link or a search opens one.
                 hidden={!visibleIds.has(faq.id)}
                 ref={(node) => {
                   if (node) rows.current.set(faq.id, node);

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import Logo from "@/components/home/Logo";
-import EarningsCalculator from "@/components/join/EarningsCalculator";
 import { PRACTITIONER_WHATSAPP, practitionerWhatsAppLink } from "@/lib/seo/site";
 
 /**
@@ -24,10 +23,15 @@ import { PRACTITIONER_WHATSAPP, practitionerWhatsAppLink } from "@/lib/seo/site"
  * client service.
  */
 
-const TITLE = "Beautician Jobs From Home: Rs 2,000 per Consultation";
-const SHARE_TITLE = "Beautician Jobs From Home: Rs 2,000 per Consultation | GlamRepairs";
+/*
+ * Talha, 29 October 2026: no amounts and no split on public pages, because
+ * clients read this site too. The rate is set out in each practitioner's
+ * written agreement, before they start.
+ */
+const TITLE = "Beautician Jobs From Home: Paid per Consultation";
+const SHARE_TITLE = "Beautician Jobs From Home: Paid per Consultation | GlamRepairs";
 const DESCRIPTION =
-  "For qualified beauticians: read skin photographs and take video consultations from home, in the evening. Rs 2,000 per 15 minute consultation, paid monthly.";
+  "For qualified beauticians: read skin photographs and take video consultations from home, in the evening. Paid for every 15 minute consultation, monthly, by bank transfer.";
 const SHARE_IMAGE = { url: "/join/opengraph-image", width: 1200, height: 630, alt: "GlamRepairs for practitioners" };
 
 export const metadata: Metadata = {
@@ -54,14 +58,14 @@ const btnPrimary = "inline-flex min-h-12 items-center justify-center rounded-xl 
 
 const STATEMENT = [
   { k: "Consultations completed", d: "15 minutes each", v: "14" },
-  { k: "Rate per consultation", v: "Rs 2,000" },
   { k: "Client did not attend", d: "Paid in full, you held the time", v: "2" },
-  { k: "Deductions", d: "No platform fee, no equipment charge", v: "Rs 0" },
+  { k: "Notes outstanding", d: "Each fee is released when its note is in", v: "0" },
+  { k: "Deductions", d: "No joining fee, no equipment charge", v: "None" },
 ];
 
 const NUMBERS = [
   { b: "15 min", s: "Length of a video consultation" },
-  { b: "Rs 2,000", s: "What you earn from each one" },
+  { b: "Per call", s: "Paid for every consultation, no-shows included" },
   { b: "24 hrs", s: "Turnaround we promise clients" },
   { b: "Monthly", s: "Paid by the 5th, by bank transfer" },
 ];
@@ -122,7 +126,7 @@ const FAQ: { q: string; a: React.ReactNode; flag?: string }[] = [
   {
     q: "What if a client does not turn up?",
     flag: "Worth knowing",
-    a: "You are paid in full. You held the time and you were there, so the Rs 2,000 is yours. We do not pass that loss to you.",
+    a: "You are paid in full. You held the time and you were there, so the fee is yours. We do not pass that loss to you.",
   },
   {
     q: "Who can apply?",
@@ -130,7 +134,7 @@ const FAQ: { q: string; a: React.ReactNode; flag?: string }[] = [
   },
   {
     q: "Is there any fee to join?",
-    a: "No. No joining fee, no platform cut from your Rs 2,000, no charge for training or equipment. If anyone ever asks you for money to work here, it is not us.",
+    a: "No. No joining fee, nothing taken from your fee, no charge for training or equipment. If anyone ever asks you for money to work here, it is not us.",
   },
   {
     q: "What if I cannot make a slot?",
@@ -231,7 +235,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
                   ))}
                   <div className="mt-2 flex items-baseline justify-between border-t-2 border-brand-ink pb-1 pt-4">
                     <span className="text-[13.5px] font-semibold">Transferred 5 October</span>
-                    <b className="text-3xl font-semibold tracking-tight text-brand-primary tabular-nums">Rs 32,000</b>
+                    <b className="text-2xl font-semibold tracking-tight text-brand-primary">16 paid</b>
                   </div>
                 </div>
                 <div className="bg-brand-success/15 px-5 py-3 text-[13px] font-semibold text-brand-success-strong">
@@ -273,31 +277,27 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
           </div>
         </section>
 
-        {/* Calculator */}
+        {/* How you are paid. The earnings calculator showed the rate, and
+            the rate is not published (Talha, 29 October 2026). */}
         <section className={`${section} bg-brand-purple-tint/40`}>
           <div className={wrap}>
-            <p className={kicker}>What you could earn</p>
+            <p className={kicker}>How you are paid</p>
             <h2 className={lead}>
-              You decide how much you work. <span className={em}>Move the slider.</span>
+              Per consultation, <span className={em}>every month.</span>
             </h2>
-            <div className="mt-8 grid items-center gap-8 lg:grid-cols-2">
-              <EarningsCalculator />
-              <div>
-                <p className={`${intro} mt-0`}>
-                  <strong className="font-semibold text-brand-ink">This is arithmetic, not a forecast.</strong> It multiplies out what
-                  you would earn if you completed that many consultations. It is not a promise that the bookings will be there, and we
-                  would rather tell you that now than have you find out in month two.
-                </p>
-                <p className={intro}>
-                  GlamRepairs is early. Booking volume is still growing. What we can promise is the rate, the payment date, and that
-                  you keep every rupee of it.
-                </p>
-                <p className={intro}>
-                  <strong className="font-semibold text-brand-ink">Nothing is deducted.</strong> No platform fee, no joining fee, no
-                  charge for equipment or training. The Rs 2,000 is what reaches your account.
-                </p>
-              </div>
-            </div>
+            <p className={intro}>
+              You are paid for every consultation you hold, including the ones where the client does not turn up. The rate is set out
+              in your written agreement before you take your first client, and it does not change for consultations already booked.
+            </p>
+            <p className={intro}>
+              Each month runs from the 1st to its last day, and it is paid by bank transfer by the 5th of the next month, with an
+              itemised statement. Your dashboard shows what you have earned each month and what has been released.
+            </p>
+            <p className={intro}>
+              <strong className="font-semibold text-brand-ink">Nothing is deducted from your fee.</strong> No joining fee and no
+              charge for equipment or training. GlamRepairs is early and booking volume is still growing, so we promise the rate and
+              the payment date, not a number of bookings.
+            </p>
           </div>
         </section>
 
@@ -361,7 +361,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
                     <span className="flex-1 text-[13.5px] text-brand-gray">Open</span>
                   </div>
                   <div className="mt-3 rounded-xl border border-brand-lavender/60 bg-brand-cream-card px-4 py-3 text-[13px] leading-relaxed text-brand-ink">
-                    <strong className="font-semibold">1 consultation note outstanding</strong> from Tuesday. Rs 2,000 is held until it is
+                    <strong className="font-semibold">1 consultation note outstanding</strong> from Tuesday. Its fee is held until the note is
                     submitted. It takes about two minutes.
                   </div>
                 </div>
@@ -378,7 +378,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
                 <p className={intro}>
                   <strong className="font-semibold text-brand-ink">Afterwards.</strong> You fill in a short note: what they came with,
                   what you observed, what you advised. Five fields, about two minutes.{" "}
-                  <strong className="font-semibold text-brand-ink">Submitting the note is what releases your Rs 2,000</strong>, so it
+                  <strong className="font-semibold text-brand-ink">Submitting the note is what releases your fee</strong>, so it
                   never gets forgotten and nobody has to chase you.
                 </p>
                 <p className={intro}>
@@ -607,8 +607,8 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
       <footer className="py-8 text-[12.5px] leading-relaxed text-brand-accent">
         <div className={wrap}>
           GlamRepairs provides cosmetic skincare guidance. It does not diagnose or treat medical conditions. Practitioners work
-          independently and are not employees of GlamRepairs. Earnings shown are illustrative calculations, not a guarantee of
-          booking volume.
+          independently and are not employees of GlamRepairs. Booking volume is not
+          guaranteed.
         </div>
       </footer>
     </div>
