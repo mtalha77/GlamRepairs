@@ -32,7 +32,7 @@ const contactEmail = "glamrepairs@gmail.com";
 const pageLinks = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
-  { label: "Pricing", href: "/pricing" },
+  { label: "Pricing", href: "/compare" },
   { label: "Contact Us", href: "/contact" },
 ];
 
@@ -200,9 +200,10 @@ export default function Footer() {
                 className="h-12 w-auto sm:h-14"
               />
               <p className="mt-4 max-w-full font-sans text-sm leading-relaxed tracking-[0.01em] text-brand-primary/80 sm:max-w-[24rem]">
-                Glam Repairs provides personalised cosmetic skincare guidance,
-                reviewed by a certified practitioner. We do not diagnose or
-                treat medical conditions.
+                {/* Handover 64 Part 7b: say plainly where the company is. */}
+                Glam Repairs is based in Pakistan and provides personalised
+                cosmetic skincare guidance, reviewed by a certified
+                practitioner. We do not diagnose or treat medical conditions.
               </p>
             </div>
 

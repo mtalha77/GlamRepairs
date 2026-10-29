@@ -45,7 +45,6 @@ const STATIC_ROUTES: {
   changeFrequency: Entry["changeFrequency"];
 }[] = [
   { path: "/", priority: 1.0, changeFrequency: "weekly" },
-  { path: "/pricing", priority: 0.9, changeFrequency: "monthly" },
   // The page that answers "what do I actually get?" — high priority
   // because it is the one conversion asset that is also indexable prose.
   { path: "/sample-assessment", priority: 0.9, changeFrequency: "monthly" },

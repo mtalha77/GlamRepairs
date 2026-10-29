@@ -92,6 +92,8 @@ We do not sell your information. We share it only with the service providers nee
 - **Messaging and notification providers**, where you choose to communicate with us that way or where we send you service notifications.
 - **The qualified practitioner** assigned to your assessment.
 - **Our payment providers**, where you pay through a payment method that involves one.
+- **Advertising measurement:** if we run adverts on Facebook or Instagram, our website uses the Meta Pixel and Meta's Conversions API to learn which adverts lead to someone starting or paying for an assessment. This sets Meta cookies in your browser and sends Meta the page you visited, your browser details, and a scrambled (hashed) copy of your email address and phone number so it can match the visit to an advert. We never send Meta your photographs, your answers or anything about your skin.
+
 These providers act on our instructions and are not permitted to use your information for their own purposes, except for third-party messaging services you choose to use, where that provider's own terms govern the copy held on their systems. Some providers store data outside Pakistan; where that happens we take reasonable steps to ensure appropriate protection.
 We may disclose information if required by law, or to establish or defend a legal claim.
 ## If you are a practitioner

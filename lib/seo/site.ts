@@ -430,7 +430,9 @@ export function canonicalOg(
   }
 
   return {
-    alternates: { canonical: path },
+    // Handover 64 Part 4d: one global English site, so x-default only. No
+    // en-GB / en-IN / en-AE variants pointing at the same URL.
+    alternates: { canonical: path, languages: { "x-default": path } },
     openGraph,
     twitter,
   };

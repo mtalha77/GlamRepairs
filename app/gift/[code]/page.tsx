@@ -113,7 +113,7 @@ export default async function GiftPage({ params }: GiftPageProps) {
             hand.
           </p>
           <Link
-            href="/pricing"
+            href="/compare"
             className="mt-5 inline-flex rounded-full bg-brand-light px-6 py-3 text-xs uppercase tracking-[0.15em] text-white"
           >
             See the plans

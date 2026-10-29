@@ -95,17 +95,22 @@ function Tag({ label, icon, tone, className = "" }: TagProps) {
   );
 }
 
+/**
+ * The section statement. Handover 64 Part 1: one H2, rendered once and
+ * styled per breakpoint. It used to be rendered twice (a mobile and a
+ * desktop copy, one hidden), so crawlers read the same 28-word heading
+ * twice.
+ */
 function Statement({ className = "" }: { className?: string }) {
   return (
     <h2
       className={`text-center font-serif italic tracking-[-0.01em] ${className}`}
     >
       <span className="font-bold text-brand-primary">
-        Receive a personalized{" "}
+        Answer a few questions, send a few photographs,{" "}
       </span>
       <span className="font-normal text-brand-accent">
-        skin assessment, skincare routine recommendations, and aesthetic
-        guidance based on your skin concerns and submitted photos.
+        and a qualified practitioner writes your routine by hand.
       </span>
     </h2>
   );
@@ -138,67 +143,29 @@ function Quote({ className = "" }: { className?: string }) {
 export default function SkinAssessment() {
   return (
     <section className="relative overflow-hidden bg-white">
-      {/* Mobile / tablet layout */}
-      <div className="px-5 py-14 sm:px-8 sm:py-20 lg:hidden">
-        <div className="mx-auto max-w-2xl space-y-9 sm:space-y-12">
-          <div className="flex justify-start">
-            <Tag
-              tone="cream"
-              label="Skin concerns"
-              icon={<EyeIcon />}
-              className="-rotate-3"
-            />
-          </div>
-
-          <Statement className="mx-auto max-w-[330px] text-[24px] leading-[1.2] sm:max-w-none sm:text-[34px] sm:leading-[1.14] md:text-[42px]" />
-
-          <div className="flex justify-center">
-            <Quote className="w-full max-w-[300px] sm:max-w-[420px]" />
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-between">
-            <Tag
-              tone="cream"
-              label="Skin Routine"
-              icon={<LotusIcon />}
-              className="-rotate-3"
-            />
-            <Tag
-              tone="lavender"
-              label="Analyze"
-              icon={<AnalyzeIcon />}
-              className="rotate-3"
-            />
-          </div>
+      {/* One tree for every breakpoint: flow layout below lg, the Figma
+          1440 x 709 absolute layout from lg. The tags are decorative and
+          may differ per breakpoint; the heading and the quote exist once. */}
+      <div className="relative mx-auto px-5 py-14 sm:px-8 sm:py-20 lg:h-[709px] lg:w-full lg:max-w-[1440px] lg:p-0">
+        <div className="mx-auto flex max-w-2xl justify-start lg:hidden">
+          <Tag tone="cream" label="Skin concerns" icon={<EyeIcon />} className="-rotate-3" />
         </div>
-      </div>
+        <div aria-hidden className="absolute inset-0 hidden lg:block">
+          <Tag tone="cream" label="Skin concerns" icon={<EyeIcon />} className="absolute left-[3.47%] top-[9.6%] -rotate-3" />
+          <Tag tone="lavender" label="Analyze" icon={<AnalyzeIcon />} className="absolute left-[82.3%] top-[64%] rotate-3" />
+          <Tag tone="cream" label="Skin Routine" icon={<LotusIcon />} className="absolute left-[15.97%] top-[84.2%] -rotate-3" />
+        </div>
 
-      {/* Desktop layout (matches Figma 1440 x 709) */}
-      <div className="relative mx-auto hidden h-[709px] w-full max-w-[1440px] lg:block">
-        <Tag
-          tone="cream"
-          label="Skin concerns"
-          icon={<EyeIcon />}
-          className="absolute left-[3.47%] top-[9.6%] -rotate-3"
-        />
+        <Statement className="mx-auto mt-9 max-w-[330px] text-[24px] leading-[1.2] sm:mt-12 sm:max-w-2xl sm:text-[34px] sm:leading-[1.14] md:text-[42px] lg:absolute lg:left-1/2 lg:top-[41.4%] lg:mt-0 lg:w-[1339px] lg:max-w-[92%] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:text-[clamp(44px,4.6vw,72px)] lg:leading-[1.08]" />
 
-        <Tag
-          tone="lavender"
-          label="Analyze"
-          icon={<AnalyzeIcon />}
-          className="absolute left-[82.3%] top-[64%] rotate-3"
-        />
+        <div className="mt-9 flex justify-center sm:mt-12 lg:absolute lg:left-1/2 lg:top-[71.9%] lg:mt-0 lg:-translate-x-1/2 lg:-translate-y-1/2">
+          <Quote className="w-full max-w-[300px] sm:max-w-[420px] lg:w-[540px] lg:max-w-none" />
+        </div>
 
-        <Tag
-          tone="cream"
-          label="Skin Routine"
-          icon={<LotusIcon />}
-          className="absolute left-[15.97%] top-[84.2%] -rotate-3"
-        />
-
-        <Statement className="absolute left-1/2 top-[41.4%] w-[1339px] max-w-[92%] -translate-x-1/2 -translate-y-1/2 text-[clamp(44px,4.6vw,72px)] leading-[1.08]" />
-
-        <Quote className="absolute left-1/2 top-[71.9%] w-[540px] -translate-x-1/2 -translate-y-1/2" />
+        <div className="mx-auto mt-9 flex max-w-2xl flex-wrap items-center justify-center gap-4 sm:mt-12 sm:justify-between lg:hidden">
+          <Tag tone="cream" label="Skin Routine" icon={<LotusIcon />} className="-rotate-3" />
+          <Tag tone="lavender" label="Analyze" icon={<AnalyzeIcon />} className="rotate-3" />
+        </div>
       </div>
     </section>
   );

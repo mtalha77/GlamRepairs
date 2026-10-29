@@ -15,6 +15,7 @@ import {
   onboardingTotalStepsFor,
 } from "@/lib/funnel/funnelProgress";
 import { useOnboardingSkips } from "@/lib/funnel/useOnboardingSkips";
+import { trackMeta } from "@/lib/analytics/meta";
 
 type OnboardingShellProps = {
   children: ReactNode;
@@ -103,6 +104,18 @@ export default function OnboardingShell({
       }
     }
   }, [ensureSessionId]);
+
+  // Handover 64 Part 6.4: funnel milestones for Meta, each sent once per
+  // session. No-ops until the Pixel id is configured.
+  const email = useFunnelStore((state) => state.email);
+  const phone = useFunnelStore((state) => state.phone);
+  const selectedPlan = useFunnelStore((state) => state.selectedPlan);
+  useEffect(() => {
+    if (!isOnboarding || typeof currentStep !== "number") return;
+    if (currentStep === 1) trackMeta("StartAssessment");
+    if (currentStep >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) trackMeta("Lead", { email, phone });
+    if (currentStep >= 3 && selectedPlan) trackMeta("PlanSelected");
+  }, [isOnboarding, currentStep, email, phone, selectedPlan]);
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-brand-purple-soft via-white to-brand-lavender/30 px-4 py-10 sm:px-6">

@@ -147,7 +147,7 @@ export default function BeforeAfterSlider({
       <div className="absolute inset-0" style={contentScaleStyle}>
         <Image
           src={beforeSrc}
-          alt=""
+          alt={imageAlt}
           fill
           draggable={false}
           priority={priority}
@@ -270,7 +270,6 @@ export default function BeforeAfterSlider({
         )}
       </button>
 
-      <span className="sr-only">{imageAlt}</span>
     </div>
   );
 }

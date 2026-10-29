@@ -50,7 +50,7 @@ const STEP_METADATA: Record<number, Metadata> = {
   },
   4: {
     title: "Skin Type",
-    description: "Select your skin type to personalize your treatment program.",
+    description: "Select your skin type to personalize your skincare program.",
   },
   5: {
     title: "Improve Areas",
@@ -81,8 +81,8 @@ const STEP_METADATA: Record<number, Metadata> = {
     description: "Join thousands who have found help with similar skin concerns.",
   },
   12: {
-    title: "Treatment Fit",
-    description: "See how well your personalized treatment program matches your skin profile.",
+    title: "Program Fit",
+    description: "See how well your personalized skincare program matches your skin profile.",
   },
   13: {
     title: "Location",
@@ -90,7 +90,7 @@ const STEP_METADATA: Record<number, Metadata> = {
   },
   14: {
     title: "Ingredients Fit",
-    description: "See how well your treatment program matches your goals.",
+    description: "See how well your skincare program matches your goals.",
   },
   15: {
     title: "About You",

@@ -81,7 +81,7 @@ export default function AdditionalConcernsStep() {
     <div>
       <StepHeader
         title="Any additional concerns?"
-        subtitle="Identifying these helps us create a treatment program for your desired skin appearance"
+        subtitle="Identifying these helps us create a skincare program for your desired skin appearance"
       />
 
       <StepBody>

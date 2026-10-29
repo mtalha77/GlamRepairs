@@ -81,8 +81,12 @@ const nextConfig: NextConfig = {
       // which Google treats as a 301 and which passes ranking signals.
       { source: "/index.html", destination: "/", permanent: true },
       { source: "/about.html", destination: "/about", permanent: true },
-      { source: "/pricing.html", destination: "/pricing", permanent: true },
-      { source: "/contact.html", destination: "/contact", permanent: true },
+            { source: "/contact.html", destination: "/contact", permanent: true },
+      // Handover 64 Part 6.1 — Google reported /pricing as "Duplicate,
+      // Google chose different canonical" because the homepage reproduces
+      // it. One pricing page: /compare, which now carries the plan card.
+      { source: "/pricing", destination: "/compare", permanent: true },
+      { source: "/pricing.html", destination: "/compare", permanent: true },
       // Deliberately NOT a catch-all `/:path*.html`. A blanket rule would
       // silently swallow any future genuine 404 and make it look like a
       // working page, which is harder to debug than a missing redirect.

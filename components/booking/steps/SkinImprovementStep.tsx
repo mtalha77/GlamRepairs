@@ -14,7 +14,7 @@ export default function SkinImprovementStep() {
         titleSize="sm"
         title={
           <>
-            Your treatment program is a{" "}
+            Your skincare program is a{" "}
             <AnimatedCount
               value={93}
               className="inline-block text-brand-primary"

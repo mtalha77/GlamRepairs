@@ -48,7 +48,7 @@ export const navLinks: NavLink[] = [
     href: "/sample-assessment",
     shortLabel: "Sample",
   },
-  { label: "Pricing", href: "/pricing" },
+  { label: "Pricing", href: "/compare" },
   { label: "Contact", href: "/contact" },
 ];
 

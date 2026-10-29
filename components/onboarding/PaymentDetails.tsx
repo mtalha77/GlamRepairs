@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { trackMeta } from "@/lib/analytics/meta";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
 import { buildScreenshotPrefill } from "@/lib/leads/paymentDetails";
@@ -112,6 +113,13 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
 
   const reference = leadDisplayRef(sessionId);
   const planId = isPlanId(selectedPlan) ? selectedPlan : null;
+
+  // Handover 64 Part 6.4: the payment screen was reached with something to
+  // pay. Once per session; a no-op until the Pixel id is configured.
+  const due = planId && planId !== "free" && !paymentOutcome?.isGifted ? region.prices[planId] : 0;
+  useEffect(() => {
+    if (due > 0) trackMeta("InitiateCheckout", { value: due, currency: region.currency });
+  }, [due, region.currency]);
 
   // The free plan is never paid for, so the whole block would be nonsense.
   if (planId === "free") return null;
