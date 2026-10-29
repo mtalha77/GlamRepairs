@@ -2649,6 +2649,9 @@ export type Database = {
           price: number;
           /** JSON array of bullet strings, already ordered. */
           features: string[];
+          /** Integer minor units (HANDOVER-62). Format money from this, never from `price`. */
+          amount_minor: number;
+          minor_units: number;
         };
         Relationships: [];
       };

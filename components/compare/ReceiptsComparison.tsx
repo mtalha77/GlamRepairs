@@ -25,7 +25,7 @@ import type { PlanSettings } from "@/lib/plans/planSettings";
  *
  * ── The third is not illustrative at all ─────────────────────────────────
  * Every Glam Repairs line is read from live data: the total from
- * `pricing_regions`, the call and the support window from `plan_settings`.
+ * `country_pricing` (through plans_public), the call and the support window from `plan_settings`.
  * Typing "Rs. 3,000" here would recreate the exact defect HANDOVER-22
  * warned about — a comparison page that contradicts /pricing the first
  * time a number changes.
@@ -372,7 +372,11 @@ export default function ReceiptsComparison({
                 {
                   name: `FULL SKIN ASSESSMENT`,
                   note: "read by a named practitioner",
-                  value: formatRegionPrice(region, "transform").replace("Rs. ", ""),
+                  // The bare amount, like the other line items; the total carries the
+                  // currency. Formatted with the currency's own decimal places.
+                  value: new Intl.NumberFormat("en", {
+                    maximumFractionDigits: region.minorUnits,
+                  }).format(region.prices.transform),
                 },
               ]}
             />

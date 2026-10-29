@@ -114,10 +114,9 @@ export default function PricingCard({
               ) : null}
             </div>
 
-            {/* The price arrives already carrying its region's own symbol,
-                which is stored per region ("Rs. " with a trailing space,
-                "$" without). No "/monthly" — these are one-time payments,
-                which is what the section's own copy promises. */}
+            {/* Formatted by Intl from minor units (lib/pricing/money.ts),
+                so the symbol sits where that currency puts it. No
+                "/monthly": these are one-time payments. */}
             <p className="mt-4 font-serif not-italic leading-none tracking-[-2px] text-[#A88EC3] text-[2.5rem] sm:text-[3rem]">
               {plan.price === 0 ? "Free" : formatPlanPrice(plan)}
             </p>

@@ -100,7 +100,7 @@ type ThankYouStepProps = {
   currentStep?: number;
   /**
    * HANDOVER-9 §1 — resolved server-side by the completion page so the
-   * payment amount comes from public.pricing_regions for this visitor's
+   * payment amount comes from country_pricing (through plans_public) for this visitor's
    * region rather than a hardcoded number.
    */
   region: PricingRegion;

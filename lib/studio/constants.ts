@@ -50,7 +50,7 @@ export const REVIEW_DECISION_LABELS: Record<
 
 // HOTFIX-7 §1: names/ids only. Price used to be hardcoded here and got
 // stale the moment PK pricing changed (1,500 → 2,000, 3,000 → 3,500) — it
-// now lives in public.pricing_regions (lib/pricing/regions.ts). The two
+// now lives in country_pricing (through plans_public) (lib/pricing/regions.ts). The two
 // call sites that used to read .price here (NewCustomerForm.tsx,
 // createCustomerAction in actions.ts) resolve the studio's own region
 // (PK — this business is Pakistan-run) live instead.

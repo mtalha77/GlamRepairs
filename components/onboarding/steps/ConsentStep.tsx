@@ -32,7 +32,7 @@ import {
 type PlanId = "free" | "clarity" | "transform";
 
 // HOTFIX-7 §1: names only — price comes from the region prop, resolved
-// server-side from public.pricing_regions. Never hardcode it here again.
+// server-side from country_pricing (through plans_public). Never hardcode it here again.
 const PLAN_NAMES: Record<PlanId, string> = {
   free: "Free",
   clarity: "Clarity",

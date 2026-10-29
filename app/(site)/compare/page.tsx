@@ -285,7 +285,7 @@ export default async function ComparePage() {
                 <Link href="/pricing" className="underline underline-offset-2">
                   pricing
                 </Link>{" "}
-                for prices in your own currency.
+                for what is included.
               </>
             ) : (
               <>
@@ -295,7 +295,7 @@ export default async function ComparePage() {
                 <Link href="/pricing" className="underline underline-offset-2">
                   Pricing
                 </Link>{" "}
-                has the current price in your own currency.
+                has the current price.
               </>
             )}
           </p>

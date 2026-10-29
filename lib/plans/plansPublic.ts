@@ -1,34 +1,24 @@
+import { formatMoney } from "@/lib/pricing/money";
 import { createPublicSupabaseClient } from "@/lib/supabase/publicClient";
 
 /**
- * Plans, read from `public.plans_public` — HANDOVER-27 §1.2.
+ * Plans, read from `public.plans_public`. HANDOVER-27 §1.2, HANDOVER-62.
  *
- * ── Why this replaces the columns in lib/pricing/regions.ts ──────────────
- * `pricing_regions` used to hold `price_free`, `price_clarity` and
- * `price_transform` as COLUMNS. Retiring Clarity and repricing Transform
- * therefore needed a schema migration, and adding a fourth plan would have
- * needed another — which is exactly the friction that made this change
- * awkward enough to be worth doing properly.
+ * The view joins `plan_settings` and `plan_features` to `country_pricing`,
+ * and lists only countries open to clients. `region_code` is a country
+ * code. Prices are formatted from `amountMinor` and `minorUnits` with
+ * Intl (lib/pricing/money.ts); `price` exists for arithmetic only.
  *
- * Prices now live in `plan_prices` (region_code, plan_key, price), one row
- * per region per plan, and `plans_public` joins that to `plan_settings` and
- * `plan_features`. A plan is a row. Retiring one is `active = false`.
+ * The old `pricing_regions` and `plan_prices` tables are no longer read by
+ * anything in the app.
  *
- * ⚠️ The old `price_*` columns still exist and are now STALE. Nothing may
- * read them. They are dropped in a follow-up migration once nothing does.
+ * `features` comes from the database. Do not hardcode bullets: a feature
+ * list in code and a price in the database drift the first time someone
+ * edits one and not the other, and the marketing card is the copy a
+ * customer holds you to.
  *
- * ── `features` comes from the database. Do not hardcode bullets ──────────
- * There are 14 for `transform` and 4 for `free`, already ordered by the
- * view. components/pricing/pricingPlans.ts used to carry them as a literal
- * and is gone for that reason: a feature list in code and a price in the
- * database drift the first time someone edits one and not the other, and
- * the marketing card is the copy a customer holds you to.
- *
- * ── Clarity is retired, not deleted ──────────────────────────────────────
- * Historical leads carry `selected_plan = 'clarity'` and must still resolve
- * to a label and a price. `plans_public` filters to active plans, so use
- * `listPublicPlans` for anything a VISITOR sees and `getPlanByKey` for
- * anything that renders a PAST lead. Never delete the row.
+ * Clarity is retired, not deleted: historical leads still carry
+ * `selected_plan = 'clarity'`, with their own recorded price on the lead.
  */
 
 /** Every plan key that may appear on a lead, including retired ones. */
@@ -71,7 +61,13 @@ export type PublicPlan = {
   currentlyOffered: boolean;
   currency: string;
   symbol: string;
+  /** Major units, for arithmetic. Never format money from this. */
   price: number;
+  /** HANDOVER-62: integer minor units and the currency's decimal places. */
+  amountMinor: number;
+  minorUnits: number;
+  /** ISO country code the price is for. */
+  regionCode: string;
   /** Ordered by the view. Flat strings, not title/description pairs. */
   features: string[];
 };
@@ -93,6 +89,9 @@ type PlansPublicRow = {
   currency: string;
   symbol: string;
   price: number | string;
+  amount_minor: number | null;
+  minor_units: number | null;
+  region_code: string;
   features: unknown;
 };
 
@@ -119,9 +118,13 @@ const FALLBACK_PLAN: PublicPlan = {
   expertReview: true,
   availableUntil: null,
   currentlyOffered: true,
+  // Mirrors the Pakistan row in country_pricing; see lib/pricing/regions.ts.
   currency: "PKR",
-  symbol: "Rs. ",
+  symbol: "Rs ",
   price: 3000,
+  amountMinor: 300000,
+  minorUnits: 2,
+  regionCode: "PK",
   features: [],
 };
 
@@ -143,6 +146,9 @@ function mapRow(row: PlansPublicRow): PublicPlan {
     currency: row.currency,
     symbol: row.symbol,
     price: Number(row.price),
+    amountMinor: row.amount_minor ?? Math.round(Number(row.price) * 100),
+    minorUnits: row.minor_units ?? 2,
+    regionCode: row.region_code,
     // Defensive: the view returns a JSON array, but a plan with no rows in
     // `plan_features` would map to null here and every `.map` downstream
     // would throw on a page that should simply show no bullets.
@@ -195,72 +201,15 @@ export async function getPaidPlan(
   return plans.find((p) => p.planKey === PAID_PLAN_KEY) ?? null;
 }
 
-/**
- * One plan by key, INCLUDING retired ones.
- *
- * This is what renders a historical lead carrying `selected_plan =
- * 'clarity'`. It reads `plan_settings` and `plan_prices` directly rather
- * than the view, because the view filters to active plans and a retired
- * plan would come back empty — which would render a past client's record
- * with a blank plan name.
- */
-export async function getPlanByKey(
-  regionCode: string,
-  planKey: string,
-): Promise<{ label: string; price: number; symbol: string } | null> {
-  const supabase = createPublicSupabaseClient();
-  const [settings, priceRow] = await Promise.all([
-    supabase
-      .from("plan_settings")
-      .select("label")
-      .eq("plan_key", planKey)
-      .maybeSingle(),
-    supabase
-      .from("plan_prices")
-      .select("price")
-      .eq("region_code", regionCode)
-      .eq("plan_key", planKey)
-      .maybeSingle(),
-  ]);
-
-  if (settings.error || !settings.data) {
-    if (settings.error) console.error("[getPlanByKey]", settings.error.message);
-    return null;
-  }
-
-  const region = await regionSymbol(regionCode);
-  return {
-    label: (settings.data as { label: string }).label,
-    price: Number((priceRow.data as { price: number | string } | null)?.price ?? 0),
-    symbol: region,
-  };
-}
-
-async function regionSymbol(regionCode: string): Promise<string> {
-  const supabase = createPublicSupabaseClient();
-  const { data } = await supabase
-    .from("pricing_regions")
-    .select("symbol")
-    .eq("code", regionCode)
-    .maybeSingle();
-  return (data as { symbol: string } | null)?.symbol ?? "Rs. ";
-}
-
-/**
- * e.g. "Rs. 3,000" or "$22". No decimals on a whole number.
- *
- * The symbol carries its own trailing space where one belongs ("Rs. " but
- * "$"), so this concatenates rather than inserting one — that is a property
- * of the currency, stored per region, not a formatting choice to make here.
- */
+/** e.g. "Rs 3,000", "£20", "₦15,000". No decimals on a whole amount. */
 export function formatPlanPrice(plan: {
-  symbol: string;
-  price: number;
+  amountMinor: number;
+  minorUnits: number;
+  currency: string;
+  regionCode?: string;
 }): string {
-  const formatted = Number.isInteger(plan.price)
-    ? plan.price.toLocaleString("en-US")
-    : plan.price.toFixed(2);
-  return `${plan.symbol}${formatted}`;
+  // HANDOVER-62 Part 4: Intl from minor units, never a symbol glued on.
+  return formatMoney(plan.amountMinor, plan.currency, plan.minorUnits, plan.regionCode);
 }
 
 /**

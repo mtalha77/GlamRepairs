@@ -7,7 +7,7 @@ import { PAYMENT } from "@/lib/seo/site";
  * components/onboarding/PaymentDetails.tsx and reads the same constants.
  *
  * `amount` is always passed in already formatted for the client's region
- * (formatRegionPrice, which reads `plan_prices`) — never derived here. See
+ * (formatRegionPrice, which reads country_pricing through plans_public), never derived here. See
  * the note on PAYMENT.
  */
 export type PaymentTextInput = {

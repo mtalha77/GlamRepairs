@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import {
   resolvePricingRegion,
   type PricingRegion,
@@ -53,4 +53,15 @@ export function pricingRegionCookieOptions() {
     path: "/",
     sameSite: "lax" as const,
   };
+}
+
+/**
+ * Where the visitor is, from Vercel's own geo header. No lookup service,
+ * no added latency. Used to tell someone outside the quoted country, in
+ * plain words, what currency they are looking at (HANDOVER-62 Part 2);
+ * never to pick a price they cannot pay. Null in development.
+ */
+export async function getVisitorCountry(): Promise<string | null> {
+  const code = (await headers()).get("x-vercel-ip-country")?.toUpperCase() ?? null;
+  return code && /^[A-Z]{2}$/.test(code) ? code : null;
 }
