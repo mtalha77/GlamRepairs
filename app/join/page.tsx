@@ -203,10 +203,10 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
                 Now taking applications
               </span>
               <h1 className="mt-4 text-[34px] font-semibold leading-[1.08] tracking-tight sm:text-[46px]">
-                Use your qualification <span className={em}>from home,</span> in the evening.
+                Use your beautician qualification <span className={em}>from home,</span> in the evening.
               </h1>
               <p className="mt-5 max-w-[47ch] text-base leading-relaxed text-brand-gray sm:text-[17.5px]">
-                You trained in cosmetology. Right now that only earns when somebody physically walks into a clinic. GlamRepairs lets
+                You trained as a beautician or in cosmetology. Right now that only earns when somebody physically walks into a clinic. GlamRepairs lets
                 you read skin from your own sitting room, on your own hours, and get paid for every consultation.
               </p>
               <div className="mt-7 flex flex-wrap items-center gap-3">

@@ -19,6 +19,21 @@ const heroBackground = "/images,svgs/hero_skin.webp";
  * "Everyone DeservesHealthy Skin".
  */
 function HeroHeading({ text }: { text: string }) {
+  // Handover 64: a two-sentence H1 ("A person reads your skin. Not an
+  // algorithm.") breaks between the sentences, with the second line's first
+  // word in sans. Otherwise the last two words make the second line.
+  const sentences = text.trim().match(/^(.+?[.!?])\s+(\S+)\s+(.+)$/);
+  if (sentences) {
+    const [, first, plain, rest] = sentences;
+    return (
+      <>
+        <span className="block">{first}</span>{" "}
+        <span className="block">
+          <span className="font-sans font-medium not-italic">{plain}</span> {rest}
+        </span>
+      </>
+    );
+  }
   const words = text.trim().split(/\s+/);
   if (words.length < 3) return <>{text}</>;
   const lead = words.slice(0, -2).join(" ");
@@ -34,7 +49,7 @@ function HeroHeading({ text }: { text: string }) {
   );
 }
 
-export default function Hero({ h1 = "Everyone Deserves Healthy Skin" }: { h1?: string }) {
+export default function Hero({ h1 = "A person reads your skin. Not an algorithm." }: { h1?: string }) {
   return (
     /*
      * HOTFIX-41 §1 — no full-bleed scrim.
@@ -60,7 +75,7 @@ export default function Hero({ h1 = "Everyone Deserves Healthy Skin" }: { h1?: s
       <div className="relative aspect-[3/2] w-full sm:absolute sm:inset-0 sm:aspect-auto">
         <Image
           src={heroBackground}
-          alt=""
+          alt="Close-up of a face with freckles and natural skin texture, eyes closed"
           fill
           priority
           sizes="100vw"
@@ -77,6 +92,12 @@ export default function Hero({ h1 = "Everyone Deserves Healthy Skin" }: { h1?: s
       </div>
 
       <div className="relative z-10 flex flex-col items-center px-6 pb-10 pt-8 text-center sm:min-h-[60svh] sm:justify-center sm:pb-12 sm:pt-[92px] lg:min-h-[100svh] lg:pb-16 lg:pt-[72px]">
+        {/* Handover 64 Part 1: the eyebrow carries the credential, so the
+            headline can carry the claim. Both statements are true today:
+            the qualification and its reference are on /credentials. */}
+        <p className="mb-4 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-primary sm:mb-5 sm:text-xs sm:text-white/90">
+          Certified Aesthetics Practitioner · Qualification published with its reference number
+        </p>
         <h1 className="font-serif text-[40px] italic leading-[1.05] tracking-[-0.32px] text-brand-primary sm:text-[56px] sm:text-white lg:text-[72px]">
           <HeroHeading text={h1} />
         </h1>

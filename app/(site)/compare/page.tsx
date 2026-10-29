@@ -4,6 +4,7 @@ import Link from "next/link";
 import CompareMatrixTable from "@/components/compare/CompareMatrixTable";
 import ReceiptsComparison from "@/components/compare/ReceiptsComparison";
 import { onboardingHref } from "@/components/home/Navbar";
+import PricingSection from "@/components/pricing/PricingSection";
 import JsonLd from "@/components/seo/JsonLd";
 import { buildCompareMatrix } from "@/lib/compare/compareMatrix";
 import { compareSource } from "@/lib/compare/sources";
@@ -282,7 +283,7 @@ export default async function ComparePage() {
                 Prices are shown for {matrix.region.label} because the clinic
                 and consultation fees they sit beside are Pakistani market
                 figures; see{" "}
-                <Link href="/pricing" className="underline underline-offset-2">
+                <Link href="#plans" className="underline underline-offset-2">
                   pricing
                 </Link>{" "}
                 for what is included.
@@ -292,7 +293,7 @@ export default async function ComparePage() {
                 Our Pakistan price could not be read just now, so the Glam
                 Repairs figures below are shown for {matrix.region.label}{" "}
                 while every fee beside them is a Pakistani market figure.{" "}
-                <Link href="/pricing" className="underline underline-offset-2">
+                <Link href="#plans" className="underline underline-offset-2">
                   Pricing
                 </Link>{" "}
                 has the current price.
@@ -557,6 +558,12 @@ export default async function ComparePage() {
             .
           </span>
         </section>
+        </div>
+        {/* Handover 64 Part 6.1: /pricing now redirects here, so this is the
+            one pricing page. The plan card is the same component the
+            homepage uses, priced for the visitor's market. */}
+        <div id="plans">
+          <PricingSection showSampleLink />
         </div>
       </main>
     </>

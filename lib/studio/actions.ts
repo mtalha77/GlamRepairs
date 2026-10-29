@@ -61,6 +61,7 @@ import { bookConsultationForLead } from "@/lib/consultation/booking";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 import { sendPaymentConfirmedEmail } from "@/lib/clients/paymentConfirmed";
 import { discardNewAuthUser } from "@/lib/studio/discardNewAuthUser";
+import { metaConfigured, sendMetaServerEvent } from "@/lib/analytics/metaServer";
 
 function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "";
@@ -587,6 +588,28 @@ export async function verifyCustomerPaymentAction(formData: FormData) {
 
   // HANDOVER-60 — payment confirmed, with the client's sign-in link.
   if (before?.payment_status !== "verified") await sendPaymentConfirmedEmail(id, booking);
+
+  // Handover 64 Part 6.4: the Purchase, sent from the server only, once per
+  // lead (the event id is the lead id). Never for a test lead. A no-op until
+  // the Pixel id and Conversions API token are configured.
+  if (before?.payment_status !== "verified" && metaConfigured()) {
+    const { data: paid } = await createAdminSupabaseClient()
+      .from("leads")
+      .select("email, phone_e164, final_price, currency, is_test")
+      .eq("id", id)
+      .maybeSingle();
+    if (paid && !paid.is_test && Number(paid.final_price ?? 0) > 0) {
+      await sendMetaServerEvent({
+        event: "Purchase",
+        eventId: `purchase-${id}`,
+        email: paid.email,
+        phone: paid.phone_e164,
+        value: Number(paid.final_price),
+        currency: paid.currency ?? "PKR",
+        actionSource: "system_generated",
+      });
+    }
+  }
 
   revalidatePath(`/studio/customers/${id}`);
   revalidatePath("/studio/customers");

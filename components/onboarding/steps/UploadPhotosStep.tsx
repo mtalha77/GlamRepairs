@@ -7,6 +7,7 @@ import CameraUploadIcon from "@/components/onboarding/CameraUploadIcon";
 import ClientNotesField from "@/components/onboarding/ClientNotesField";
 import UploadSupportNote from "@/components/onboarding/UploadSupportNote";
 import SamplePhotosButton from "@/components/testPortal/SamplePhotosButton";
+import { trackMeta } from "@/lib/analytics/meta";
 import { StepHeader, StepRequiredError } from "@/components/steps";
 import { resolveUnlockTarget } from "@/lib/funnel/funnelProgress";
 import { processPhoto } from "@/lib/funnel/image";
@@ -59,6 +60,19 @@ const PLAN_PHOTO_LIMITS: Record<PlanId, number> = {
   transform: 6,
 };
 
+/**
+ * How many of those slots must be filled before the client can continue
+ * (Handover 64). plan_settings.photos_required says 3 for Skin Transform,
+ * and the site promises three photos, but this step used to demand all six.
+ * The first slots are the required ones (front, then each side); the rest
+ * are offered and optional.
+ */
+const PLAN_PHOTOS_REQUIRED: Record<PlanId, number> = {
+  free: 1,
+  clarity: 2,
+  transform: 3,
+};
+
 const EMPTY_PHOTOS: (string | null)[] = Array(PHOTO_SLOTS.length).fill(null);
 const EMPTY_CHECKS: (PhotoCheck | null)[] = Array(PHOTO_SLOTS.length).fill(null);
 
@@ -72,6 +86,13 @@ function Tick({ className = "" }: { className?: string }) {
 }
 
 const PHOTO_TIPS = ["Face a window", "No makeup", "Beauty filter off"];
+
+function getRequiredPhotos(plan: string | null): number {
+  if (plan === "clarity" || plan === "transform" || plan === "free") {
+    return PLAN_PHOTOS_REQUIRED[plan];
+  }
+  return PLAN_PHOTOS_REQUIRED.free;
+}
 
 function getPhotoLimit(plan: string | null): number {
   if (plan === "clarity" || plan === "transform" || plan === "free") {
@@ -135,7 +156,7 @@ export function UploadPhotosFooter({ backHref, nextHref }: UploadPhotosFooterPro
     (state) => state.answers["onboarding.photos"] as (string | null)[] | undefined,
   );
   const selectedPlan = useFunnelStore((state) => state.selectedPlan);
-  const photoLimit = getPhotoLimit(selectedPlan);
+  const requiredPhotos = getRequiredPhotos(selectedPlan);
   const unlockFlowStep = useFunnelStore((state) => state.unlockFlowStep);
   const requestStepValidation = useFunnelStore(
     (state) => state.requestStepValidation,
@@ -143,7 +164,7 @@ export function UploadPhotosFooter({ backHref, nextHref }: UploadPhotosFooterPro
   const clearStepValidationAttempt = useFunnelStore(
     (state) => state.clearStepValidationAttempt,
   );
-  const allPhotosUploaded = areAllPhotosUploaded(photos, photoLimit);
+  const allPhotosUploaded = areAllPhotosUploaded(photos, requiredPhotos);
 
   return (
     <div className="flex items-center justify-between gap-4">
@@ -173,6 +194,7 @@ export function UploadPhotosFooter({ backHref, nextHref }: UploadPhotosFooterPro
         <Link
           href={nextHref}
           onClick={() => {
+            trackMeta("PhotosUploaded");
             clearStepValidationAttempt();
             const target = resolveUnlockTarget("onboarding", nextHref);
             if (target !== null) unlockFlowStep("onboarding", target);
@@ -218,12 +240,13 @@ export default function UploadPhotosStep() {
   const clearStepValidationAttempt = useFunnelStore(
     (state) => state.clearStepValidationAttempt,
   );
-  const allPhotosUploaded = areAllPhotosUploaded(photos, photoLimit);
+  const requiredPhotos = getRequiredPhotos(selectedPlan);
+  const allPhotosUploaded = areAllPhotosUploaded(photos, requiredPhotos);
   const error = useStepRequiredError(
     !allPhotosUploaded,
-    photoLimit === 1
+    requiredPhotos === 1
       ? "Front face photo is required."
-      : `All ${photoLimit} photos are required.`,
+      : `The first ${requiredPhotos} photos are required. The others are optional.`,
   );
 
   useEffect(() => {
@@ -343,7 +366,7 @@ export default function UploadPhotosStep() {
               onClick={() => openFilePicker(index)}
               aria-label={`Upload ${slot.label} photo`}
               className={`relative aspect-[3/4] overflow-hidden rounded-[1.1rem] border bg-white shadow-sm transition-opacity hover:opacity-95 ${
-                error && !photos[index]
+                error && !photos[index] && index < requiredPhotos
                   ? "border-brand-error"
                   : "border-brand-border-light/50"
               }`}
@@ -407,6 +430,7 @@ export default function UploadPhotosStep() {
 
             <span className="text-center text-[0.6875rem] leading-snug text-brand-gray sm:text-xs">
               {slot.label}
+              {index >= requiredPhotos ? <span className="block text-brand-gray/70">optional</span> : null}
             </span>
           </div>
         ))}

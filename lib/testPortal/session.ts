@@ -104,11 +104,16 @@ export async function startTestSession(passphrase: string): Promise<boolean> {
     path: "/",
     maxAge: TTL_MS / 1000,
   });
+  // Readable by the browser, and carries nothing: it only tells client-side
+  // analytics (the Meta Pixel) to stay quiet in a demo. Authority is the
+  // signed cookie above.
+  (await cookies()).set("gr_test_ui", "1", { path: "/", sameSite: "lax", maxAge: TTL_MS / 1000 });
   return true;
 }
 
 export async function clearTestCookie() {
   (await cookies()).delete(TEST_COOKIE);
+  (await cookies()).delete("gr_test_ui");
 }
 
 const WORDS = [

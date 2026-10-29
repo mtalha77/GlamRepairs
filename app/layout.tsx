@@ -21,6 +21,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import GoogleTag from "@/components/analytics/GoogleTag";
+import MetaPixel from "@/components/analytics/MetaPixel";
 import StickyGetStartedTab from "@/components/cta/StickyGetStartedTab";
 import JsonLd from "@/components/seo/JsonLd";
 import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
@@ -208,6 +209,8 @@ export default async function RootLayout({
         {/* Google tag (gtag.js) — every public page; skipped on /studio,
             which is internal. See components/analytics/GoogleTag.tsx. */}
         <GoogleTag id={GA_MEASUREMENT_ID} />
+        {/* Handover 64: off until NEXT_PUBLIC_META_PIXEL_ID is set. */}
+        <MetaPixel id={process.env.NEXT_PUBLIC_META_PIXEL_ID} />
         {children}
         {/* HANDOVER-22 §2 — mounted site-wide; it suppresses itself across
             /onboarding/* and while the plans are on screen. */}

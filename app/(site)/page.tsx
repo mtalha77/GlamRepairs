@@ -68,7 +68,7 @@ export default async function Home() {
         faqs.map((faq) => ({ question: faq.q, answer: faq.a })),
         "/",
       ))} />
-      <Hero h1={await pageH1("/", "Everyone Deserves Healthy Skin")} />
+      <Hero h1={await pageH1("/", "A person reads your skin. Not an algorithm.")} />
       <SkinAssessment />
       <ProblemSection />
       <WhatWeDoSection />

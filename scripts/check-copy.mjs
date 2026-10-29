@@ -53,6 +53,14 @@ const baseIdx = args.indexOf("--base");
 const BASE =
   baseIdx !== -1 ? args[baseIdx + 1] : "http://127.0.0.1:3100";
 
+/*
+ * Preview deployments sit behind Vercel Authentication. CI passes the
+ * project's protection-bypass secret so a pull request's own preview can be
+ * checked before it merges. Absent, requests go out plain (production).
+ */
+const BYPASS = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const HEADERS = BYPASS ? { "x-vercel-protection-bypass": BYPASS } : {};
+
 /**
  * Strings that must never reach a visitor or a crawler.
  *
@@ -126,10 +134,54 @@ const BANNED = [
     why: "BS, never BSc — Pakistani universities award BS.",
   },
   {
-    re: /\bLicensed\b/,
+    /*
+     * Handover 64: any case. The two allowed pages use it only to say that
+     * no licence exists for this work, which is the point being made.
+     */
+    re: /\blicensed\b/i,
     why:
       "No licence is held. Claiming one in a YMYL niche is a false " +
       "credential claim.",
+    allow: ["/credentials", "/editorial-policy"],
+  },
+  {
+    /*
+     * Handover 64 Part 2. "Treat" is banned for describing the service.
+     * The disclaimer ("we do not diagnose or treat") and referral advice
+     * ("see a doctor for treatment") are correct and stay, so the rule
+     * targets the service phrasings that actually shipped: "Treatment
+     * Tracking" lived in a responsive variant nobody read.
+     */
+    re: /\btreatment (?:tracking|program(?:me)?|plan)\b|\byour treatment\b/i,
+    why:
+      "The service is a skincare routine, never a treatment (CLAUDE.md " +
+      "2.1). Use 'progress tracking', 'skincare program', 'routine'.",
+  },
+  {
+    re: /teledermatolog|telemedicine/i,
+    why:
+      "Never. Teledermatology is a medical specialty and telemedicine is " +
+      "regulated and tied to licensed clinicians (Handover 64 Part 7a). " +
+      "Use 'online skin assessment' or 'remote skin assessment'.",
+  },
+  {
+    /*
+     * Client-facing surfaces only. /join (practitioners) may use it, and
+     * Ayma's Duke course titles are quoted verbatim wherever they appear,
+     * so those exact titles are removed before testing.
+     */
+    re: /telehealth/i,
+    strip: [
+      /Telehealth: Essentials, Teamwork (?:&amp;|&|and) Dermatology/gi,
+      /Telehealth Clinical Essentials/gi,
+      /Telehealth: Interprofessional Team-Based Care/gi,
+      /Telehealth: Dermatology Assessment/gi,
+    ],
+    why:
+      "Not on client-facing pages: it implies health care (Handover 64 " +
+      "Part 7a). Practitioner pages (/join) may use it; the Duke course " +
+      "title is exempt because it is quoted verbatim.",
+    allow: ["/join", "/join/apply"],
   },
   {
     re: /Dr\.?\s+Ayma/i,
@@ -146,10 +198,16 @@ const EM_DASH = /—/g;
  * the thing it is guarding did. Anything the sitemap omits but a visitor
  * can still reach is listed here explicitly.
  */
-const EXTRA_ROUTES = ["/blog", "/authors/ayma-arif"];
+const EXTRA_ROUTES = [
+  "/blog",
+  "/authors/ayma-arif",
+  // Handover 64: the funnel is noindex and out of the sitemap, which is
+  // exactly why "treatment program" survived in it. Every step is checked.
+  ...Array.from({ length: 26 }, (_, i) => `/onboarding/step/${i + 1}`),
+];
 
 async function routes() {
-  const res = await fetch(`${BASE}/sitemap.xml`);
+  const res = await fetch(`${BASE}/sitemap.xml`, { headers: HEADERS });
   if (!res.ok) throw new Error(`sitemap.xml -> ${res.status}`);
   const xml = await res.text();
   const paths = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) =>
@@ -198,7 +256,7 @@ const list = await routes();
 console.log(`Checking ${list.length} routes against ${BASE}\n`);
 
 for (const route of list) {
-  const res = await fetch(`${BASE}${route}`);
+  const res = await fetch(`${BASE}${route}`, { headers: HEADERS });
   if (!res.ok) {
     skipped.push(`${route} (HTTP ${res.status})`);
     continue;
@@ -210,7 +268,8 @@ for (const route of list) {
     // Default scope is everything a crawler reads, JSON-LD included — that
     // is where this class of bug has hidden every time. A rule opts down to
     // `visible` only where a machine-readable occurrence is legitimate.
-    const haystack = rule.scope === "visible" ? visible : all;
+    let haystack = rule.scope === "visible" ? visible : all;
+    for (const pattern of rule.strip ?? []) haystack = haystack.replace(pattern, " ");
     const hit = rule.re.exec(haystack);
     if (hit) {
       violations.push({ route, found: hit[0], why: rule.why });

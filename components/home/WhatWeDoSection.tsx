@@ -46,7 +46,7 @@ const steps = [
  */
 const progressItems = [
   "Customized Weekly Routine",
-  "Treatment Tracking",
+  "Progress Tracking",
   "Expert Adjustments",
   "Goal-Oriented Care",
 ];
@@ -183,7 +183,7 @@ export default function WhatWeDoSection() {
               <div className="absolute right-[10%] top-[-34%] h-[74px] w-[64px] rotate-[31deg] overflow-hidden rounded-[10px] border-2 border-white shadow-sm">
                 <Image
                   src="/images,svgs/wyg_routine.webp"
-                  alt=""
+                  alt="Woman pressing her fingertips to her forehead and nose"
                   fill
                   sizes="90px"
                   className="object-cover"
@@ -196,7 +196,7 @@ export default function WhatWeDoSection() {
             <BeforeAfterSlider
               beforeSrc="/images,svgs/Rectangle 3467729.webp"
               afterSrc="/images,svgs/Rectangle 3467730.webp"
-              imageAlt="Before and after skin comparison"
+              imageAlt="A freckled face, and the same face with the freckles retouched out"
               imagePosition="center"
               contentScale={1}
               showLabels={false}

@@ -1,0 +1,52 @@
+name: Copy check (rendered output)
+
+# Handover 64 Part 2. Banned words have shipped twice inside a responsive
+# variant nobody read, while the source looked fine. This checks what a
+# visitor and a crawler actually receive: every sitemap route, the blog
+# list, the author page and all funnel steps, code and database together.
+#
+# - Every successful deployment Vercel reports: production is checked at
+#   www.glamrepairs.com; a preview is checked at its own URL when the
+#   VERCEL_AUTOMATION_BYPASS_SECRET repository secret is set (Vercel →
+#   Project → Settings → Deployment Protection → Protection Bypass for
+#   Automation), and skipped otherwise.
+# - Daily, against production, because blog and SEO copy change in the
+#   database without a deploy.
+
+on:
+  deployment_status:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    if: github.event_name != 'deployment_status' || github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Choose the deployment to check
+        id: target
+        env:
+          EVENT: ${{ github.event_name }}
+          ENVIRONMENT: ${{ github.event.deployment.environment }}
+          URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+          HAS_BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET != '' }}
+        run: |
+          if [ "$EVENT" != "deployment_status" ] || [ "$ENVIRONMENT" = "Production" ]; then
+            echo "base=https://www.glamrepairs.com" >> "$GITHUB_OUTPUT"
+          elif [ "$HAS_BYPASS" = "true" ] && [ -n "$URL" ]; then
+            echo "base=${URL%/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "No bypass secret for preview deployments; skipping." >> "$GITHUB_STEP_SUMMARY"
+            echo "base=" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check rendered copy
+        if: steps.target.outputs.base != ''
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: node scripts/check-copy.mjs --base "${{ steps.target.outputs.base }}"

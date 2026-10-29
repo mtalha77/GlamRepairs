@@ -6,7 +6,7 @@ import SiteHeader from "@/components/layout/SiteHeader";
  *
  * ── Why a route group ────────────────────────────────────────────────────
  * `(site)` is a route group, so it changes nothing about any URL:
- * `app/(site)/pricing/page.tsx` still serves `/pricing`. What it buys is a
+ * `app/(site)/compare/page.tsx` still serves `/compare`. What it buys is a
  * layout boundary that covers the public pages and nothing else. The routes
  * deliberately left OUTSIDE it, at `app/`, are the ones that must NOT get
  * site chrome:

@@ -338,7 +338,7 @@ export default function SkinGuidanceReport() {
           </h2>
           <div className="mt-3 rounded-2xl border border-brand-lavender/50 bg-white px-4 py-4 shadow-sm sm:mt-4 sm:px-5 sm:py-5">
             <h3 className="text-sm font-semibold text-brand-primary sm:text-[0.9375rem]">
-              Avoid These During Your Treatment
+              Avoid These During Your Routine
             </h3>
             <div className="mt-3 sm:mt-4">
               <AvoidList />

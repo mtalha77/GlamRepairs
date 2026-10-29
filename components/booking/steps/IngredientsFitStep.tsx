@@ -11,7 +11,7 @@ export default function IngredientsFitStep() {
 
       <StepBody className="mt-8 sm:mt-10">
         <p className="font-serif text-[1.75rem] leading-[1.2] text-brand-ink sm:text-[2rem]">
-          Your treatment program is a{" "}
+          Your skincare program is a{" "}
           <AnimatedCount value={93} className="inline-block" duration={1600} />% fit
           to you thanks to hydration, sensitivity &amp; goal
         </p>
