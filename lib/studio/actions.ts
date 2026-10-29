@@ -9,7 +9,6 @@ import { sendStudioReportEmail } from "@/lib/email/sendStudioReportEmail";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { resolvePricingRegion, priceForPlan } from "@/lib/pricing/regions";
-import { updatePlanPrices } from "@/lib/studio/pricingAdmin";
 import { PLAN_OPTIONS, REVIEW_DECISIONS } from "@/lib/studio/constants";
 import {
   getStudioCustomer,
@@ -1036,43 +1035,6 @@ export async function sendBroadcastAction(formData: FormData) {
   redirect(
     `/studio/broadcast?sent=${sent}${failed ? `&failed=${failed}` : ""}`,
   );
-}
-
-/**
- * HOTFIX-7 §1 — "changing a price is a database update, not a deploy."
- * Super-admin-only field on /studio/settings so Talha doesn't need the
- * Supabase dashboard for routine price changes.
- */
-export async function updatePricingRegionAction(formData: FormData) {
-  const { member } = await requireStudioMember();
-  if (!member?.isSuperAdmin) {
-    redirect("/studio/settings?error=pricing_forbidden");
-  }
-
-  const code = asString(formData, "code");
-  // HANDOVER-27 §1.1 — one paid plan. The form used to carry a Clarity
-  // field as well; Clarity is retired, so editing its price would have been
-  // editing a number nobody can be charged.
-  const transform = Number(formData.get("transform"));
-
-  if (!code || !Number.isFinite(transform) || transform < 0) {
-    redirect("/studio/settings?error=pricing_invalid");
-  }
-
-  try {
-    await updatePlanPrices(code, { transform });
-  } catch (error) {
-    console.error("[updatePricingRegionAction]", error);
-    redirect("/studio/settings?error=pricing_save");
-  }
-
-  // Every route that shows a price reads it fresh per-request (see
-  // PricingSection.tsx) — these revalidations mostly matter for any
-  // response-cache layer in front of Next, not for correctness.
-  revalidatePath("/studio/settings");
-  revalidatePath("/pricing");
-  revalidatePath("/");
-  redirect("/studio/settings?saved=pricing");
 }
 
 /* ── HANDOVER-19 — deleting photographs, keeping the client ──────────────

@@ -120,10 +120,11 @@ export const FAQS: Faq[] = [
     // to choose this over a clinic visit at the same price, and the cost
     // question is exactly where someone is making that comparison.
     fromPricing: ({ paid, videoMinutes }) =>
+      // HANDOVER-62: the free tier's offer ended on 30 September, and
+      // payment is only possible in rupees, so neither old sentence is true.
       `Skin Transform is ${paid}, one payment, and includes a ${videoMinutes} ` +
-      "minute video consultation with your practitioner. Skin Starter is " +
-      "free while the offer lasts. Outside Pakistan, you can switch the " +
-      "prices to your own currency.",
+      "minute video consultation with your practitioner. Payment is by bank " +
+      "transfer in Pakistani rupees.",
   },
   {
     id: "how-to-pay",
@@ -296,8 +297,9 @@ export const FAQS: Faq[] = [
     group: "practical",
     tags: ["home", "pricing", "contact"],
     a:
-      "Yes. The assessment is online, and you can switch the prices to your " +
-      "own currency. Advice is written for the climate and water conditions " +
+      "Yes, the assessment is online. For now we can only take payment in " +
+      "Pakistani rupees, by bank transfer to a Pakistani account. Advice is " +
+      "written for the climate and water conditions " +
       "where you actually live.",
   },
   {

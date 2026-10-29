@@ -14,7 +14,7 @@ import {
  * HANDOVER-22 §5b — the comparison matrix, built from live data.
  *
  * ── Why the prices are read rather than typed ────────────────────────────
- * "Prices must come from pricing_regions and plan_settings, not be typed
+ * "Prices must come from the database (now country_pricing) and plan_settings, not be typed
  * into the table. Otherwise this page contradicts the pricing page the
  * first time a number changes." Every Glam Repairs figure below — the two
  * prices, the photo counts, the support window, the call length — is read

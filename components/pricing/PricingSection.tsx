@@ -3,7 +3,7 @@ import Link from "next/link";
 import CompareStrip from "@/components/compare/CompareStrip";
 import CurrencySwitcher from "@/components/pricing/CurrencySwitcher";
 import PricingCard from "@/components/pricing/PricingCard";
-import { getServerPricingRegion } from "@/lib/pricing/geo";
+import { getServerPricingRegion, getVisitorCountry } from "@/lib/pricing/geo";
 import { listActivePricingRegions } from "@/lib/pricing/regions";
 import { listOfferedPlans, PAID_PLAN_KEY } from "@/lib/plans/plansPublic";
 
@@ -51,10 +51,16 @@ export default async function PricingSection({
   showSampleLink = false,
   showCompareStrip = false,
 }: PricingSectionProps) {
-  const [region, regions] = await Promise.all([
+  const [region, regions, visitorCountry] = await Promise.all([
     getServerPricingRegion(),
     listActivePricingRegions(),
+    getVisitorCountry(),
   ]);
+  // HANDOVER-62 Part 2: someone outside the quoted country is told what
+  // they are looking at, rather than assuming it is their own currency.
+  // Logged so demand by country shows up in the runtime logs.
+  const elsewhere = visitorCountry !== null && visitorCountry !== region.code;
+  if (elsewhere) console.info("[pricing] visitor outside a priced country", visitorCountry);
   // Only plans a visitor can actually buy today. Once the free tier's
   // `available_until` passes, `currently_offered` goes false and the card
   // stops rendering with no deploy — see HANDOVER-27 §1.3.
@@ -76,6 +82,12 @@ export default async function PricingSection({
           <div className="mt-4 flex justify-center">
             <CurrencySwitcher region={region} regions={regions} />
           </div>
+          {elsewhere ? (
+            <p className="mt-3 font-sans text-sm text-brand-gray">
+              Shown in {region.currency === "PKR" ? "Pakistani rupees" : region.currency}. We cannot take payment in other
+              currencies yet.
+            </p>
+          ) : null}
         </header>
 
         {/*

@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   }
 
   const plan = PLAN_OPTIONS.find((item) => item.id === body.selectedPlan);
-  // HOTFIX-7 §1: price resolved from public.pricing_regions, not a
+  // HOTFIX-7 §1: price resolved from country_pricing (through plans_public), not a
   // hardcoded PLAN_OPTIONS.price — that field no longer exists precisely
   // because it went stale the moment PK pricing last changed.
   const planPrice =

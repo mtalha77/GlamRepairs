@@ -50,7 +50,7 @@ export default async function Home() {
   // and an FAQ quoting a stale number would quietly undo that.
   const region = await getServerPricingRegion();
   // HANDOVER-27 §1.2 — the paid price comes from `plans_public`, never from
-  // pricing_regions.price_*, which are stale and still hold the old numbers.
+  // the old pricing tables, retired in HANDOVER-62.
   const paidPlan = await getPaidPlan(region.code);
   const faqs = resolveFaqs(
     "home",

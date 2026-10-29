@@ -79,7 +79,7 @@ function DetailRow({
 /**
  * HANDOVER-9 §1 — the payment block on /onboarding/complete.
  *
- * Amount comes from the region (public.pricing_regions), never a hardcoded
+ * Amount comes from the region (country_pricing (through plans_public)), never a hardcoded
  * number. The reference is derived from the session id — see
  * lib/leads/displayRef.ts for why it isn't a column — and is deliberately
  * the most prominent thing here: a bank transfer arrives as a name and an

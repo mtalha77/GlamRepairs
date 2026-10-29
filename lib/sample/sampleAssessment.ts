@@ -233,7 +233,7 @@ export type SampleValueIcon =
  * What the buyer is actually paying for, stated without adjectives.
  *
  * `body` is a function where the claim depends on data, so the follow-up
- * window and the price come from plan_settings and pricing_regions rather
+ * window and the price come from plan_settings and country_pricing rather
  * than being typed here — the same rule /compare is built under. A marketing
  * card that outlives the decision to change "30 days" is exactly how these
  * numbers go stale.

@@ -110,7 +110,7 @@ export const SITE = {
  * (the completion screen, the WhatsApp message body, and the confirmation
  * email) and defined only here.
  *
- * ⚠️ The amount is NEVER in this constant. It comes from public.pricing_regions
+ * ⚠️ The amount is NEVER in this constant. It comes from country_pricing (through plans_public)
  * via lib/pricing/regions.ts, because it differs per region and changing it is
  * a database update, not a deploy. Adding an `amount` field here would quietly
  * re-introduce the stale-price bug HOTFIX-7 removed.

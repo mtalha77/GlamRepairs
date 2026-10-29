@@ -42,7 +42,7 @@ import { splitAccent } from "@/lib/seo/headingAccent";
  *
  * ── The one number that is read, not typed ───────────────────────────────
  * The follow-up window comes from `plan_settings` and the price from
- * `pricing_regions`, for the same reason /compare reads them: a marketing
+ * `country_pricing` (through plans_public), for the same reason /compare reads them: a marketing
  * card that outlives the decision to change "30 days" is exactly how these
  * numbers go stale and start contradicting the pricing page.
  *
