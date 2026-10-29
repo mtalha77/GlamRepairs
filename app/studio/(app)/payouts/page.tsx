@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import FinanceTabs from "@/components/studio/FinanceTabs";
 import { ApproveRunButton, MarkPaidForm } from "@/components/studio/payouts/PayoutControls";
 import { loadPayoutPeriod, periodFor } from "@/lib/practitioners/payouts";
 import { formatRupees } from "@/lib/practitioners/roster";
@@ -32,6 +33,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="space-y-6">
+      <FinanceTabs active="payouts" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-serif text-2xl text-brand-primary">Payouts, {period.label}</h1>

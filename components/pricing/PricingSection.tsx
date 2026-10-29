@@ -84,8 +84,8 @@ export default async function PricingSection({
           </div>
           {elsewhere ? (
             <p className="mt-3 font-sans text-sm text-brand-gray">
-              Shown in {region.currency === "PKR" ? "Pakistani rupees" : region.currency}. We cannot take payment in other
-              currencies yet.
+              Shown in {region.currency === "PKR" ? "Pakistani rupees" : region.currency}. Paying from outside Pakistan? An
+              international bank transfer works: message us on WhatsApp and we will arrange it.
             </p>
           ) : null}
         </header>

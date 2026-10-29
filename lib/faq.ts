@@ -124,7 +124,8 @@ export const FAQS: Faq[] = [
       // payment is only possible in rupees, so neither old sentence is true.
       `Skin Transform is ${paid}, one payment, and includes a ${videoMinutes} ` +
       "minute video consultation with your practitioner. Payment is by bank " +
-      "transfer in Pakistani rupees.",
+      "transfer in Pakistani rupees, and from abroad by international bank " +
+      "transfer.",
   },
   {
     id: "how-to-pay",
@@ -297,9 +298,12 @@ export const FAQS: Faq[] = [
     group: "practical",
     tags: ["home", "pricing", "contact"],
     a:
-      "Yes, the assessment is online. For now we can only take payment in " +
-      "Pakistani rupees, by bank transfer to a Pakistani account. Advice is " +
-      "written for the climate and water conditions " +
+      // Talha, 29 October 2026: clients abroad can pay by international
+      // transfer; the account details are shared once they get in touch.
+      "Yes, the assessment is online. Prices are in Pakistani rupees. From " +
+      "abroad you can pay by international bank transfer: message us on " +
+      "WhatsApp and we will send the details. Advice is written for the " +
+      "climate and water conditions " +
       "where you actually live.",
   },
   {

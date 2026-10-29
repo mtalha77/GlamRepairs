@@ -29,6 +29,7 @@
 import type { Metadata } from "next";
 import AboutHeroSection from "@/components/about/AboutHeroSection";
 import WhatWeAreSection from "@/components/about/WhatWeAreSection";
+import WhoRunsItSection from "@/components/about/WhoRunsItSection";
 import OurStorySection from "@/components/about/OurStorySection";
 import HowItWorksSection from "@/components/about/HowItWorksSection";
 import WhyPakistanSection from "@/components/about/WhyPakistanSection";
@@ -78,6 +79,7 @@ export default async function AboutPage() {
         <AboutHeroSection h1={await pageH1("/about", "Online skin consultations, built for Pakistani skin")} />
         <WhatWeAreSection />
         <OurStorySection />
+        <WhoRunsItSection />
         <HowItWorksSection />
         <WhyPakistanSection />
         <WhatWeWontDoSection />

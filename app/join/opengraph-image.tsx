@@ -7,7 +7,7 @@ import { ImageResponse } from "next/og";
  */
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "GlamRepairs for practitioners: Rs 2,000 per 15 minute consultation, from home";
+export const alt = "GlamRepairs for practitioners: paid per 15 minute consultation, from home";
 
 export default function JoinOpengraphImage() {
   return new ImageResponse(
@@ -33,7 +33,7 @@ export default function JoinOpengraphImage() {
             Use your qualification from home, in the evening.
           </div>
           <div style={{ display: "flex", marginTop: 28, fontSize: 36, color: "#fff3da" }}>
-            Rs 2,000 per 15 minute consultation. Paid monthly. Your own hours.
+            Paid for every 15 minute consultation. Monthly. Your own hours.
           </div>
         </div>
         <div style={{ display: "flex", fontSize: 28, color: "#e7d9f5" }}>glamrepairs.com/join</div>

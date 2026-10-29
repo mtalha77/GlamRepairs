@@ -22,6 +22,7 @@ import {
   weeklyWindowsFor,
 } from "@/lib/practitioners/roster";
 import { listOwnPayouts } from "@/lib/practitioners/payouts";
+import { monthLabel, practitionerMonths, showMoney } from "@/lib/practitioners/revenue";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -78,7 +79,7 @@ export default async function PracticePage() {
     );
   }
 
-  const [data, earnings, windows, degree, payouts, { data: blackouts }] = await Promise.all([
+  const [data, earnings, windows, degree, payouts, { data: blackouts }, months] = await Promise.all([
     loadConsultationAdmin({ practitionerId: profile.id }),
     earningsSummary(profile.id),
     weeklyWindowsFor(profile.id),
@@ -90,6 +91,7 @@ export default async function PracticePage() {
       .eq("practitioner_id", profile.id)
       .gte("ends_at", new Date().toISOString())
       .order("starts_at"),
+    practitionerMonths(profile.id),
   ]);
   // A block runs to midnight after its last day; show the last day itself.
   const timeOff = (blackouts ?? []).map((b) => {
@@ -187,7 +189,39 @@ export default async function PracticePage() {
             <dd className="text-lg text-brand-ink">{formatRupees(earnings.paidThisMonthMinor)}</dd>
           </div>
         </dl>
-        <p className="mt-3 text-xs text-brand-gray">Paid monthly, by the 5th, for the month before.</p>
+        <p className="mt-3 text-xs text-brand-gray">
+          Each month runs from the 1st to its last day. It is paid by the 5th of the next month.
+        </p>
+        {/* Talha, 29 October 2026: revenue by month, and what has been
+            released, in every practitioner's own portal. */}
+        {months.length ? (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[30rem] text-left text-sm">
+              <thead className="text-xs uppercase tracking-wide text-brand-gray">
+                <tr>
+                  <th className="py-2 pr-3 font-medium">Month</th>
+                  <th className="py-2 pr-3 font-medium">Consultations</th>
+                  <th className="py-2 pr-3 font-medium">Earned</th>
+                  <th className="py-2 pr-3 font-medium">Released</th>
+                  <th className="py-2 font-medium">Still to come</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brand-lavender/60 border-t border-brand-lavender/60">
+                {months.map((m) => (
+                  <tr key={m.month}>
+                    <td className="py-2 pr-3 text-brand-ink">{monthLabel(m.month)}</td>
+                    <td className="py-2 pr-3 tabular-nums">{m.consultations}</td>
+                    <td className="py-2 pr-3 tabular-nums">{showMoney(m.earned)}</td>
+                    <td className="py-2 pr-3 tabular-nums text-brand-success-strong">{showMoney(m.released)}</td>
+                    <td className="py-2 tabular-nums">{showMoney(m.awaiting)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-brand-gray">Your monthly revenue appears here after your first consultation.</p>
+        )}
         {payouts.length ? (
           <ul className="mt-4 divide-y divide-brand-lavender/60 border-t border-brand-lavender/60 text-sm">
             {payouts.map((p) => (

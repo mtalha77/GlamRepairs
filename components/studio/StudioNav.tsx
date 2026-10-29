@@ -42,6 +42,7 @@ const STUDIO_ADMIN_LINKS = [
   // HANDOVER-52 — rates, status, photographs, offboarding.
   { href: "/studio/practitioners", label: "Practitioners" },
   { href: "/studio/payouts", label: "Payouts" },
+  { href: "/studio/revenue", label: "Revenue" },
   // HANDOVER-58 — country switches, legal status and prices.
   { href: "/studio/countries", label: "Countries" },
   { href: "/studio/admin/archive", label: "Archive" },
