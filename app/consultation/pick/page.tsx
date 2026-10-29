@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import ConsultationPicker from "@/components/consultation/ConsultationPicker";
 import { renderMarkdown } from "@/lib/blog/markdown";
+import LocalTimeNote from "@/components/consultation/LocalTimeNote";
 import { formatSlot } from "@/lib/consultation/format";
 import {
   getConsultationSettings,
@@ -53,7 +54,10 @@ export default async function PickConsultationPage({
       {current?.status === "booked" ? (
         <div className="rounded-2xl border border-brand-primary/30 bg-brand-lavender/20 p-5">
           <h1 className="font-serif text-2xl text-brand-ink">Your consultation is booked</h1>
-          <p className="mt-2 text-brand-ink">{formatSlot(current.startsAt)}</p>
+          <p className="mt-2 text-brand-ink">
+            {formatSlot(current.startsAt)}
+            <LocalTimeNote iso={current.startsAt} />
+          </p>
           <p className="mt-2 text-sm text-brand-gray">
             Your confirmation and video link are in your email. To change the time, message us on{" "}
             <a href={whatsapp} className="underline">WhatsApp</a>.

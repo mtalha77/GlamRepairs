@@ -8,6 +8,7 @@ import { DOCS_BUCKET, OPEN_STATUSES } from "@/lib/practitioners/applications";
 import { ASSESSMENT_MINUTES, ASSESSMENT_QUESTIONS, assessmentUrl } from "@/lib/practitioners/assessment";
 import { REVISION_FIELDS, signApplicationEdit } from "@/lib/practitioners/join";
 import { storeProfilePhoto } from "@/lib/practitioners/photo";
+import { formatMoney } from "@/lib/pricing/money";
 import { requireStudioMember } from "@/lib/studio/member";
 import type { PractitionerApplicationStatus } from "@/lib/supabase/database.types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -415,7 +416,11 @@ async function createPractitionerLogin(profileId: string): Promise<ApplicationAc
 
   const type = generated.data.properties?.verification_type === "magiclink" ? "magiclink" : "invite";
   const signInUrl = `${getPublicAppUrl()}/studio/invite?token_hash=${encodeURIComponent(tokenHash)}&type=${type}`;
-  const sent = await sendPractitionerEmail({ kind: "sign_in", toEmail: app.email, name: profile.full_name, signInUrl });
+  // The practitioner's current rate, from the same function bookings use.
+  const { data: rates } = await admin.rpc("rate_for", { p_practitioner: profileId, p_at: new Date().toISOString() });
+  const rate = rates?.[0];
+  const fee = rate && rate.practitioner_fee_minor > 0 ? formatMoney(rate.practitioner_fee_minor, rate.currency, 2) : null;
+  const sent = await sendPractitionerEmail({ kind: "sign_in", toEmail: app.email, name: profile.full_name, signInUrl, fee });
   return sent.ok
     ? { ok: true, message: `A set-password link was emailed to ${app.email}.` }
     : { ok: false, error: `The account is ready but the email failed (${sent.message}).` };

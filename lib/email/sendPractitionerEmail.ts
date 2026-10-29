@@ -25,7 +25,7 @@ export type PractitionerEmail =
   | (Base & { kind: "received" })
   | (Base & { kind: "rejected"; note: string })
   | (Base & { kind: "changes"; message: string; fields: string[]; editUrl: string })
-  | (Base & { kind: "sign_in"; signInUrl: string })
+  | (Base & { kind: "sign_in"; signInUrl: string; fee: string | null })
   | (Base & { kind: "assessment"; assessmentUrl: string; questions: number; minutes: number });
 
 const BRAND = "#662d91";
@@ -121,6 +121,13 @@ function compose(e: PractitionerEmail): { subject: string; html: string; text: s
         "Your application to join GlamRepairs has been approved.",
         "Set a password for the studio with the button below. Once you are in, finish your profile with a photograph and a short bio; it is not shown to clients until it is complete.",
         "Your first reports are reviewed before they are sent.",
+        // Audit, 29 October 2026: the rate is no longer published on /join
+        // (clients read that page too), so the approval is where it is told.
+        ...(e.fee
+          ? [
+              `Your fee is ${e.fee} for each completed consultation. Each month runs from the 1st to its last day, and it is paid by the 5th of the next month. You can see what you have earned and what has been released under My practice.`,
+            ]
+          : []),
       ];
       return {
         subject: "Welcome to GlamRepairs: set your password",

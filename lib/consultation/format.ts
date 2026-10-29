@@ -65,3 +65,39 @@ export function groupByDay(slots: PublicSlot[]): { key: string; label: string; s
   }
   return [...groups.entries()].map(([key, list]) => ({ key, label: formatDay(list[0].startsAt), slots: list }));
 }
+
+/* ── The client's own clock, beside PKT (audit, 29 October 2026) ──────────
+ * PKT stays the label of record. Beside it, the same moment in the
+ * client's timezone, so someone in London or Toronto does not have to do
+ * the arithmetic. Nothing is added when their clock already reads PKT.
+ */
+
+export function isValidTimeZone(tz: unknown): tz is string {
+  if (typeof tz !== "string" || !tz || tz.length > 64) return false;
+  try {
+    new Intl.DateTimeFormat("en-GB", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** "2:20 pm your time", or "Friday 2:20 am your time" when the day differs. Null when it adds nothing. */
+export function localTimeNote(iso: string | Date, tz: string | null | undefined): string | null {
+  if (!isValidTimeZone(tz)) return null;
+  const at = new Date(iso);
+  const local = new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true })
+    .format(at)
+    .replace(/\s?([ap])\.?m\.?/i, " $1m")
+    .toLowerCase();
+  if (local === formatTime(at)) return null;
+  const day = new Intl.DateTimeFormat("en-GB", { timeZone: tz, weekday: "long" }).format(at);
+  const pkDay = new Intl.DateTimeFormat("en-GB", { timeZone: CONSULTATION_TZ, weekday: "long" }).format(at);
+  return `${day === pkDay ? "" : `${day} `}${local} your time`;
+}
+
+/** "Thursday 9 October, 6:20 pm PKT (2:20 pm your time)" */
+export function formatSlotFor(iso: string | Date, tz: string | null | undefined): string {
+  const note = localTimeNote(iso, tz);
+  return note ? `${formatSlot(iso)} (${note})` : formatSlot(iso);
+}
