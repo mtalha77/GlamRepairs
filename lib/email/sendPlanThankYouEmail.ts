@@ -134,8 +134,8 @@ export async function sendPlanThankYouEmail(
   const reference = leadDisplayRef(payload.sessionId);
   const internationalText =
     `Payment from outside Pakistan is by international bank transfer${planPrice ? ` (${planPrice})` : ""}. ` +
-    "Message us on WhatsApp and we will send the account details. Ask your bank to send it with all charges " +
-    `paid by you, so the full amount arrives.${reference ? ` Your reference is ${reference}.` : ""}`;
+    // No mention of bank charges or fees to clients (Talha, 30 October 2026).
+    `Message us on WhatsApp and we will send the account details.${reference ? ` Your reference is ${reference}.` : ""}`;
   const paymentBlockHtml = includePayment
     ? payload.international
       ? `<p style="margin: 0 0 12px; padding: 12px 14px; background: #fff7e5; border-radius: 10px;">${escapeHtml(internationalText)}</p>`
