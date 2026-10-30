@@ -5,6 +5,8 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import Link from "next/link";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
 import ConsultationPicker, { type PickerState } from "@/components/consultation/ConsultationPicker";
+import { PREFERRED_PRACTITIONER_KEY } from "@/components/onboarding/ApplyPractitionerFromQuery";
+import PractitionerChoice, { type ChoosablePractitioner } from "@/components/onboarding/PractitionerChoice";
 import { formatSlot } from "@/lib/consultation/format";
 import {
   ONBOARDING_FORM,
@@ -65,6 +67,8 @@ type ConsentContextValue = {
     onStateChange: (state: PickerState) => void;
     error: string | undefined;
   } | null;
+  practitioners: ChoosablePractitioner[];
+  freePlan: boolean;
 };
 
 const ConsentContext = createContext<ConsentContextValue | null>(null);
@@ -187,7 +191,11 @@ function ConsentContent() {
     setPrivateReview,
     setPhotoMarketingRestriction,
     consultation,
+    practitioners,
+    freePlan,
   } = useConsent();
+  const chosen = useFunnelStore((s) => s.answers[PREFERRED_PRACTITIONER_KEY]);
+  const chosenSlug = typeof chosen === "string" && practitioners.some((p) => p.slug === chosen) ? chosen : null;
   const privateReviewError = useStepRequiredError(
     !privateReview,
     "This consent is required.",
@@ -199,9 +207,12 @@ function ConsentContent() {
 
   return (
     <div>
+      <PractitionerChoice practitioners={practitioners} freePlan={freePlan} />
       {consultation ? (
         <div className="mb-8">
           <ConsultationPicker
+            key={chosenSlug ?? "any"}
+            practitioner={chosenSlug}
             mode="funnel"
             sessionId={consultation.sessionId}
             fullName={consultation.fullName}
@@ -270,6 +281,8 @@ type ConsentStepProps = {
   region: PricingRegion;
   /** HANDOVER-50 — plans with a video call (plan → minutes) and the guidelines. */
   consultation?: { videoPlans: Record<string, number>; guidelinesHtml: string };
+  /** Public practitioners, recommended first, for the paid plan's choice. */
+  practitioners?: ChoosablePractitioner[];
 };
 
 export default function ConsentStep({
@@ -277,6 +290,7 @@ export default function ConsentStep({
   nextHref = "/onboarding/complete",
   region,
   consultation,
+  practitioners = [],
 }: ConsentStepProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -418,6 +432,8 @@ export default function ConsentStep({
         canSubmit,
         isSubmitting,
         onSubmit,
+        practitioners,
+        freePlan: selectedPlan === "free",
         consultation:
           videoMinutes !== undefined && sessionId
             ? {

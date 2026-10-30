@@ -16,7 +16,7 @@ export {
 } from "@/lib/studio/customerTypes";
 
 const CUSTOMER_COLUMNS =
-  "id, session_id, full_name, email, selected_plan, plan_name, plan_price, answers, image_urls, photo_paths, photos_expire_at, photos_deleted_at, photos_deletion_reason, person_key, submission_no, duplicate_reason, duplicate_of, gift_code_used, referred_by_person, referred_by_practitioner_id, status, notes, client_notes, deleted_at, deleted_by, deletion_reason, source, payment_status, assigned_to, report_sender_id, funnel_complete, funnel_step, is_test, test_reason, created_at, updated_at";
+  "id, session_id, full_name, email, selected_plan, plan_name, plan_price, answers, image_urls, photo_paths, photos_expire_at, photos_deleted_at, photos_deletion_reason, person_key, submission_no, duplicate_reason, duplicate_of, gift_code_used, referred_by_person, referred_by_practitioner_id, preferred_practitioner_id, status, notes, client_notes, deleted_at, deleted_by, deletion_reason, source, payment_status, assigned_to, report_sender_id, funnel_complete, funnel_step, is_test, test_reason, created_at, updated_at";
 
 function mapCustomer(
   row: {
@@ -40,6 +40,7 @@ function mapCustomer(
     gift_code_used: string | null;
     referred_by_person: string | null;
     referred_by_practitioner_id?: string | null;
+    preferred_practitioner_id?: string | null;
     status: CustomerStatus;
     notes: string | null;
     client_notes: string | null;
@@ -80,6 +81,7 @@ function mapCustomer(
     giftCodeUsed: row.gift_code_used,
     referredByPerson: row.referred_by_person,
     referredByPractitionerId: row.referred_by_practitioner_id ?? null,
+    preferredPractitionerId: row.preferred_practitioner_id ?? null,
     status: row.status,
     notes: row.notes,
     clientNotes: row.client_notes,

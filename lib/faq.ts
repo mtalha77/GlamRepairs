@@ -120,11 +120,13 @@ export const FAQS: Faq[] = [
     // to choose this over a clinic visit at the same price, and the cost
     // question is exactly where someone is making that comparison.
     fromPricing: ({ paid, videoMinutes }) =>
-      // HANDOVER-62: the free tier's offer ended on 30 September, and
-      // payment is only possible in rupees, so neither old sentence is true.
+      // Talha, 30 October 2026: Skin Starter is free again for 30 days.
       `Skin Transform is ${paid}, one payment, and includes a ${videoMinutes} ` +
-      "minute video consultation with your practitioner. Payment is by bank " +
-      "transfer in Pakistan, and from abroad by international bank transfer.",
+      "minute video consultation with your practitioner. Skin Starter is free " +
+      "for a limited time: a certified practitioner reads your answers and " +
+      "sends a written report, with no photographs and no video consultation. " +
+      "Payment is by bank transfer in Pakistan, and from abroad by " +
+      "international bank transfer.",
   },
   {
     id: "how-to-pay",

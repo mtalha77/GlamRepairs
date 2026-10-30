@@ -60,20 +60,22 @@ export async function getConsultationSettings(): Promise<ConsultationSettings> {
  * Expired holds are released first (§4.4) so the grid never shows a time as
  * taken by someone who walked away an hour ago.
  */
-export async function listBookableSlots(settings?: ConsultationSettings): Promise<PublicSlot[]> {
+export async function listBookableSlots(settings?: ConsultationSettings, practitionerId?: string | null): Promise<PublicSlot[]> {
   const s = settings ?? (await getConsultationSettings());
   const supabase = createAdminSupabaseClient();
   await supabase.rpc("release_expired_holds");
   const from = new Date(Date.now() + s.leadTimeHours * 3_600_000).toISOString();
   const to = new Date(Date.now() + s.horizonDays * 86_400_000).toISOString();
-  const { data, error } = await supabase
+  let query = supabase
     .from("availability_slots")
     .select("id, starts_at, ends_at")
     .eq("status", "open")
     .gte("starts_at", from)
-    .lte("starts_at", to)
-    .order("starts_at")
-    .limit(1000);
+    .lte("starts_at", to);
+  // A client who chose a practitioner sees only that practitioner's times
+  // (30 October 2026); "choose for me" sees everyone's.
+  if (practitionerId) query = query.eq("practitioner_id", practitionerId);
+  const { data, error } = await query.order("starts_at").limit(1000);
   if (error) {
     console.error("[listBookableSlots]", error.message);
     return [];

@@ -10,6 +10,7 @@ import {
   ONBOARDING_PROGRESS,
 } from "@/components/onboarding/onboardingConfig";
 import CurrencySwitcher from "@/components/pricing/CurrencySwitcher";
+import OfferCountdown from "@/components/pricing/OfferCountdown";
 import CredentialsBlock from "@/components/seo/CredentialsBlock";
 import { StepHeader, StepRequiredError } from "@/components/steps";
 import { resolveUnlockTarget } from "@/lib/funnel/funnelProgress";
@@ -57,8 +58,8 @@ function PlanCard({
   name: string;
   price: string;
   highlights: string;
-  /** e.g. the free tier's end date — HANDOVER-27 §1.3. */
-  note?: string;
+  /** e.g. the free tier's countdown — HANDOVER-27 §1.3. */
+  note?: React.ReactNode;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -312,9 +313,12 @@ export default function PlanSelectionStep({
               price={plan.price === 0 ? "Free" : formatPlanPrice(plan)}
               highlights={highlightFor(plan)}
               note={
-                plan.availableUntil
-                  ? `Free until ${formatOfferEndDate(plan.availableUntil)}.`
-                  : undefined
+                plan.availableUntil ? (
+                  <OfferCountdown
+                    until={plan.availableUntil}
+                    label={`Free until ${formatOfferEndDate(plan.availableUntil)}.`}
+                  />
+                ) : undefined
               }
               selected={selectedPlan === plan.planKey}
               onSelect={() => {
