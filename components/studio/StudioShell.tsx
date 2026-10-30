@@ -25,9 +25,17 @@ export default function StudioShell({
       userId={member.userId}
       initialNotifications={initialNotifications}
     >
+      {/*
+        30 October 2026: the shell was locked to h-dvh with its own inner
+        scroller. On iOS the photo picker shrinks the dynamic viewport while
+        it is open and Safari does not always repaint afterwards, which left
+        the page cut off above a blank white area. Phones and tablets now
+        scroll the document normally; only a desktop keeps the fixed
+        sidebar, and it uses the stable 100vh rather than dvh.
+      */}
       <div
         data-studio-shell
-        className="flex h-dvh overflow-hidden bg-brand-purple-tint text-brand-ink"
+        className="flex min-h-screen bg-brand-purple-tint text-brand-ink lg:h-screen lg:overflow-hidden"
       >
         <aside className="hidden h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-brand-lavender/70 bg-white px-5 py-6 lg:flex">
           <div className="mb-6">
@@ -42,7 +50,7 @@ export default function StudioShell({
           <StudioUserFooter member={member} />
         </aside>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
+        <div className="flex min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-y-auto">
           <StudioMobileHeader superAdmin={member.isSuperAdmin} practitionerSeat={practitionerSeat} />
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>

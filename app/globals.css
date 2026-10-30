@@ -138,10 +138,16 @@ html {
   scrollbar-gutter: stable;
 }
 
-html:has([data-studio-shell]),
-html:has([data-studio-shell]) body {
-  overflow: hidden;
+/* Desktop only: the studio's sidebar layout scrolls inside the shell. On a
+   phone or tablet the document scrolls, which iOS handles far better. */
+html:has([data-studio-shell]) {
   scrollbar-gutter: auto;
+}
+@media (min-width: 1024px) {
+  html:has([data-studio-shell]),
+  html:has([data-studio-shell]) body {
+    overflow: hidden;
+  }
 }
 
 body {

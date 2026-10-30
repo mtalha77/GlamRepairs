@@ -55,7 +55,8 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
       <section className={card}>
         <h2 className="font-serif text-lg text-brand-primary">To approve</h2>
         {rows.length ? (
-          <table className="mt-3 w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="mt-3 w-full text-sm min-w-[32rem]">
             <thead className="text-left text-brand-gray">
               <tr>
                 <th className="py-2 font-normal">Practitioner</th>
@@ -102,6 +103,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
               ) : null}
             </tfoot>
           </table>
+          </div>
         ) : (
           <p className="mt-2 text-sm text-brand-gray">Nothing earned up to the end of {period.label}.</p>
         )}

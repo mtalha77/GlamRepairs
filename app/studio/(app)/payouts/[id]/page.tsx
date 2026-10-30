@@ -32,7 +32,8 @@ export default async function PayoutStatementPage({ params }: { params: Promise<
         </p>
       </div>
       <section className="rounded-2xl border border-brand-lavender/70 bg-white p-5">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[32rem]">
           <thead className="text-left text-brand-gray">
             <tr>
               <th className="py-2 font-normal">Consultation ({TZ_LABEL})</th>
@@ -58,6 +59,7 @@ export default async function PayoutStatementPage({ params }: { params: Promise<
             </tr>
           </tfoot>
         </table>
+        </div>
       </section>
     </div>
   );
