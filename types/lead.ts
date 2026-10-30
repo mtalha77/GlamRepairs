@@ -51,6 +51,13 @@ export type LeadSubmitSuccess = {
     showBankDetails: boolean;
     /** A gift covered the whole assessment. */
     isGifted: boolean;
+    /**
+     * The amount to pay when a code took part of the price off, formatted
+     * in the client's currency from the row's `final_price`. Null when the
+     * regular price stands (30 October 2026: a 20% code still showed and
+     * emailed the full price).
+     */
+    amountDue: string | null;
   };
 };
 

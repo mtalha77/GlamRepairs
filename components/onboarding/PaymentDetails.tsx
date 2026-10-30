@@ -144,7 +144,8 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
     );
   }
 
-  const amount = planId ? formatRegionPrice(region, planId) : null;
+  // A partial discount code: the server's figure from the row, not the list price.
+  const amount = paymentOutcome?.amountDue ?? (planId ? formatRegionPrice(region, planId) : null);
   const planName = planId ? PLAN_NAMES[planId] : null;
 
   /*

@@ -18,6 +18,8 @@ import {
 } from "@/lib/leads/paymentVisibility";
 import { deleteUnreferencedPhotos } from "@/lib/leads/deleteLeadPhotos";
 import { extendHoldOnSubmit } from "@/lib/consultation/slots";
+import { formatMoney } from "@/lib/pricing/money";
+import { resolvePricingRegion } from "@/lib/pricing/regions";
 import { logSuppressedEmail } from "@/lib/testPortal/email";
 import { getTestSession, scopedSessionId } from "@/lib/testPortal/session";
 
@@ -227,7 +229,7 @@ export async function POST(request: Request) {
       // read. Treated as an ordinary paid lead: showing payment
       // instructions to a developer is harmless, hiding them would mask a
       // regression in the real path.
-      payment: { showBankDetails: true, isGifted: false },
+      payment: { showBankDetails: true, isGifted: false, amountDue: null },
     });
   }
 
@@ -319,6 +321,16 @@ export async function POST(request: Request) {
     finalPrice: lead?.finalPrice,
   };
   const includeBankDetails = computeShowBankDetails(paymentFacts);
+  const gifted = isGiftedLead(paymentFacts);
+
+  // A code that took part of the price off: the client is told, and
+  // emailed, the discounted amount the row now carries, not the list price.
+  let amountDue: string | null = null;
+  const finalPrice = Number(lead.finalPrice);
+  if (!gifted && Number.isFinite(finalPrice) && finalPrice > 0 && body.listPrice && finalPrice < body.listPrice) {
+    const region = await resolvePricingRegion(body.pricingRegion);
+    amountDue = formatMoney(Math.round(finalPrice * 10 ** region.minorUnits), region.currency, region.minorUnits, region.code);
+  }
 
   if (test) {
     await logSuppressedEmail({
@@ -333,7 +345,7 @@ export async function POST(request: Request) {
       fullName: body.fullName,
       email: body.email,
       planName: body.planName,
-      planPrice: body.planPrice,
+      planPrice: amountDue ?? body.planPrice,
       selectedPlan: body.selectedPlan,
       sessionId: body.sessionId,
       showBankDetails: includeBankDetails,
@@ -355,7 +367,8 @@ export async function POST(request: Request) {
     imageUrls,
     payment: {
       showBankDetails: includeBankDetails,
-      isGifted: isGiftedLead(paymentFacts),
+      isGifted: gifted,
+      amountDue,
     },
   });
 }
