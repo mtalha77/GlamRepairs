@@ -1,3 +1,4 @@
+import { ChatIcon, PhoneIcon } from "@/components/ui/ContactIcons";
 import { SITE } from "@/lib/seo/site";
 
 /**
@@ -13,9 +14,8 @@ import { SITE } from "@/lib/seo/site";
  * is one business number now, shared with the Google Business Profile.
  *
  * Both actions are one tap because in Pakistan plenty of people will prefer
- * WhatsApp to a call, and the digits are rendered as readable text rather
- * than hidden behind a button: `tel:` frequently does nothing on desktop,
- * so the number has to be readable and copyable on its own.
+ * WhatsApp to a call. The digits are not printed (Talha, 30 October 2026):
+ * the links are the contact.
  *
  * Tone is deliberately "help is here if you want it", not "this step is
  * hard" — telling someone a step is difficult right before they attempt it
@@ -29,28 +29,23 @@ export default function UploadSupportNote() {
   return (
     <div className="mt-4 rounded-2xl border border-brand-border-light/60 bg-white px-3.5 py-3 text-center shadow-sm sm:mt-5 sm:px-4 sm:py-3.5">
       <p className="text-xs leading-relaxed text-brand-gray sm:text-[0.8125rem]">
-        Trouble uploading? Call or WhatsApp us on{" "}
-        <a
-          href={`tel:${SITE.phone.e164}`}
-          className="font-semibold text-brand-primary underline underline-offset-2"
-        >
-          {SITE.phone.display}
-        </a>{" "}
-        and we&apos;ll help you get it done.
+        Trouble uploading? Call or WhatsApp us and we&apos;ll help you get it done.
       </p>
       <div className="mt-2.5 flex items-center justify-center gap-2">
         <a
           href={`tel:${SITE.phone.e164}`}
-          className="rounded-full border border-brand-border-light bg-white px-3.5 py-1.5 text-xs font-medium text-brand-primary transition-colors hover:border-brand-lavender sm:text-[0.8125rem]"
+          className="inline-flex items-center gap-1.5 rounded-full border border-brand-border-light bg-white px-3.5 py-1.5 text-xs font-medium text-brand-primary transition-colors hover:border-brand-lavender sm:text-[0.8125rem]"
         >
+          <PhoneIcon className="h-3.5 w-3.5" />
           Call
         </a>
         <a
           href={`https://wa.me/${SITE.phone.digits}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-full border border-brand-border-light bg-white px-3.5 py-1.5 text-xs font-medium text-brand-primary transition-colors hover:border-brand-lavender sm:text-[0.8125rem]"
+          className="inline-flex items-center gap-1.5 rounded-full border border-brand-border-light bg-white px-3.5 py-1.5 text-xs font-medium text-brand-primary transition-colors hover:border-brand-lavender sm:text-[0.8125rem]"
         >
+          <ChatIcon className="h-3.5 w-3.5" />
           WhatsApp
         </a>
       </div>

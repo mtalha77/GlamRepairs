@@ -38,6 +38,22 @@ type PublicRow = {
   languages: string[] | null;
   next_available_at: string | null;
   bio: string | null;
+  profile_story: string | null;
+  focus_notes: Record<string, string> | null;
+  timezone: string | null;
+  degree_verified: boolean;
+};
+
+/** What the full profile page reads beyond the card. */
+export type PublicProfile = {
+  id: string;
+  card: CardPractitioner;
+  bio: string | null;
+  story: string[];
+  /** Focus area to the practitioner's own sentence on it, in card order. */
+  focusNotes: { area: string; note: string | null }[];
+  timezone: string | null;
+  degreeVerified: boolean;
 };
 
 /** The price a visitor would pay, from their own market. Never from the view. */
@@ -84,17 +100,46 @@ export async function listPublicPractitioners(price: string | null): Promise<Car
   return ((data ?? []) as PublicRow[]).map((row) => fromPublic(row, price));
 }
 
-export async function getPublicPractitioner(
-  slug: string,
-  price: string | null,
-): Promise<{ card: CardPractitioner; bio: string | null } | null> {
+export async function getPublicPractitioner(slug: string, price: string | null): Promise<PublicProfile | null> {
   const { data, error } = await createAdminSupabaseClient()
     .from("practitioner_public")
     .select("*")
     .eq("slug", slug)
     .maybeSingle();
   if (error) console.error("[practitioners] get", error.message);
-  return data ? { card: fromPublic(data as PublicRow, price), bio: (data as PublicRow).bio } : null;
+  if (!data) return null;
+  const row = data as PublicRow;
+  const card = fromPublic(row, price);
+  const notes = row.focus_notes ?? {};
+  return {
+    id: row.id,
+    card,
+    bio: row.bio,
+    story: (row.profile_story ?? "")
+      .split(/\n\s*\n/)
+      .map((para) => para.trim())
+      .filter(Boolean),
+    focusNotes: card.focus.map((area) => ({ area, note: typeof notes[area] === "string" ? notes[area] : null })),
+    timezone: row.timezone,
+    degreeVerified: row.degree_verified,
+  };
+}
+
+/**
+ * The next few open video call times, for display on the profile. Same
+ * window as the view's `next_available_at`: nothing inside the lead time.
+ */
+export async function nextOpenSlots(practitionerId: string, limit = 3): Promise<string[]> {
+  const { data, error } = await createAdminSupabaseClient()
+    .from("availability_slots")
+    .select("starts_at")
+    .eq("practitioner_id", practitionerId)
+    .eq("status", "open")
+    .gt("starts_at", new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
+    .order("starts_at")
+    .limit(limit);
+  if (error) console.error("[practitioners] slots", error.message);
+  return (data ?? []).map((s) => s.starts_at as string);
 }
 
 /** The gate, counted from the same view the cards read. */

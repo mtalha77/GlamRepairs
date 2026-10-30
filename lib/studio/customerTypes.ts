@@ -42,6 +42,8 @@ export type StudioCustomer = {
   giftCodeUsed: string | null;
   /** person_key of whoever gifted it, credited by the redemption trigger. */
   referredByPerson: string | null;
+  /** The practitioner whose own link (/with/[slug]) brought this client. */
+  referredByPractitionerId: string | null;
   /** HANDOVER-18 §1 — soft delete. Non-null means archived and hidden. */
   deletedAt: string | null;
   deletedBy: string | null;

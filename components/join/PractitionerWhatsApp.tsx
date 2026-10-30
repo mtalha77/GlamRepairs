@@ -1,11 +1,11 @@
+import { ChatIcon } from "@/components/ui/ContactIcons";
 import { PRACTITIONER_WHATSAPP, practitionerWhatsAppLink, PRACTITIONER_WHATSAPP_TEXT } from "@/lib/seo/site";
 
 /**
  * WhatsApp help for applicants, on /join and the pages under it only (the hiring
- * number; clients use SITE.phone). Plain text and a link they choose to
- * press: no logo, no emoji, never an automatic redirect. The digits are
- * shown as text because on a desktop without WhatsApp the link does
- * nothing, and the hours carry "PKT" because applicants write from other
+ * number; clients use SITE.phone). A link they choose to press, never an
+ * automatic redirect. The digits are not printed (Talha, 30 October 2026),
+ * only the link; the hours carry "PKT" because applicants write from other
  * time zones.
  */
 type Context = keyof typeof PRACTITIONER_WHATSAPP_TEXT;
@@ -18,14 +18,15 @@ export function WhatsAppHelpLine({ context = "help" }: { context?: Context }) {
     <p className="text-xs leading-relaxed text-brand-gray">
       {context === "documents" ? "Trouble with a file? " : "Stuck? "}
       <a href={practitionerWhatsAppLink(context)} target="_blank" rel="noopener noreferrer" className={link}>
+        <ChatIcon className="mr-1.5 h-3.5 w-3.5" />
         Message us on WhatsApp
-      </a>{" "}
-      at {PRACTITIONER_WHATSAPP.display}, {PRACTITIONER_WHATSAPP.hours}.
+      </a>
+      , {PRACTITIONER_WHATSAPP.hours}.
     </p>
   );
 }
 
-/** A heading, a line and the number as a button-sized link. */
+/** A heading, a line and a button-sized WhatsApp link. */
 export function WhatsAppHelpBlock({ context, heading, body }: { context: Context; heading: string; body?: string }) {
   return (
     <div className="rounded-2xl border border-brand-lavender/60 bg-white p-4 text-sm leading-relaxed text-brand-ink">
@@ -37,9 +38,10 @@ export function WhatsAppHelpBlock({ context, heading, body }: { context: Context
         href={practitionerWhatsAppLink(context)}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-3 inline-flex min-h-12 items-center rounded-xl border border-brand-primary px-5 font-semibold text-brand-primary hover:bg-brand-primary hover:text-white"
+        className="mt-3 inline-flex min-h-12 items-center gap-2 rounded-xl border border-brand-primary px-5 font-semibold text-brand-primary hover:bg-brand-primary hover:text-white"
       >
-        WhatsApp {PRACTITIONER_WHATSAPP.display}
+        <ChatIcon />
+        WhatsApp us
       </a>
     </div>
   );

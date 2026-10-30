@@ -11,6 +11,7 @@ import {
   PublicProfileForm,
   TimeOffControls,
 } from "@/components/studio/practice/PracticeControls";
+import ReferralLink from "@/components/studio/practice/ReferralLink";
 import { loadConsultationAdmin } from "@/lib/consultation/admin";
 import { formatDay, formatSlotFor, TZ_LABEL } from "@/lib/consultation/format";
 import {
@@ -23,6 +24,8 @@ import {
 } from "@/lib/practitioners/roster";
 import { listOwnPayouts } from "@/lib/practitioners/payouts";
 import { monthLabel, practitionerMonths, showMoney } from "@/lib/practitioners/revenue";
+import { referralPath } from "@/lib/practitioners/referral";
+import { abs } from "@/lib/seo/site";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -79,7 +82,7 @@ export default async function PracticePage() {
     );
   }
 
-  const [data, earnings, windows, degree, payouts, { data: blackouts }, months] = await Promise.all([
+  const [data, earnings, windows, degree, payouts, { data: blackouts }, months, referred] = await Promise.all([
     loadConsultationAdmin({ practitionerId: profile.id }),
     earningsSummary(profile.id),
     weeklyWindowsFor(profile.id),
@@ -92,7 +95,15 @@ export default async function PracticePage() {
       .gte("ends_at", new Date().toISOString())
       .order("starts_at"),
     practitionerMonths(profile.id),
+    createAdminSupabaseClient()
+      .from("leads")
+      .select("funnel_complete")
+      .eq("referred_by_practitioner_id", profile.id)
+      .eq("is_test", false)
+      .is("deleted_at", null),
   ]);
+  const referredStarted = referred.data?.length ?? 0;
+  const referredFinished = (referred.data ?? []).filter((l) => l.funnel_complete !== false).length;
   // A block runs to midnight after its last day; show the last day itself.
   const timeOff = (blackouts ?? []).map((b) => {
     const first = formatDay(b.starts_at);
@@ -127,6 +138,18 @@ export default async function PracticePage() {
               <li key={m}>{m}</li>
             ))}
           </ul>
+        </Card>
+      ) : null}
+
+      {profile.status === "approved" && profile.slug ? (
+        <Card title="Your link for your clients">
+          <ReferralLink url={abs(referralPath(profile.slug))} name={profile.full_name?.split(" ")[0] ?? "you"} />
+          {referredStarted ? (
+            <p className="mt-3 text-sm text-brand-ink">
+              {referredStarted} {referredStarted === 1 ? "client has" : "clients have"} started through your link, {referredFinished}{" "}
+              finished the assessment.
+            </p>
+          ) : null}
         </Card>
       ) : null}
 

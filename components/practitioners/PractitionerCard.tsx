@@ -27,7 +27,7 @@ const HAIR: Record<SampleAvatar["style"], string> = {
  */
 function SampleFace({ a }: { a: SampleAvatar }) {
   return (
-    <svg viewBox="13 5 74 74" role="img" aria-label="Illustrated sample portrait" className="block h-full w-full">
+    <svg viewBox="13 5 74 74" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Illustrated sample portrait" className="block h-full w-full">
       <rect x="0" y="0" width="100" height="100" fill={a.bg} />
       <rect x="43" y="52" width="14" height="18" rx="6" fill={a.shade} />
       <path d="M16 100c0-23 15-32 34-32s34 9 34 32z" fill={a.cloth} />
@@ -42,10 +42,11 @@ function SampleFace({ a }: { a: SampleAvatar }) {
 }
 
 /**
- * Photograph over a monogram. The image removes itself on error, and is
- * also checked right after mount for a load that failed before the
- * listener existed, so a broken file degrades to initials, never to a
- * broken-image icon.
+ * Full-bleed portrait (the face is the first thing someone judges, so it gets
+ * the top of the card), over a monogram or the sample illustration. The
+ * image removes itself on error, and is checked right after mount for a load
+ * that failed before the listener existed, so a broken file degrades to the
+ * monogram, never to a broken-image icon.
  */
 function Portrait({ p }: { p: CardPractitioner }) {
   const img = useRef<HTMLImageElement>(null);
@@ -56,8 +57,8 @@ function Portrait({ p }: { p: CardPractitioner }) {
   }, []);
 
   return (
-    <div className="relative h-[78px] w-[78px] shrink-0">
-      <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-full border-[3px] border-white bg-brand-lavender font-serif text-xl italic text-brand-primary shadow-md">
+    <div className="absolute inset-0">
+      <div className="absolute inset-0 flex items-center justify-center bg-brand-lavender font-serif text-6xl italic text-brand-primary [&_svg]:h-full [&_svg]:w-full">
         {p.avatar ? <SampleFace a={p.avatar} /> : p.initials}
       </div>
       {p.photo && !broken ? (
@@ -66,11 +67,9 @@ function Portrait({ p }: { p: CardPractitioner }) {
           ref={img}
           src={p.photo}
           alt={p.name}
-          width={78}
-          height={78}
           loading="lazy"
           onError={() => setBroken(true)}
-          className="absolute inset-0 h-[78px] w-[78px] rounded-full border-[3px] border-white object-cover shadow-md"
+          className="absolute inset-0 h-full w-full object-cover object-[center_22%]"
         />
       ) : null}
     </div>
@@ -118,12 +117,15 @@ export default function PractitionerCard({
         </span>
       ) : null}
 
-      <div className="flex items-start gap-4 bg-gradient-to-b from-brand-purple-soft to-white px-[22px] pb-[18px] pt-[22px]">
+      <div className="relative h-[236px] shrink-0 overflow-hidden bg-brand-purple-soft">
         <Portrait p={p} />
-        <div className="min-w-0 pt-1">
-          <Heading className="font-sans text-[19.5px] font-semibold leading-tight tracking-[-0.3px] text-brand-ink">{p.name}</Heading>
-          <p className="mt-0.5 font-serif text-[13px] italic leading-snug text-brand-primary">{p.role}</p>
-          <p className="mt-[7px] text-[12.5px] text-brand-gray">
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-brand-ink/90 via-brand-ink/30 to-transparent" />
+        <div className="absolute inset-x-[22px] bottom-[17px] text-white">
+          <Heading className="font-sans text-[23px] font-bold leading-tight tracking-[-0.4px] [text-shadow:0_1px_10px_rgb(0_0_0/0.35)]">
+            {p.name}
+          </Heading>
+          <p className="mt-1 font-serif text-[14px] italic leading-snug text-brand-lavender">{p.role}</p>
+          <p className="mt-2 inline-block rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[12.5px] text-white/95 backdrop-blur-md">
             {[p.countryName, p.languages.join(", ")].filter(Boolean).join("  ·  ")}
           </p>
         </div>

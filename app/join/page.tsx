@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChatIcon } from "@/components/ui/ContactIcons";
 import { redirect } from "next/navigation";
 
 import Logo from "@/components/home/Logo";
@@ -548,8 +549,9 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
               </Link>
               <p className="text-sm leading-relaxed text-brand-gray">
                 A question first?{" "}
-                <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center text-brand-primary underline underline-offset-2">
-                  WhatsApp {PRACTITIONER_WHATSAPP.display}
+                <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-1.5 text-brand-primary underline underline-offset-2">
+                  <ChatIcon />
+                  WhatsApp us
                 </a>
                 <span className="block text-xs">{PRACTITIONER_WHATSAPP.hours}</span>
               </p>
@@ -595,8 +597,9 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
             </Link>
             <p className="mt-5 text-[13px] text-white/75">
               Questions first?{" "}
-              <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center underline underline-offset-2">
-                WhatsApp {PRACTITIONER_WHATSAPP.display}
+              <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-1.5 underline underline-offset-2">
+                <ChatIcon />
+                WhatsApp us
               </a>
               , {PRACTITIONER_WHATSAPP.hours}.
             </p>

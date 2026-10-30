@@ -452,7 +452,8 @@ export function canonicalOg(
  */
 export const PRACTITIONER_WHATSAPP = {
   digits: "923355880333",
-  display: "0335 5880333",
+  /** International form: applicants write from outside Pakistan. Not printed on pages, only links. */
+  display: "+92 335 5880333",
   /** The hours it is answered, labelled with the zone: applicants are not all in Pakistan. */
   hours: "12pm to 10pm PKT, Monday to Saturday",
 } as const;
