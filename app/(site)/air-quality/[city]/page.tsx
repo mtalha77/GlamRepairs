@@ -90,13 +90,13 @@ export async function generateMetadata({
   };
 }
 
-function formatWhen(iso: string) {
+function formatWhen(iso: string, timeZone: string) {
   return new Date(iso).toLocaleString("en-GB", {
     day: "numeric",
     month: "long",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Asia/Karachi",
+    timeZone,
     timeZoneName: "short",
   });
 }
@@ -115,16 +115,18 @@ function formatWhen(iso: string) {
  * generic and this is a Pakistan-facing page. `en-CA` is the shortest way
  * to an ISO date string, and ISO dates compare correctly as strings.
  */
-function todayInPakistan(): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Karachi" });
+function todayIn(timeZone: string): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone });
 }
 
+// The forecast date is already the city's own calendar day, so it is read
+// as a plain date, not shifted through a timezone.
 function formatDay(iso: string) {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
     weekday: "short",
     day: "numeric",
     month: "short",
-    timeZone: "Asia/Karachi",
+    timeZone: "UTC",
   });
 }
 
@@ -153,18 +155,28 @@ function formatDay(iso: string) {
  * `FAQPage` only when the page renders a visible FAQ block — never markup
  * for questions that are not on the page (§4.4).
  */
-function toKarachiIso(isoUtc: string): string {
-  // Stable, explicit offset. Pakistan does not observe DST, so +05:00 is
-  // always correct and reads the way §4.2's example does.
-  const d = new Date(new Date(isoUtc).getTime() + 5 * 60 * 60 * 1000);
-  return `${d.toISOString().slice(0, 19)}+05:00`;
+/**
+ * An ISO timestamp with the city's own UTC offset at that moment (+05:00
+ * for Pakistan, which has no DST; +00:00 or +01:00 for London, and so on).
+ */
+function toLocalIso(isoUtc: string, timeZone: string): string {
+  const at = new Date(isoUtc);
+  const name = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longOffset" })
+    .formatToParts(at)
+    .find((p) => p.type === "timeZoneName")?.value;
+  const m = name?.match(/GMT([+-])(\d{2}):?(\d{2})?/);
+  const sign = m?.[1] === "-" ? -1 : 1;
+  const minutes = m ? sign * (Number(m[2]) * 60 + Number(m[3] ?? 0)) : 0;
+  const local = new Date(at.getTime() + minutes * 60 * 1000);
+  const off = `${m?.[1] ?? "+"}${m?.[2] ?? "00"}:${m?.[3] ?? "00"}`;
+  return `${local.toISOString().slice(0, 19)}${off}`;
 }
 
 function areaSchema(page: AreaPage, trail: Crumb[]) {
   const path = `/air-quality/${page.slug}`;
   const person = { "@id": abs(`/authors/${PRACTITIONER.slug}#person`) };
-  const published = toKarachiIso(page.createdAt);
-  const modified = toKarachiIso(page.updatedAt);
+  const published = toLocalIso(page.createdAt, page.timezone);
+  const modified = toLocalIso(page.updatedAt, page.timezone);
   const place = {
     "@type": "Place",
     name: page.city,
@@ -172,7 +184,7 @@ function areaSchema(page: AreaPage, trail: Crumb[]) {
       "@type": "PostalAddress",
       addressLocality: page.city,
       ...(page.province ? { addressRegion: page.province } : {}),
-      addressCountry: "PK",
+      addressCountry: page.countryCode,
     },
     geo: {
       "@type": "GeoCoordinates",
@@ -188,7 +200,7 @@ function areaSchema(page: AreaPage, trail: Crumb[]) {
       url: abs(path),
       name: page.title,
       description: page.metaDescription,
-      inLanguage: "en-PK",
+      inLanguage: `en-${page.countryCode}`,
       isPartOf: { "@id": abs("/#website") },
       datePublished: published,
       dateModified: modified,
@@ -201,7 +213,7 @@ function areaSchema(page: AreaPage, trail: Crumb[]) {
       "@id": abs(`${path}#article`),
       headline: page.h1,
       description: page.metaDescription,
-      inLanguage: "en-PK",
+      inLanguage: `en-${page.countryCode}`,
       datePublished: published,
       dateModified: modified,
       author: person,
@@ -226,11 +238,11 @@ function areaSchema(page: AreaPage, trail: Crumb[]) {
       name: `${page.city} air quality readings`,
       description:
         `Hourly particulate, temperature and humidity readings for ` +
-        `${page.city}, Pakistan, refreshed every hour and shown with what ` +
+        `${page.city}, ${page.countryName}, refreshed every hour and shown with what ` +
         `the current level means for skin.`,
       // §4.3: the Dataset describes the reading, so it carries the
       // reading's time — the one place that time belongs.
-      temporalCoverage: toKarachiIso(page.latest.observedAt),
+      temporalCoverage: toLocalIso(page.latest.observedAt, page.timezone),
       spatialCoverage: place,
       creator: {
         "@type": "Organization",
@@ -256,12 +268,12 @@ function areaSchema(page: AreaPage, trail: Crumb[]) {
   return graph(...nodes);
 }
 
-function formatDate(isoUtc: string) {
+function formatDate(isoUtc: string, timeZone: string) {
   return new Date(isoUtc).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
-    timeZone: "Asia/Karachi",
+    timeZone,
   });
 }
 
@@ -296,7 +308,7 @@ function sevenDayChart(page: AreaPage, days: DailyPm25[]): string | null {
     new Date(`${d}T12:00:00Z`).toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
-      timeZone: "Asia/Karachi",
+      timeZone: "UTC",
     });
   const first = days[0].date;
   const last = days[days.length - 1].date;
@@ -336,9 +348,9 @@ export default async function AirQualityCityPage({ params }: PageProps) {
 
   const showLive = canShowLivePanel(page);
   // Drop any forecast day that is already yesterday where the reader is.
-  const today = todayInPakistan();
+  const today = todayIn(page.timezone);
   const forecast = page.forecast.filter((d) => d.date >= today);
-  const chart = sevenDayChart(page, await getDailyPm25(page.slug));
+  const chart = sevenDayChart(page, await getDailyPm25(page.slug, 7, 6, page.timezone));
   const trail: Crumb[] = [
     { name: "Home", path: "/" },
     { name: "Air quality", path: "/air-quality" },
@@ -367,9 +379,9 @@ export default async function AirQualityCityPage({ params }: PageProps) {
           */}
           <p className="mt-3 text-sm text-brand-gray">
             Published{" "}
-            <time dateTime={page.createdAt}>{formatDate(page.createdAt)}</time>.
+            <time dateTime={page.createdAt}>{formatDate(page.createdAt, page.timezone)}</time>.
             Last reviewed{" "}
-            <time dateTime={page.updatedAt}>{formatDate(page.updatedAt)}</time>{" "}
+            <time dateTime={page.updatedAt}>{formatDate(page.updatedAt, page.timezone)}</time>{" "}
             by{" "}
             <Link
               href={`/authors/${PRACTITIONER.slug}`}
@@ -417,7 +429,7 @@ export default async function AirQualityCityPage({ params }: PageProps) {
               */}
               <table role="table" className="mt-4 block w-full text-left">
                 <caption className="block pb-2 text-left text-xs text-brand-gray">
-                  Reading taken {formatWhen(page.latest.observedAt)}
+                  Reading taken {formatWhen(page.latest.observedAt, page.timezone)}
                 </caption>
                 <tbody
                   role="rowgroup"

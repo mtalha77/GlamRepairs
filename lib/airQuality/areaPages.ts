@@ -57,6 +57,11 @@ export type AreaPage = {
   slug: string;
   city: string;
   province: string | null;
+  /** ISO code and name. Pakistan for the original thirteen. */
+  countryCode: string;
+  countryName: string;
+  /** IANA zone the page's dates and times are shown in. */
+  timezone: string;
   latitude: number;
   longitude: number;
   title: string;
@@ -110,6 +115,9 @@ function mapRow(r: RawRow): AreaPage {
     slug: String(r.slug),
     city: String(r.city),
     province: (r.province as string) ?? null,
+    countryCode: (r.country_code as string) ?? "PK",
+    countryName: (r.country_name as string) ?? "Pakistan",
+    timezone: (r.timezone as string) || "Asia/Karachi",
     latitude: num(r.latitude) ?? 0,
     longitude: num(r.longitude) ?? 0,
     title: String(r.title ?? ""),
@@ -279,7 +287,7 @@ export function readingAgeMs(reading: AirReading): number {
  * is returned too, flagged `partial`, because it is still filling.
  */
 export type DailyPm25 = {
-  date: string; // YYYY-MM-DD, Asia/Karachi
+  date: string; // YYYY-MM-DD, in the city's own timezone
   mean: number;
   readings: number;
   partial: boolean;
@@ -289,6 +297,7 @@ export async function getDailyPm25(
   slug: string,
   days = 7,
   minReadings = 6,
+  timeZone = "Asia/Karachi",
 ): Promise<DailyPm25[]> {
   const supabase = createAdminSupabaseClient();
   const since = new Date(Date.now() - (days + 1) * 24 * 60 * 60 * 1000);
@@ -309,17 +318,13 @@ export async function getDailyPm25(
   for (const row of data as { observed_at: string; pm2_5: number | string }[]) {
     const v = Number(row.pm2_5);
     if (!Number.isFinite(v)) continue;
-    const day = new Date(row.observed_at).toLocaleDateString("en-CA", {
-      timeZone: "Asia/Karachi",
-    });
+    const day = new Date(row.observed_at).toLocaleDateString("en-CA", { timeZone });
     const bucket = byDay.get(day) ?? [];
     bucket.push(v);
     byDay.set(day, bucket);
   }
 
-  const today = new Date().toLocaleDateString("en-CA", {
-    timeZone: "Asia/Karachi",
-  });
+  const today = new Date().toLocaleDateString("en-CA", { timeZone });
 
   return [...byDay.entries()]
     .filter(([, values]) => values.length >= minReadings)
