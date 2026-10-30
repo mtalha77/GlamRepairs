@@ -31,7 +31,15 @@ type Props = {
   minutes: number;
   onStateChange?: (state: PickerState) => void;
 } & (
-  | { mode: "funnel"; sessionId: string; fullName?: string; email?: string; selectedPlan?: string | null }
+  | {
+      mode: "funnel";
+      sessionId: string;
+      fullName?: string;
+      email?: string;
+      selectedPlan?: string | null;
+      /** The practitioner the client chose; only their times are offered. */
+      practitioner?: string | null;
+    }
   | { mode: "link"; leadId: string; signature: string }
 );
 
@@ -49,9 +57,13 @@ export default function ConsultationPicker(props: Props) {
   const [allDays, setAllDays] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const sessionId = props.mode === "funnel" ? props.sessionId : null;
+  const chosenSlug = props.mode === "funnel" ? (props.practitioner ?? null) : null;
 
   const load = useCallback(async () => {
-    const qs = sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : "";
+    const q = new URLSearchParams();
+    if (sessionId) q.set("sessionId", sessionId);
+    if (chosenSlug) q.set("practitioner", chosenSlug);
+    const qs = q.toString() ? `?${q.toString()}` : "";
     try {
       const res = await fetch(`/api/consultation/slots${qs}`, { cache: "no-store" });
       const data = (await res.json()) as { slots?: PublicSlot[]; held?: HeldSlot | null; practitioner?: string };
@@ -64,7 +76,7 @@ export default function ConsultationPicker(props: Props) {
     }
     // props.mode never changes for a mounted picker.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
+  }, [sessionId, chosenSlug]);
 
   useEffect(() => {
     // Loading the grid on mount is the point of this effect.

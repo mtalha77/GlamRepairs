@@ -126,6 +126,7 @@ export default async function CustomerDetailPage({
     consultation,
     timeline,
     referrer,
+    chosenName,
   ] = await Promise.all([
     getPersonHistory(customer.personKey),
     listSiblingSubmissions(customer.personKey, customer.id),
@@ -143,6 +144,15 @@ export default async function CustomerDetailPage({
           .from("practitioner_profiles")
           .select("full_name")
           .eq("id", customer.referredByPractitionerId)
+          .maybeSingle()
+          .then(({ data }) => data?.full_name ?? null)
+      : Promise.resolve(null),
+    // The practitioner the client chose in the form, if any.
+    customer.preferredPractitionerId
+      ? createAdminSupabaseClient()
+          .from("practitioner_profiles")
+          .select("full_name")
+          .eq("id", customer.preferredPractitionerId)
           .maybeSingle()
           .then(({ data }) => data?.full_name ?? null)
       : Promise.resolve(null),
@@ -190,6 +200,7 @@ export default async function CustomerDetailPage({
           {PAYMENT_STATUS_LABELS[customer.paymentStatus]}
           {customer.assignedToName ? ` · Assigned to ${customer.assignedToName}` : " · Unassigned"}
           {referrer ? ` · Sent by ${referrer}'s own link` : ""}
+          {chosenName ? ` · Chose ${chosenName}` : customer.selectedPlan && customer.selectedPlan !== "free" ? " · No practitioner preference" : ""}
           {" · Added "}
           {formatStudioDateTime(customer.createdAt)}
         </p>

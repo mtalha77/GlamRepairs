@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import OfferCountdown from "@/components/pricing/OfferCountdown";
 
 import PlanFeatureList from "@/components/pricing/PlanFeatureList";
 import { getOnboardingStartHref } from "@/lib/funnel/plans";
@@ -133,7 +134,7 @@ export default function PricingCard({
             */}
             {plan.availableUntil && plan.currentlyOffered ? (
               <p className="mt-2 font-sans text-xs font-medium text-[#8a6d1f] sm:text-[13px]">
-                Free until {formatOfferEndDate(plan.availableUntil)}.
+                <OfferCountdown until={plan.availableUntil} label={`Free until ${formatOfferEndDate(plan.availableUntil)}.`} />
               </p>
             ) : null}
 
