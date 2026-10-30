@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { sendPractitionerEmail } from "@/lib/email/sendPractitionerEmail";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
+import { issueWelcomeLink } from "@/lib/studio/welcomeLinks";
 import { DOCS_BUCKET, OPEN_STATUSES } from "@/lib/practitioners/applications";
 import { ASSESSMENT_MINUTES, ASSESSMENT_QUESTIONS, assessmentUrl } from "@/lib/practitioners/assessment";
 import { REVISION_FIELDS, signApplicationEdit } from "@/lib/practitioners/join";
@@ -26,7 +27,9 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
  * behind it. A failed account step is retried from the application page.
  */
 
-export type ApplicationActionResult = { ok: true; message: string } | { ok: false; error: string };
+export type ApplicationActionResult =
+  | { ok: true; message: string; link?: string }
+  | { ok: false; error: string; link?: string };
 
 const PATH = "/studio/applications";
 
@@ -296,7 +299,7 @@ export async function approvePractitionerApplication(input: {
   await carryOverToProfile(profileId, input.id, current);
 
   // The profile exists now; only then create the sign-in account.
-  const login = await createPractitionerLogin(profileId);
+  const login = await createPractitionerLogin(profileId, g.userId);
   revalidatePath(PATH);
   revalidatePath(`${PATH}/${input.id}`);
   return login.ok
@@ -357,7 +360,7 @@ export async function resendPractitionerSignIn(input: { applicationId: string })
     .eq("id", input.applicationId)
     .maybeSingle();
   if (!app?.profile_id) return { ok: false, error: "This application has no profile yet." };
-  const result = await createPractitionerLogin(app.profile_id);
+  const result = await createPractitionerLogin(app.profile_id, g.userId);
   revalidatePath(`${PATH}/${input.applicationId}`);
   return result;
 }
@@ -368,7 +371,7 @@ export async function resendPractitionerSignIn(input: { applicationId: string })
  * assigned to it and cannot send reports (probation), then emails a
  * set-password link through the studio's existing invite page.
  */
-async function createPractitionerLogin(profileId: string): Promise<ApplicationActionResult> {
+async function createPractitionerLogin(profileId: string, issuedBy: string | null): Promise<ApplicationActionResult> {
   const admin = createAdminSupabaseClient();
   const { data: profile } = await admin
     .from("practitioner_profiles")
@@ -425,14 +428,15 @@ async function createPractitionerLogin(profileId: string): Promise<ApplicationAc
     }
   }
 
-  const type = generated.data.properties?.verification_type === "magiclink" ? "magiclink" : "invite";
-  const signInUrl = `${getPublicAppUrl()}/studio/invite?token_hash=${encodeURIComponent(tokenHash)}&type=${type}`;
+  // A seven-day welcome link, not the one-time token itself: that expires
+  // within the hour and dies on first use (Anthonia, 30 October 2026).
+  const signInUrl = await issueWelcomeLink(userId, issuedBy);
   // The practitioner's current rate, from the same function bookings use.
   const { data: rates } = await admin.rpc("rate_for", { p_practitioner: profileId, p_at: new Date().toISOString() });
   const rate = rates?.[0];
   const fee = rate && rate.practitioner_fee_minor > 0 ? formatMoney(rate.practitioner_fee_minor, rate.currency, 2) : null;
   const sent = await sendPractitionerEmail({ kind: "sign_in", toEmail: app.email, name: profile.full_name, signInUrl, fee });
   return sent.ok
-    ? { ok: true, message: `A set-password link was emailed to ${app.email}.` }
-    : { ok: false, error: `The account is ready but the email failed (${sent.message}).` };
+    ? { ok: true, message: `A set-password link was emailed to ${app.email}. It works for 7 days, once.`, link: signInUrl }
+    : { ok: false, error: `The account is ready but the email failed (${sent.message}). The link below still works.`, link: signInUrl };
 }

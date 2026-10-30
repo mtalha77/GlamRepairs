@@ -61,6 +61,7 @@ import { bookConsultationForLead } from "@/lib/consultation/booking";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 import { sendPaymentConfirmedEmail } from "@/lib/clients/paymentConfirmed";
 import { discardNewAuthUser } from "@/lib/studio/discardNewAuthUser";
+import { issueWelcomeLink, spendWelcomeLink } from "@/lib/studio/welcomeLinks";
 import { metaConfigured, sendMetaServerEvent } from "@/lib/analytics/metaServer";
 
 function getAppUrl() {
@@ -331,7 +332,8 @@ export async function inviteTeamMemberAction(formData: FormData) {
     redirect("/studio/team?error=invite");
   }
 
-  const inviteUrl = `${appUrl}/studio/invite?token_hash=${encodeURIComponent(hashedToken)}&type=${otpType}`;
+  // Seven days and spent only on Accept, not the one-hour, one-use token.
+  const inviteUrl = await issueWelcomeLink(userId, member.userId);
   const emailResult = await sendStudioInviteEmail({
     toEmail: email,
     displayName,
@@ -378,6 +380,43 @@ export async function acceptStudioInviteAction(formData: FormData) {
     await rememberDevice(session.userId);
   }
 
+  redirect("/studio/set-password");
+}
+
+/**
+ * A seven-day welcome link (lib/studio/welcomeLinks.ts). Spends it, mints a
+ * fresh one-time sign-in token for that person and uses it at once, so the
+ * short-lived token never travels through an inbox.
+ */
+export async function acceptWelcomeLinkAction(formData: FormData) {
+  const userId = await spendWelcomeLink(asString(formData, "t"));
+  if (!userId) redirect("/studio/login?error=expired");
+
+  const admin = createAdminSupabaseClient();
+  const { data: user } = await admin.auth.admin.getUserById(userId);
+  const email = user.user?.email;
+  if (!email) redirect("/studio/login?error=auth");
+  const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: "magiclink", email });
+  const tokenHash = link?.properties?.hashed_token;
+  if (linkError || !tokenHash) {
+    console.error("[acceptWelcomeLinkAction] generateLink", linkError?.message);
+    redirect("/studio/login?error=auth");
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash: tokenHash });
+  if (error) {
+    console.error("[acceptWelcomeLinkAction] verifyOtp", error.message);
+    redirect("/studio/login?error=auth");
+  }
+
+  // The link was issued to this person by the studio, which is what a
+  // sign-in code proves.
+  const session = await currentStudioSession();
+  if (session) {
+    await markSessionVerified(session, "invite");
+    await rememberDevice(session.userId);
+  }
   redirect("/studio/set-password");
 }
 

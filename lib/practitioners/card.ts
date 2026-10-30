@@ -15,6 +15,13 @@ export type SampleAvatar = {
   style: "long" | "bun" | "wrap" | "crop";
 };
 
+/**
+ * Talha, 30 October 2026: Ayma is always the recommended practitioner. She
+ * leads every list and her card carries the badge; anyone can still choose
+ * someone else.
+ */
+export const RECOMMENDED_SLUG = "ayma-arif";
+
 export type CardPractitioner = {
   slug: string;
   name: string;
@@ -25,6 +32,8 @@ export type CardPractitioner = {
   initials: string;
   avatar: SampleAvatar | null;
   sample: boolean;
+  /** Shown first, with a "Recommended" badge. */
+  recommended: boolean;
   years: number | null;
   reads: number | null;
   /** Null below ten real ratings: the stat is hidden, not shown as nothing. */

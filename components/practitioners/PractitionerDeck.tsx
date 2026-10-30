@@ -26,7 +26,11 @@ const VISIBLE = 4;
 const THROW_PX = 70;
 const EXIT_MS = 400;
 
-export default function PractitionerDeck({ practitioners }: { practitioners: CardPractitioner[] }) {
+export default function PractitionerDeck({
+  practitioners,
+}: {
+  practitioners: CardPractitioner[];
+}) {
   const n = practitioners.length;
   const [order, setOrder] = useState(() => practitioners.map((_, i) => i));
   const [leaving, setLeaving] = useState<number | null>(null);
@@ -82,7 +86,8 @@ export default function PractitionerDeck({ practitioners }: { practitioners: Car
     setDrag(null);
     if (dx < -THROW_PX) next();
     else if (dx > THROW_PX) prev();
-    else if (!moved.current && !(e.target as HTMLElement).closest("a,button")) next();
+    else if (!moved.current && !(e.target as HTMLElement).closest("a,button"))
+      next();
   };
 
   const top = order[0];
@@ -103,7 +108,8 @@ export default function PractitionerDeck({ practitioners }: { practitioners: Car
           const i = order.indexOf(id);
           let transform = `translate3d(${i * 14}px, ${-i * 11}px, ${-i * 62}px) rotateZ(${i * 2.2}deg) scale(${1 - i * 0.035})`;
           let opacity = i === 0 ? 1 : i < VISIBLE ? 1 - i * 0.18 : 0;
-          let transition = "transform .55s cubic-bezier(.3,.9,.3,1), opacity .5s";
+          let transition =
+            "transform .55s cubic-bezier(.3,.9,.3,1), opacity .5s";
           if (leaving === id) {
             transform = "translate3d(-430px, -34px, 140px) rotateZ(-17deg)";
             opacity = 0;
@@ -117,7 +123,13 @@ export default function PractitionerDeck({ practitioners }: { practitioners: Car
               aria-hidden={i !== 0}
               inert={i !== 0}
               className="absolute inset-0 cursor-grab will-change-transform active:cursor-grabbing motion-reduce:!transition-none"
-              style={{ transform, opacity, transition, zIndex: n - i, pointerEvents: i === 0 ? "auto" : "none" }}
+              style={{
+                transform,
+                opacity,
+                transition,
+                zIndex: n - i,
+                pointerEvents: i === 0 ? "auto" : "none",
+              }}
             >
               <PractitionerCard
                 p={p}
@@ -132,36 +144,38 @@ export default function PractitionerDeck({ practitioners }: { practitioners: Car
         })}
       </div>
 
-      <div className="mt-7 flex items-center justify-center gap-2.5">
-        <button
-          type="button"
-          onClick={prev}
-          aria-label="Previous practitioner"
-          className="flex h-[42px] w-[42px] items-center justify-center rounded-full border border-brand-lavender bg-white text-lg text-brand-primary transition hover:bg-brand-purple-soft"
-        >
-          ‹
-        </button>
-        <div className="flex gap-[7px]">
-          {practitioners.map((p, id) => (
-            <button
-              key={p.slug}
-              type="button"
-              onClick={() => goTo(id)}
-              aria-label={`Show ${p.name}`}
-              aria-current={id === top}
-              className={`h-[7px] rounded-full transition-all ${id === top ? "w-[22px] bg-brand-primary" : "w-[7px] bg-brand-lavender"}`}
-            />
-          ))}
+      {n > 1 ? (
+        <div className="mt-7 flex items-center justify-center gap-2.5">
+          <button
+            type="button"
+            onClick={prev}
+            aria-label="Previous practitioner"
+            className="flex h-[42px] w-[42px] items-center justify-center rounded-full border border-brand-lavender bg-white text-lg text-brand-primary transition hover:bg-brand-purple-soft"
+          >
+            ‹
+          </button>
+          <div className="flex gap-[7px]">
+            {practitioners.map((p, id) => (
+              <button
+                key={p.slug}
+                type="button"
+                onClick={() => goTo(id)}
+                aria-label={`Show ${p.name}`}
+                aria-current={id === top}
+                className={`h-[7px] rounded-full transition-all ${id === top ? "w-[22px] bg-brand-primary" : "w-[7px] bg-brand-lavender"}`}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={next}
+            aria-label="Next practitioner"
+            className="flex h-[42px] w-[42px] items-center justify-center rounded-full border border-brand-lavender bg-white text-lg text-brand-primary transition hover:bg-brand-purple-soft"
+          >
+            ›
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={next}
-          aria-label="Next practitioner"
-          className="flex h-[42px] w-[42px] items-center justify-center rounded-full border border-brand-lavender bg-white text-lg text-brand-primary transition hover:bg-brand-purple-soft"
-        >
-          ›
-        </button>
-      </div>
+      ) : null}
     </div>
   );
 }

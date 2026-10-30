@@ -3,7 +3,7 @@ import "server-only";
 import { formatMoney } from "@/lib/pricing/money";
 import type { PricingRegion } from "@/lib/pricing/regions";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import type { CardPractitioner, SampleAvatar } from "@/lib/practitioners/card";
+import { RECOMMENDED_SLUG, type CardPractitioner, type SampleAvatar } from "@/lib/practitioners/card";
 
 /**
  * Handover 63 (and 61 Part 1): who appears on the practitioner card.
@@ -15,8 +15,13 @@ import type { CardPractitioner, SampleAvatar } from "@/lib/practitioners/card";
  * directory, the homepage or the three-practitioner count.
  */
 
-/** Below this many approved practitioners the deck and the directory do not exist. */
-export const DIRECTORY_MIN_PRACTITIONERS = 3;
+/**
+ * Below this many public practitioners the directory and its "choose" deck
+ * do not exist. Talha, 30 October 2026: two for now (Handover 63 said
+ * three). Below it the homepage still shows the recommended practitioner's
+ * card on its own.
+ */
+export const DIRECTORY_MIN_PRACTITIONERS = 2;
 
 type PublicRow = {
   id: string;
@@ -73,6 +78,7 @@ function fromPublic(row: PublicRow, price: string | null): CardPractitioner {
     initials: row.avatar_initials ?? row.display_name.slice(0, 2).toUpperCase(),
     avatar: null,
     sample: false,
+    recommended: row.slug === RECOMMENDED_SLUG,
     years: row.years_practising,
     reads: row.assessments_count,
     rating: row.rating_count >= 10 ? row.rating : null,
@@ -86,7 +92,7 @@ function fromPublic(row: PublicRow, price: string | null): CardPractitioner {
   };
 }
 
-/** Every public practitioner, soonest available first. */
+/** Every public practitioner: the recommended one first, then soonest available. */
 export async function listPublicPractitioners(price: string | null): Promise<CardPractitioner[]> {
   const { data, error } = await createAdminSupabaseClient()
     .from("practitioner_public")
@@ -97,7 +103,9 @@ export async function listPublicPractitioners(price: string | null): Promise<Car
     console.error("[practitioners] list", error.message);
     return [];
   }
-  return ((data ?? []) as PublicRow[]).map((row) => fromPublic(row, price));
+  return ((data ?? []) as PublicRow[])
+    .map((row) => fromPublic(row, price))
+    .sort((a, b) => Number(b.recommended) - Number(a.recommended));
 }
 
 export async function getPublicPractitioner(slug: string, price: string | null): Promise<PublicProfile | null> {
@@ -208,6 +216,7 @@ export async function listSamplePractitioners(): Promise<CardPractitioner[]> {
       .toUpperCase(),
     avatar: s.avatar,
     sample: true,
+    recommended: false,
     years: s.years_practising,
     reads: s.assessments_count,
     rating: s.rating_count >= 10 ? s.rating : null,
