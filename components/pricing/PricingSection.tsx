@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import CompareStrip from "@/components/compare/CompareStrip";
 import CurrencySwitcher from "@/components/pricing/CurrencySwitcher";
 import PricingCard from "@/components/pricing/PricingCard";
 import { getServerPricingRegion, getVisitorCountry } from "@/lib/pricing/geo";
@@ -18,13 +17,6 @@ type PricingSectionProps = {
    * of copy on this section can.
    */
   showSampleLink?: boolean;
-  /**
-   * HANDOVER-22 §5a — the compact four-column comparison, directly under the
-   * cards. Separate from showSampleLink because the two answer different
-   * questions: the sample answers "what do I get?", the strip answers "why
-   * not just see a dermatologist / buy another serum?".
-   */
-  showCompareStrip?: boolean;
 };
 
 const defaultTitle = "Pricing";
@@ -57,7 +49,6 @@ export default async function PricingSection({
   subtitle = defaultSubtitle,
   showTrustLine = false,
   showSampleLink = false,
-  showCompareStrip = false,
 }: PricingSectionProps) {
   const [region, regions, visitorCountry] = await Promise.all([
     getServerPricingRegion(),
@@ -128,13 +119,10 @@ export default async function PricingSection({
           ))}
         </div>
 
-        {showCompareStrip ? <CompareStrip region={region} /> : null}
-
-        {/* The PK comparison already ends with "See a real assessment
-            first", so a second link to the same page two lines later is
-            dropped there. Everywhere else the strip is a single link and
-            this sentence is the only route to the sample. */}
-        {showSampleLink && !(showCompareStrip && region.code === "PK") ? (
+        {/* Handover 61 Part 9 (30 October 2026): the homepage comparison
+            strip is gone, so this sentence is the route to the sample
+            everywhere. The full comparison lives on /compare. */}
+        {showSampleLink ? (
           <p className="mt-8 text-center text-sm leading-relaxed text-brand-ink sm:mt-10 sm:text-[0.9375rem]">
             Not sure what you get for that?{" "}
             <Link

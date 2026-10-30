@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { ChatIcon, PhoneIcon } from "@/components/ui/ContactIcons";
+import LocalHoursNote from "@/components/home/LocalHoursNote";
 import Link from "next/link";
 
 import { BOOKING_START_HREF } from "@/components/booking/bookingConfig";
@@ -200,8 +201,14 @@ export default function Footer() {
                 height={45}
                 className="h-12 w-auto sm:h-14"
               />
-              <p className="mt-4 max-w-full font-sans text-sm leading-relaxed tracking-[0.01em] text-brand-primary/80 sm:max-w-[24rem]">
-                {/* Handover 64 Part 7b: say plainly where the company is. */}
+              {/* Handover 61 Part 8.2: the positioning line that is true today. */}
+              <p className="mt-4 font-serif text-base italic text-brand-primary">
+                Based in Pakistan. Reading skin for clients worldwide.
+              </p>
+              <p className="mt-2 max-w-full font-sans text-sm leading-relaxed tracking-[0.01em] text-brand-primary/80 sm:max-w-[24rem]">
+                {/* Handover 64 Part 7b: say plainly where the company is.
+                    Handover 61 Part 7.7: this sentence becomes conditional
+                    only once a PMDC-verified doctor's profile is live. */}
                 Glam Repairs is based in Pakistan and provides personalised
                 cosmetic skincare guidance, reviewed by a certified
                 practitioner. We do not diagnose or treat medical conditions.
@@ -271,6 +278,7 @@ export default function Footer() {
               <div className="mt-4 max-w-xs text-sm text-[#242424]">
                 <p className="font-medium">{SITE.hours.displayDays}</p>
                 <p className="mt-0.5">{SITE.hours.displayTime}</p>
+                <LocalHoursNote opens={SITE.hours.opens} closes={SITE.hours.closes} />
                 <p className="mt-2 text-xs leading-relaxed text-brand-primary/70">
                   {SITE.hours.note}
                 </p>

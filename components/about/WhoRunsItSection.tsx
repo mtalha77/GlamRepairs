@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 import AnimatedSlideIn from "@/components/home/AnimatedSlideIn";
-import { PAYMENT } from "@/lib/seo/site";
+import { MANAGING_DIRECTOR, PAYMENT } from "@/lib/seo/site";
 
 /**
  * "Who runs Glam Repairs". Talha, 29 October 2026, with his own photograph.
@@ -18,8 +18,8 @@ export default function WhoRunsItSection() {
       <div className="mx-auto grid max-w-4xl items-center gap-8 sm:grid-cols-[220px_1fr] sm:gap-12">
         <AnimatedSlideIn direction="up">
           <Image
-            src="/images/team/muhammad-talha.webp"
-            alt="Muhammad Talha"
+            src={MANAGING_DIRECTOR.photo}
+            alt={MANAGING_DIRECTOR.name}
             width={440}
             height={440}
             sizes="(max-width: 640px) 60vw, 220px"

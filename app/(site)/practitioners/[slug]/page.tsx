@@ -344,7 +344,7 @@ export default async function PractitionerProfilePage({ params }: Props) {
                   <figure key={r.name} className="rounded-xl border border-brand-cream bg-brand-cream-light px-[19px] py-[17px]">
                     <blockquote className="font-serif text-[14.5px] italic leading-[1.65] text-brand-gray">&ldquo;{r.quote}&rdquo;</blockquote>
                     <figcaption className="mt-[11px] text-[11.5px] text-brand-gray/80">
-                      {r.name}, {r.city}
+                      {r.name}, {countryName(r.country)}
                     </figcaption>
                   </figure>
                 ))}
