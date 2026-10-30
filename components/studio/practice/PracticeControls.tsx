@@ -78,22 +78,56 @@ export function CannotAttendButton({ appointmentId, when }: { appointmentId: str
   );
 }
 
+/**
+ * Phone photographs are often 5 to 15 MB (and HEIC on an iPhone), over the
+ * server's 4 MB limit. The browser shrinks them first to a 1600px JPEG,
+ * which is still far more than the 4:5 portrait the server stores. Falls
+ * back to the original file if the browser cannot decode it.
+ */
+async function shrinkForUpload(file: File): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
+    return blob ?? file;
+  } catch {
+    return file;
+  }
+}
+
 export function PhotoUpload({ current, profileId }: { current: string | null; profileId?: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  async function upload(file: File | undefined) {
+  async function upload(input: HTMLInputElement) {
+    const file = input.files?.[0];
     if (!file) return;
     setBusy(true);
     setError(null);
-    const form = new FormData();
-    form.append("file", file);
-    if (profileId) form.append("profileId", profileId);
-    const res = await fetch("/api/studio/practitioner-photo", { method: "POST", body: form });
-    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-    setBusy(false);
-    if (!data.ok) setError(data.error ?? "Upload failed.");
-    else router.refresh();
+    try {
+      const form = new FormData();
+      form.append("file", await shrinkForUpload(file), "photo.jpg");
+      if (profileId) form.append("profileId", profileId);
+      const res = await fetch("/api/studio/practitioner-photo", {
+        method: "POST",
+        body: form,
+        signal: AbortSignal.timeout(60_000),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!data.ok) setError(data.error ?? `Upload failed (${res.status}). Try a smaller photograph.`);
+      else router.refresh();
+    } catch {
+      setError("The upload did not finish. Check the connection and try again.");
+    } finally {
+      setBusy(false);
+      // Lets the same file be chosen again after an error.
+      input.value = "";
+    }
   }
   return (
     <div className="flex flex-wrap items-start gap-4">
@@ -110,7 +144,7 @@ export function PhotoUpload({ current, profileId }: { current: string | null; pr
         </p>
         <label className={`${ghost} inline-flex cursor-pointer items-center`}>
           {busy ? "Uploading…" : current ? "Replace photograph" : "Upload photograph"}
-          <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={busy} onChange={(e) => upload(e.target.files?.[0])} />
+          <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={(e) => upload(e.currentTarget)} />
         </label>
         {error ? <p className="text-brand-error-strong">{error}</p> : null}
       </div>

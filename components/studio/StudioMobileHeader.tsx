@@ -82,7 +82,7 @@ export default function StudioMobileHeader({
             className="fixed inset-0 z-10 bg-brand-ink/25"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute left-0 right-0 top-full z-20 border-b border-brand-lavender/70 bg-white px-4 py-3 shadow-lg">
+          <div className="absolute left-0 right-0 top-full z-20 max-h-[calc(100svh-4rem)] overflow-y-auto overscroll-contain border-b border-brand-lavender/70 bg-white px-4 py-3 shadow-lg">
             <StudioNav
               includeSettings={!practitionerSeat}
               superAdmin={superAdmin}

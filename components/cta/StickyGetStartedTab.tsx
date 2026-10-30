@@ -45,6 +45,8 @@ const SUPPRESSED_PREFIXES = [
   "/p/",
   // A profile has its own booking rail and mobile bar; two CTAs compete.
   "/practitioners/",
+  // The practitioner recruitment pages: a client CTA there is the wrong audience.
+  "/join",
 ];
 
 /**
@@ -74,6 +76,9 @@ function Arrow({ className }: { className: string }) {
 export default function StickyGetStartedTab() {
   const pathname = usePathname();
   const [plansVisible, setPlansVisible] = useState(false);
+  // 30 October 2026: on a phone the pill sat on the footer's "Join as a
+  // practitioner" button. It steps aside once the footer is on screen.
+  const [footerVisible, setFooterVisible] = useState(false);
 
   // Hidden until the reader has moved — appearing over the hero, beside the
   // navbar's own Get Started, is the one place it is pure noise.
@@ -104,6 +109,20 @@ export default function StickyGetStartedTab() {
 
   useEffect(() => {
     if (suppressed) return;
+    const footer = document.querySelector("footer");
+    if (!footer) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) setFooterVisible(entry.isIntersecting);
+      },
+      { threshold: 0 },
+    );
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, [suppressed, pathname]);
+
+  useEffect(() => {
+    if (suppressed) return;
 
     const onScroll = () =>
       setScrolledPastHero(window.scrollY > HERO_SCROLL_PX);
@@ -114,7 +133,7 @@ export default function StickyGetStartedTab() {
 
   if (suppressed) return null;
 
-  const visible = scrolledPastHero && !plansVisible;
+  const visible = scrolledPastHero && !plansVisible && !footerVisible;
 
   return (
     <>
