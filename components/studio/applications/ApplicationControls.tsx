@@ -326,12 +326,45 @@ export function SendAssessmentButton({ id, sentLabel }: { id: string; sentLabel:
 
 export function ResendSignInButton({ applicationId }: { applicationId: string }) {
   const { result, pending, run } = useAction();
+  const [copied, setCopied] = useState(false);
+  const link = result?.link;
   return (
     <div className="space-y-2">
       <button type="button" className={ghost} disabled={pending} onClick={() => run(() => resendPractitionerSignIn({ applicationId }))}>
-        {pending ? "Sending…" : "Send sign-in link"}
+        {pending ? "Sending…" : "Send a new sign-in link"}
       </button>
       <Feedback result={result} />
+      {link ? (
+        // Also shown here so it can go on WhatsApp. It signs this person in,
+        // so send it only to them. A newer link retires this one.
+        <div className="space-y-2 rounded-xl border border-brand-lavender/70 bg-white p-3">
+          <code className="block break-all text-xs text-brand-ink">{link}</code>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={ghost}
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(link);
+                  setCopied(true);
+                } catch {
+                  setCopied(false);
+                }
+              }}
+            >
+              {copied ? "Copied" : "Copy link"}
+            </button>
+            <a
+              className={`${ghost} inline-flex items-center`}
+              href={`https://wa.me/?text=${encodeURIComponent(`Your GlamRepairs studio link (works for 7 days): ${link}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Share on WhatsApp
+            </a>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

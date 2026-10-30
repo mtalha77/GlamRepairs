@@ -1,7 +1,11 @@
 import Link from "next/link";
 
 import PractitionerDeck from "@/components/practitioners/PractitionerDeck";
-import { DIRECTORY_MIN_PRACTITIONERS, listPublicPractitioners, visitorPrice } from "@/lib/practitioners/directory";
+import {
+  DIRECTORY_MIN_PRACTITIONERS,
+  listPublicPractitioners,
+  visitorPrice,
+} from "@/lib/practitioners/directory";
 import { getServerPricingRegion } from "@/lib/pricing/geo";
 
 /**
@@ -10,15 +14,27 @@ import { getServerPricingRegion } from "@/lib/pricing/geo";
  * them. It sits directly above the reviews drum, so the proof that the
  * people are real is followed at once by the proof that clients liked them.
  *
- * Gated on the count, not a flag: below three approved practitioners it
- * renders nothing, because "you pick the person" is false with one person.
+ * Gated on the count, not a flag. With fewer practitioners than the
+ * directory needs, "you pick the person" is false, so it becomes "meet your
+ * practitioner": the recommended card alone, linking to the full profile,
+ * with no directory link and no drag hint.
  */
 export default async function PractitionerStrip() {
-  const practitioners = await listPublicPractitioners(visitorPrice(await getServerPricingRegion()));
-  if (practitioners.length < DIRECTORY_MIN_PRACTITIONERS) return null;
+  const all = await listPublicPractitioners(
+    visitorPrice(await getServerPricingRegion()),
+  );
+  const open = all.length >= DIRECTORY_MIN_PRACTITIONERS;
+  const practitioners = open
+    ? all
+    : all.filter((p) => p.recommended).slice(0, 1);
+  if (!practitioners.length) return null;
+  const solo = practitioners[0];
 
   return (
-    <section aria-labelledby="practitioners-heading" className="px-6 pb-6 pt-16">
+    <section
+      aria-labelledby="practitioners-heading"
+      className="px-6 pb-6 pt-16"
+    >
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-12">
         <div className="max-w-[360px]">
           <p className="gr-eyebrow mb-3">Your practitioner</p>
@@ -26,20 +42,42 @@ export default async function PractitionerStrip() {
             id="practitioners-heading"
             className="font-serif text-[1.7rem] font-semibold leading-[1.18] tracking-[-0.015em] text-brand-ink sm:text-[2rem]"
           >
-            You pick the person who <em className="italic text-brand-primary">reads your skin.</em>
+            {open ? (
+              <>
+                You pick the person who{" "}
+                <em className="italic text-brand-primary">reads your skin.</em>
+              </>
+            ) : (
+              <>
+                Meet the person who{" "}
+                <em className="italic text-brand-primary">reads your skin.</em>
+              </>
+            )}
           </h2>
           <p className="mt-3 text-[15px] leading-relaxed text-brand-gray">
-            Every practitioner publishes their qualification with its reference number, the languages they work in, and
-            how soon they can take you. Read them, then choose.
+            {open
+              ? "Every practitioner publishes their qualification with its reference number, the languages they work in, and how soon they can take you. Read them, then choose."
+              : `${solo.name}'s qualification is published with its reference number, alongside the languages spoken and the next open time.`}
           </p>
-          <p className="mt-5 hidden items-center gap-2 text-[13px] text-brand-gray/80 sm:flex">
-            <kbd className="rounded border border-brand-lavender px-2 py-0.5 font-sans text-[11.5px] font-semibold">←</kbd>
-            <kbd className="rounded border border-brand-lavender px-2 py-0.5 font-sans text-[11.5px] font-semibold">→</kbd>
-            or drag the card
-          </p>
+          {open ? (
+            <p className="mt-5 hidden items-center gap-2 text-[13px] text-brand-gray/80 sm:flex">
+              <kbd className="rounded border border-brand-lavender px-2 py-0.5 font-sans text-[11.5px] font-semibold">
+                ←
+              </kbd>
+              <kbd className="rounded border border-brand-lavender px-2 py-0.5 font-sans text-[11.5px] font-semibold">
+                →
+              </kbd>
+              or drag the card
+            </p>
+          ) : null}
           <p className="mt-5">
-            <Link href="/practitioners" className="text-[14.5px] font-semibold text-brand-primary hover:underline">
-              See all practitioners →
+            <Link
+              href={open ? "/practitioners" : `/practitioners/${solo.slug}`}
+              className="text-[14.5px] font-semibold text-brand-primary hover:underline"
+            >
+              {open
+                ? "See all practitioners →"
+                : `Read ${solo.name.split(" ")[0]}'s full profile →`}
             </Link>
           </p>
         </div>

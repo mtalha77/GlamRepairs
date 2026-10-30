@@ -121,6 +121,7 @@ function compose(e: PractitionerEmail): { subject: string; html: string; text: s
         "Your application to join GlamRepairs has been approved.",
         "Set a password for the studio with the button below. Once you are in, finish your profile with a photograph and a short bio; it is not shown to clients until it is complete.",
         "Your first reports are reviewed before they are sent.",
+        "The button works for 7 days. If you have already set a password, sign in at glamrepairs.com/studio/login instead.",
         // Audit, 29 October 2026: the rate is no longer published on /join
         // (clients read that page too), so the approval is where it is told.
         ...(e.fee

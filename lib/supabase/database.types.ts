@@ -194,6 +194,31 @@ export type Database = {
         };
         Relationships: [];
       };
+      studio_welcome_links: {
+        Row: {
+          id: string;
+          token_hash: string;
+          user_id: string;
+          created_by: string | null;
+          created_at: string;
+          expires_at: string;
+          used_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          token_hash: string;
+          user_id: string;
+          created_by?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          used_at?: string | null;
+        };
+        Update: {
+          used_at?: string | null;
+          expires_at?: string;
+        };
+        Relationships: [];
+      };
       practitioner_blackouts: {
         Row: {
           id: string;

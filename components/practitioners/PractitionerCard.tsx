@@ -120,6 +120,11 @@ export default function PractitionerCard({
       <div className="relative h-[236px] shrink-0 overflow-hidden bg-brand-purple-soft">
         <Portrait p={p} />
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-brand-ink/90 via-brand-ink/30 to-transparent" />
+        {p.recommended ? (
+          <span className="absolute left-3.5 top-3.5 rounded-full bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-brand-primary shadow-md">
+            Recommended
+          </span>
+        ) : null}
         <div className="absolute inset-x-[22px] bottom-[17px] text-white">
           <Heading className="font-sans text-[23px] font-bold leading-tight tracking-[-0.4px] [text-shadow:0_1px_10px_rgb(0_0_0/0.35)]">
             {p.name}
