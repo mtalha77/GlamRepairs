@@ -224,19 +224,42 @@ export async function reassignAppointment(input: { appointmentId: string; toPrac
 
 // ── The practitioner herself ────────────────────────────────────────────
 
+function bioProblem(text: string): string | null {
+  if (text.length <= 80) return "Write a little more: the bio needs more than 80 characters.";
+  if (text.length > 1200) return "Keep it under 1,200 characters.";
+  return null;
+}
+
+async function saveBio(profileId: string, slug: string | null, text: string, by: string): Promise<PractitionerActionResult> {
+  const { error } = await createAdminSupabaseClient()
+    .from("practitioner_profiles")
+    .update({ bio: text, edited_by: by, updated_at: new Date().toISOString() })
+    .eq("id", profileId);
+  if (error) return { ok: false, error: error.message };
+  revalidate();
+  if (slug) revalidatePath(`/practitioners/${slug}`);
+  return { ok: true, message: "Bio saved." };
+}
+
 export async function updateOwnBio(bio: string): Promise<PractitionerActionResult> {
   const g = await self();
   if ("error" in g) return { ok: false, error: g.error as string };
   const text = bio.trim();
-  if (text.length <= 80) return { ok: false, error: "Write a little more: the bio needs more than 80 characters." };
-  if (text.length > 1200) return { ok: false, error: "Keep it under 1,200 characters." };
-  const { error } = await createAdminSupabaseClient()
-    .from("practitioner_profiles")
-    .update({ bio: text, edited_by: g.userId, updated_at: new Date().toISOString() })
-    .eq("id", g.profile.id);
-  if (error) return { ok: false, error: error.message };
-  revalidate();
-  return { ok: true, message: "Bio saved." };
+  const problem = bioProblem(text);
+  if (problem) return { ok: false, error: problem };
+  return saveBio(g.profile.id, g.profile.slug, text, g.userId);
+}
+
+/** The studio writing a practitioner's bio for them (Talha, 30 October 2026). */
+export async function updatePractitionerBio(input: { id: string; bio: string }): Promise<PractitionerActionResult> {
+  const g = await superAdmin();
+  if ("error" in g) return { ok: false, error: g.error as string };
+  const text = input.bio.trim();
+  const problem = bioProblem(text);
+  if (problem) return { ok: false, error: problem };
+  const { data: p } = await createAdminSupabaseClient().from("practitioner_profiles").select("slug").eq("id", input.id).maybeSingle();
+  if (!p) return { ok: false, error: "Practitioner not found." };
+  return saveBio(input.id, p.slug, text, g.userId);
 }
 
 /**

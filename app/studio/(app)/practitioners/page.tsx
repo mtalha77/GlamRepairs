@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import {
+  BioForm,
   PhotoUpload,
   PractitionerDetailsForm,
   PractitionerStatusButtons,
@@ -102,9 +103,16 @@ export default async function PractitionersPage() {
               {!p.hasAccount ? <p className="text-sm text-brand-gray">No sign-in account linked yet.</p> : null}
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium text-brand-ink">Photograph</h3>
-                  <PhotoUpload current={p.photoUrl} profileId={p.id} />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-brand-ink">Photograph</h3>
+                    <PhotoUpload current={p.photoUrl} profileId={p.id} />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-brand-ink">Bio</h3>
+                    <p className="text-xs text-brand-gray">Shown to clients on their profile. The practitioner can also edit it under My practice.</p>
+                    <BioForm initial={p.bio} profileId={p.id} />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium text-brand-ink">Checks, payout and capacity</h3>

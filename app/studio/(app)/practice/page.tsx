@@ -141,6 +141,34 @@ export default async function PracticePage() {
         </Card>
       ) : null}
 
+      {!gone ? (
+        <>
+          <Card title="Your photograph">
+            <PhotoUpload current={profile.photo_url} />
+          </Card>
+
+          <Card title="Your bio">
+            <p className="mb-2 text-sm text-brand-gray">Shown to clients beside your name. Plain words, your training and what you look for.</p>
+            <BioForm initial={profile.bio ?? ""} />
+          </Card>
+
+          <Card title="Your public profile">
+            <p className="mb-3 text-sm text-brand-gray">
+              {profile.public_consent_at
+                ? "Shown on the website. You agreed on " + formatDay(profile.public_consent_at) + "."
+                : "Not shown anywhere yet. Nothing about you appears on the website until you tick the box below."}
+            </p>
+            <PublicProfileForm
+              city={profile.city ?? ""}
+              yearsExperience={profile.years_experience === null ? "" : String(profile.years_experience)}
+              specialisms={(profile.specialisms ?? []).join(", ")}
+              languages={(profile.languages ?? []).join(", ")}
+              consented={Boolean(profile.public_consent_at)}
+            />
+          </Card>
+        </>
+      ) : null}
+
       {profile.status === "approved" && profile.slug ? (
         <Card title="Your link for your clients">
           <ReferralLink url={abs(referralPath(profile.slug))} name={profile.full_name?.split(" ")[0] ?? "you"} />
@@ -267,30 +295,6 @@ export default async function PracticePage() {
 
       {!gone ? (
         <>
-          <Card title="Your photograph">
-            <PhotoUpload current={profile.photo_url} />
-          </Card>
-
-          <Card title="Your bio">
-            <p className="mb-2 text-sm text-brand-gray">Shown to clients beside your name. Plain words, your training and what you look for.</p>
-            <BioForm initial={profile.bio ?? ""} />
-          </Card>
-
-          <Card title="Your public profile">
-            <p className="mb-3 text-sm text-brand-gray">
-              {profile.public_consent_at
-                ? "Shown on the website. You agreed on " + formatDay(profile.public_consent_at) + "."
-                : "Not shown anywhere yet. Nothing about you appears on the website until you tick the box below."}
-            </p>
-            <PublicProfileForm
-              city={profile.city ?? ""}
-              yearsExperience={profile.years_experience === null ? "" : String(profile.years_experience)}
-              specialisms={(profile.specialisms ?? []).join(", ")}
-              languages={(profile.languages ?? []).join(", ")}
-              consented={Boolean(profile.public_consent_at)}
-            />
-          </Card>
-
           <Card title="Your hours">
             <p className="mb-3 text-sm text-brand-gray">Clients can only book inside these hours. Change them whenever you like.</p>
             <WeeklyHours initial={windows} defaultSlot={data.defaultSlotMinutes} readOnly={false} practitionerId={profile.id} timezone={profile.timezone} />
