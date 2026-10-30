@@ -44,6 +44,14 @@ const trustLine =
  * first visitor's currency to everyone after that. Do not memoize or hoist
  * the region lookup above this component in a way that could get cached.
  */
+function currencyName(code: string): string {
+  try {
+    return new Intl.DisplayNames(["en"], { type: "currency" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 export default async function PricingSection({
   title = defaultTitle,
   subtitle = defaultSubtitle,
@@ -82,10 +90,10 @@ export default async function PricingSection({
           <div className="mt-4 flex justify-center">
             <CurrencySwitcher region={region} regions={regions} />
           </div>
-          {elsewhere ? (
+          {region.code !== "PK" ? (
             <p className="mt-3 font-sans text-sm text-brand-gray">
-              Shown in {region.currency === "PKR" ? "Pakistani rupees" : region.currency}. Paying from outside Pakistan? An
-              international bank transfer works: message us on WhatsApp and we will arrange it.
+              Prices in {currencyName(region.currency)}. Paying from outside Pakistan is by international bank
+              transfer: message us on WhatsApp and we will send the details.
             </p>
           ) : null}
         </header>

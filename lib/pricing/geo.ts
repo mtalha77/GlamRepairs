@@ -11,9 +11,9 @@ import {
  * HANDOVER-54 §2.1 — without a choice, the default is Pakistan, not the
  * visitor's location. Google crawls from the United States, so a geo
  * default rendered /pricing as "$22" under a "Rs 3,000" title, and Google
- * declined to index the page. Rupees for everyone who has not chosen
- * otherwise; the funnel reads the same default, so the page and the
- * checkout always agree.
+ * declined to index the page. Superseded for people on 29 October 2026
+ * (see visitorDefault below); crawlers still get Pakistan. The funnel reads
+ * the same default, so the page and the checkout always agree.
  */
 export const PRICING_REGION_COOKIE = "pricing_region";
 
@@ -31,7 +31,26 @@ const DEFAULT_COUNTRY = "PK";
 export async function getServerPricingRegion(): Promise<PricingRegion> {
   const cookieStore = await cookies();
   const override = cookieStore.get(PRICING_REGION_COOKIE)?.value;
-  return resolvePricingRegion(override || DEFAULT_COUNTRY);
+  return resolvePricingRegion(override || visitorDefault(await headers()));
+}
+
+/**
+ * Talha, 29 October 2026: prices in the visitor's own currency. Without a
+ * choice in the switcher, a visitor is quoted in the currency of the country
+ * they are in (Vercel's geo header); a country without its own price gets US
+ * dollars (see resolvePricingRegion).
+ *
+ * Crawlers keep the Pakistan default. Google crawls from the United States,
+ * and HANDOVER-54 §2.1 measured what happens when it sees "$22" under a
+ * "Rs 3,000" title: it declines to index the page. So search engines are
+ * quoted the price the title and structured data describe.
+ */
+const CRAWLER = /bot|crawl|spider|slurp|facebookexternalhit|embedly|preview|lighthouse|headless/i;
+
+function visitorDefault(h: Headers): string {
+  if (CRAWLER.test(h.get("user-agent") ?? "")) return DEFAULT_COUNTRY;
+  const code = h.get("x-vercel-ip-country")?.toUpperCase();
+  return code && /^[A-Z]{2}$/.test(code) ? code : DEFAULT_COUNTRY;
 }
 
 /** Same resolution, for a plain Route Handler holding a `Request` directly. */
@@ -43,7 +62,7 @@ export async function getRequestPricingRegion(
     new RegExp(`(?:^|; )${PRICING_REGION_COOKIE}=([^;]+)`),
   );
   const override = match ? decodeURIComponent(match[1]) : null;
-  return resolvePricingRegion(override || DEFAULT_COUNTRY);
+  return resolvePricingRegion(override || visitorDefault(request.headers));
 }
 
 export function pricingRegionCookieOptions() {

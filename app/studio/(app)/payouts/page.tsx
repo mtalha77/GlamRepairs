@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import FinanceTabs from "@/components/studio/FinanceTabs";
 import { ApproveRunButton, MarkPaidForm } from "@/components/studio/payouts/PayoutControls";
 import { loadPayoutPeriod, periodFor } from "@/lib/practitioners/payouts";
-import { formatRupees } from "@/lib/practitioners/roster";
+import { formatFee } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
 
 /**
@@ -71,11 +71,11 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
                     {r.toApproveCount}
                     {r.heldCount ? (
                       <span className="block text-xs text-brand-gray">
-                        {r.heldCount} {r.heldCount === 1 ? "note" : "notes"} outstanding, {formatRupees(r.heldMinor)} held
+                        {r.heldCount} {r.heldCount === 1 ? "note" : "notes"} outstanding, {formatFee(r.heldMinor)} held
                       </span>
                     ) : null}
                   </td>
-                  <td className="py-2 text-right text-brand-ink">{formatRupees(r.toApproveMinor)}</td>
+                  <td className="py-2 text-right text-brand-ink">{formatFee(r.toApproveMinor)}</td>
                 </tr>
               ))}
             </tbody>
@@ -84,20 +84,20 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
                 <td className="pt-3 font-medium text-brand-ink" colSpan={2}>
                   Total payable
                 </td>
-                <td className="pt-3 text-right font-medium text-brand-ink">{formatRupees(toApprove)}</td>
+                <td className="pt-3 text-right font-medium text-brand-ink">{formatFee(toApprove)}</td>
               </tr>
               <tr>
                 <td className="text-brand-gray" colSpan={2}>
                   Platform
                 </td>
-                <td className="text-right text-brand-gray">{formatRupees(platform)}</td>
+                <td className="text-right text-brand-gray">{formatFee(platform)}</td>
               </tr>
               {held ? (
                 <tr>
                   <td className="text-brand-gray" colSpan={2}>
                     Held for notes
                   </td>
-                  <td className="text-right text-brand-gray">{formatRupees(held)}</td>
+                  <td className="text-right text-brand-gray">{formatFee(held)}</td>
                 </tr>
               ) : null}
             </tfoot>
@@ -107,7 +107,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
         )}
         {toApprove > 0 ? (
           <div className="mt-4">
-            <ApproveRunButton month={period.month} label={period.label} total={formatRupees(toApprove)} />
+            <ApproveRunButton month={period.month} label={period.label} total={formatFee(toApprove)} />
           </div>
         ) : null}
       </section>
@@ -120,7 +120,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
               <li key={p.id} className="flex flex-wrap items-start justify-between gap-3 py-3 text-sm">
                 <div>
                   <p className="text-brand-ink">
-                    {p.name} · {formatRupees(p.totalMinor)}
+                    {p.name} · {formatFee(p.totalMinor)}
                   </p>
                   <Link href={`/studio/payouts/${p.id}`} className="inline-flex min-h-10 items-center text-brand-primary underline">
                     Statement
@@ -145,7 +145,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
                 .map((p) => (
                   <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
                     <span className="text-brand-ink">
-                      {r.name} · {formatRupees(p.totalMinor)} · {p.reference}
+                      {r.name} · {formatFee(p.totalMinor)} · {p.reference}
                     </span>
                     <Link href={`/studio/payouts/${p.id}`} className="inline-flex min-h-10 items-center text-brand-primary underline">
                       Statement

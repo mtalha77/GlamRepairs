@@ -12,6 +12,7 @@ import { defaultPractitionerId, ownPractitionerProfile } from "@/lib/practitione
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isValidTimeZone } from "@/lib/consultation/format";
+import { timezonesFor } from "@/lib/countries/timezones";
 
 /**
  * Practitioner management — HANDOVER-52 §2.6, §3.3, §3.5, §4.3.
@@ -74,6 +75,10 @@ export async function updatePractitionerDetails(input: {
   if (!isValidTimeZone(input.timezone.trim())) {
     return { ok: false, error: "That timezone is not recognised. Use a name like Africa/Lagos or Asia/Karachi." };
   }
+  const zones = timezonesFor(countryCode);
+  if (zones.length && !zones.includes(input.timezone.trim())) {
+    return { ok: false, error: "Choose a timezone in the practitioner's own country." };
+  }
   const countryName = countryCode ? new Intl.DisplayNames(["en"], { type: "region" }).of(countryCode) ?? countryCode : null;
   const { error } = await createAdminSupabaseClient()
     .from("practitioner_profiles")
@@ -100,20 +105,41 @@ export async function updatePractitionerDetails(input: {
  * instant and a new one opens, so consultations already booked keep the
  * fee they were booked at.
  */
+/** The currency a practitioner is paid in: their country's real price, else PKR. */
+async function practitionerCurrency(practitionerId: string): Promise<{ currency: string; minorUnits: number }> {
+  const admin = createAdminSupabaseClient();
+  const { data: profile } = await admin.from("practitioner_profiles").select("country_code").eq("id", practitionerId).maybeSingle();
+  if (profile?.country_code) {
+    const { data: price } = await admin
+      .from("country_pricing")
+      .select("currency, minor_units, note")
+      .eq("country_code", profile.country_code)
+      .eq("plan_key", "transform")
+      .eq("active", true)
+      .maybeSingle();
+    if (price && !(price.note ?? "").startsWith("Placeholder")) return { currency: price.currency, minorUnits: price.minor_units };
+  }
+  return { currency: "PKR", minorUnits: 2 };
+}
+
 export async function setPractitionerRate(input: {
   id: string;
-  practitionerRupees: number;
-  platformRupees: number;
+  practitionerAmount: number;
+  platformAmount: number;
   note: string;
 }): Promise<PractitionerActionResult> {
   const g = await superAdmin();
   if ("error" in g) return { ok: false, error: g.error as string };
-  const prac = Math.round(input.practitionerRupees * 100);
-  const plat = Math.round(input.platformRupees * 100);
-  if (!Number.isFinite(prac) || !Number.isFinite(plat) || prac < 0 || plat < 0 || prac + plat <= 0) {
-    return { ok: false, error: "Enter the two amounts in rupees." };
-  }
   const admin = createAdminSupabaseClient();
+  // Talha, 29 October 2026: a practitioner's rate is in their own country's
+  // currency (the one their country is priced in), else rupees.
+  const { currency, minorUnits } = await practitionerCurrency(input.id);
+  const scale = 10 ** minorUnits;
+  const prac = Math.round(input.practitionerAmount * scale);
+  const plat = Math.round(input.platformAmount * scale);
+  if (!Number.isFinite(prac) || !Number.isFinite(plat) || prac < 0 || plat < 0 || prac + plat <= 0) {
+    return { ok: false, error: `Enter the two amounts in ${currency}.` };
+  }
   const now = new Date().toISOString();
   const { error: closeError } = await admin
     .from("practitioner_rates")
@@ -125,6 +151,7 @@ export async function setPractitionerRate(input: {
     practitioner_id: input.id,
     practitioner_fee_minor: prac,
     platform_fee_minor: plat,
+    currency,
     effective_from: now,
     note: input.note.trim() || null,
     set_by: g.userId,

@@ -41,6 +41,9 @@ export type PricingRegion = {
 
 export const DEFAULT_COUNTRY = "PK";
 
+/** The price shown to visitors from a country without its own price. */
+export const INTERNATIONAL_COUNTRY = "US";
+
 type PlanRow = {
   plan_key: string;
   region_code: string;
@@ -122,7 +125,17 @@ export async function listActivePricingRegions(): Promise<PricingRegion[]> {
 export async function resolvePricingRegion(countryCode?: string | null): Promise<PricingRegion> {
   const regions = await listActivePricingRegions();
   const code = (countryCode ?? "").toUpperCase();
-  return regions.find((r) => r.code === code) ?? regions.find((r) => r.isDefault) ?? regions[0] ?? FALLBACK_REGION;
+  // A country with no price of its own is quoted in US dollars rather than
+  // rupees: an anchor price chosen for international visitors, never an FX
+  // conversion (Talha, 29 October 2026).
+  const international = code && code !== DEFAULT_COUNTRY ? regions.find((r) => r.code === INTERNATIONAL_COUNTRY) : undefined;
+  return (
+    regions.find((r) => r.code === code) ??
+    international ??
+    regions.find((r) => r.isDefault) ??
+    regions[0] ??
+    FALLBACK_REGION
+  );
 }
 
 /**

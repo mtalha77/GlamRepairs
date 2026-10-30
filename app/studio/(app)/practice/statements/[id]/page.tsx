@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { formatSlot, TZ_LABEL } from "@/lib/consultation/format";
 import { loadPayout, REASON_LABEL } from "@/lib/practitioners/payouts";
-import { formatRupees, ownPractitionerProfile } from "@/lib/practitioners/roster";
+import { formatFee, ownPractitionerProfile } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
 
 /**
@@ -46,7 +46,7 @@ export default async function OwnStatementPage({ params }: { params: Promise<{ i
               <tr key={l.id}>
                 <td className="py-2 text-brand-ink">{l.startsAt ? formatSlot(l.startsAt) : ""}</td>
                 <td className="py-2 text-brand-ink">{REASON_LABEL[l.reason] ?? l.reason}</td>
-                <td className="py-2 text-right text-brand-ink">{formatRupees(l.practitionerMinor)}</td>
+                <td className="py-2 text-right text-brand-ink">{formatFee(l.practitionerMinor)}</td>
               </tr>
             ))}
           </tbody>
@@ -55,7 +55,7 @@ export default async function OwnStatementPage({ params }: { params: Promise<{ i
               <td className="pt-3 font-medium text-brand-ink" colSpan={2}>
                 Total
               </td>
-              <td className="pt-3 text-right font-medium text-brand-ink">{formatRupees(payout.total_minor)}</td>
+              <td className="pt-3 text-right font-medium text-brand-ink">{formatFee(payout.total_minor)}</td>
             </tr>
           </tfoot>
         </table>

@@ -146,6 +146,58 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
 
   const amount = planId ? formatRegionPrice(region, planId) : null;
   const planName = planId ? PLAN_NAMES[planId] : null;
+
+  /*
+   * Talha, 29 October 2026: outside Pakistan the price is in the client's
+   * own currency and payment is by international bank transfer. The
+   * Pakistani account details are not printed for that case: the client
+   * messages us and we send the details that suit their transfer.
+   */
+  if (region.code !== "PK") {
+    const ask = getWhatsAppChatLink(
+      `Hi, I would like to pay ${amount ?? "for my assessment"} by international bank transfer.` +
+        (reference ? ` My reference is ${reference}.` : ""),
+    );
+    return (
+      <section className="mt-6 rounded-2xl border-2 border-brand-light/70 bg-white px-4 py-4 text-left shadow-sm sm:mt-7 sm:px-5 sm:py-5">
+        <h2 className="font-serif text-lg text-brand-primary sm:text-xl">
+          Almost done. Here&apos;s how to pay
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-brand-ink sm:text-[0.9375rem]">
+          {amount ? (
+            <>
+              Your assessment is <strong className="font-semibold">{amount}</strong>, paid by international bank
+              transfer.
+            </>
+          ) : (
+            <>Payment from outside Pakistan is by international bank transfer.</>
+          )}{" "}
+          Message us on WhatsApp and we will send the account details. Ask your bank to send it with all charges paid by
+          you (often shown as &ldquo;OUR&rdquo;), so the full amount arrives.
+        </p>
+        {reference ? (
+          <div className="mt-4 rounded-xl border border-brand-light/60 bg-brand-light/10 px-3.5 py-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-primary">Your reference</p>
+            <div className="mt-1.5 flex items-center justify-between gap-3">
+              <span className="font-mono text-lg font-semibold tracking-tight text-brand-primary sm:text-xl">{reference}</span>
+              <CopyButton value={reference} label="reference" />
+            </div>
+          </div>
+        ) : null}
+        <a
+          href={ask}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="subscribe-fill-btn min-h-12 mt-4 block w-full rounded-full bg-brand-light px-6 py-3 text-center text-xs font-normal uppercase tracking-[0.08em] text-white sm:py-3.5 sm:text-sm"
+        >
+          Ask for transfer details on WhatsApp
+        </a>
+        <p className="mt-3 text-xs leading-relaxed text-brand-gray sm:text-[0.8125rem]">
+          Once your payment arrives, your assessment is written and sent within 24 hours.
+        </p>
+      </section>
+    );
+  }
   const whatsappHref = getWhatsAppChatLink(
     buildScreenshotPrefill({ amount, reference, planName }),
   );
