@@ -43,6 +43,8 @@ const SUPPRESSED_PREFIXES = [
   "/studio",
   "/gift",
   "/p/",
+  // A profile has its own booking rail and mobile bar; two CTAs compete.
+  "/practitioners/",
 ];
 
 /**

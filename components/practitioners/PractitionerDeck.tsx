@@ -90,7 +90,7 @@ export default function PractitionerDeck({ practitioners }: { practitioners: Car
   return (
     <div ref={root}>
       <div
-        className="relative h-[600px] w-[min(348px,calc(100vw-2rem))] touch-pan-y select-none [perspective:1400px]"
+        className="relative h-[712px] w-[min(348px,calc(100vw-2rem))] touch-pan-y select-none [perspective:1400px]"
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}

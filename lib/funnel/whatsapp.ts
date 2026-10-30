@@ -21,20 +21,20 @@ export function getWhatsAppNumber() {
 }
 
 /**
- * Local-style display, e.g. "0301 8770506".
+ * International display, e.g. "+92 301 8770506", for the few places the
+ * number has to be written out (emails). Talha, 30 October 2026: where a
+ * number is shown at all it is in international format, because clients
+ * outside Pakistan cannot dial a local "03..." number.
  *
- * For the business number this returns SITE.phone.display verbatim, so the
- * site, the emails and the Google Business Profile all show the identical
- * string — NAP consistency is a string match, not a number match. The
- * derivation below only runs when NEXT_PUBLIC_WHATSAPP_NUMBER overrides it
- * with some other number, which has no canonical display form to reuse.
+ * For the business number this returns SITE.phone.displayInternational
+ * verbatim. The derivation below only runs when NEXT_PUBLIC_WHATSAPP_NUMBER
+ * overrides it with some other number.
  */
 export function getWhatsAppDisplayNumber() {
   const digits = getWhatsAppNumber();
-  if (digits === SITE.phone.digits) return SITE.phone.display;
+  if (digits === SITE.phone.digits) return SITE.phone.displayInternational;
   if (digits.startsWith("92") && digits.length === 12) {
-    const local = `0${digits.slice(2)}`;
-    return `${local.slice(0, 4)}-${local.slice(4)}`;
+    return `+92 ${digits.slice(2, 5)} ${digits.slice(5)}`;
   }
   return `+${digits}`;
 }

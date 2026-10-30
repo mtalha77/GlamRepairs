@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
+import { ChatIcon, PhoneIcon } from "@/components/ui/ContactIcons";
 import Link from "next/link";
 
 import { BOOKING_START_HREF } from "@/components/booking/bookingConfig";
@@ -239,21 +240,25 @@ export default function Footer() {
                 {contactEmail}
               </a>
               {/* HOTFIX-8 — the business number, on every page, matching the
-                  Google Business Profile listing. Number and links both come
-                  from SITE.phone; never hardcode one here. */}
+                  Google Business Profile listing. Links come from SITE.phone;
+                  never hardcode one here. Talha, 30 October 2026: the digits
+                  are not printed, only the links. The Organization schema
+                  still carries the number, which is what Google matches. */}
               <p className="mt-2 flex flex-wrap items-center gap-3 font-sans text-sm text-brand-ink">
                 <a
                   href={`tel:${SITE.phone.e164}`}
-                  className="inline-flex min-h-11 items-center font-medium transition-colors hover:text-brand-primary"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand-primary/40 px-4 font-medium text-brand-primary transition-colors hover:bg-brand-primary hover:text-white"
                 >
-                  {SITE.phone.display}
+                  <PhoneIcon />
+                  Call
                 </a>
                 <a
                   href={`https://wa.me/${SITE.phone.digits}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center rounded-full border border-brand-primary/40 px-4 font-medium text-brand-primary transition-colors hover:bg-brand-primary hover:text-white"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand-primary/40 px-4 font-medium text-brand-primary transition-colors hover:bg-brand-primary hover:text-white"
                 >
+                  <ChatIcon />
                   WhatsApp
                 </a>
               </p>

@@ -23,6 +23,7 @@ import VerifyPaymentButton from "@/components/studio/VerifyPaymentButton";
 import { getLeadConsultation } from "@/lib/consultation/forLead";
 import { formatBookingWhatsAppMessage } from "@/lib/funnel/formatBookingSummary";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getGiftCapacity } from "@/lib/gifts/giftSettings";
 import {
   getOutstandingGiftCode,
@@ -124,6 +125,7 @@ export default async function CustomerDetailPage({
     giftCapacity,
     consultation,
     timeline,
+    referrer,
   ] = await Promise.all([
     getPersonHistory(customer.personKey),
     listSiblingSubmissions(customer.personKey, customer.id),
@@ -135,6 +137,15 @@ export default async function CustomerDetailPage({
     // 20 October 2026 — the whole record on one line. The lead was read
     // through RLS above, so this viewer may see this client.
     clientTimeline(customer.id, { includeContactEdits: member.isSuperAdmin }),
+    // The practitioner whose own link brought this client, if any.
+    customer.referredByPractitionerId
+      ? createAdminSupabaseClient()
+          .from("practitioner_profiles")
+          .select("full_name")
+          .eq("id", customer.referredByPractitionerId)
+          .maybeSingle()
+          .then(({ data }) => data?.full_name ?? null)
+      : Promise.resolve(null),
   ]);
 
   // Only fetched for non-super-admins: the redacted copy comes from the
@@ -178,6 +189,7 @@ export default async function CustomerDetailPage({
           {CUSTOMER_STATUS_LABELS[customer.status]} ·{" "}
           {PAYMENT_STATUS_LABELS[customer.paymentStatus]}
           {customer.assignedToName ? ` · Assigned to ${customer.assignedToName}` : " · Unassigned"}
+          {referrer ? ` · Sent by ${referrer}'s own link` : ""}
           {" · Added "}
           {formatStudioDateTime(customer.createdAt)}
         </p>

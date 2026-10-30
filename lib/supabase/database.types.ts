@@ -1645,6 +1645,7 @@ export type Database = {
           is_test: boolean;
           test_session: string | null;
           preferred_practitioner_id: string | null;
+          referred_by_practitioner_id: string | null;
           test_reason: string | null;
           // HOTFIX-7 §1 — "record what was quoted": the pricing_regions.code
           // and currency the visitor actually saw/chose at submission, and
@@ -1685,6 +1686,7 @@ export type Database = {
           duplicate_reason?: string | null;
           duplicate_of?: string | null;
           referred_by_person?: string | null;
+          referred_by_practitioner_id?: string | null;
           gift_code_used?: string | null;
           phone?: string | null;
           last_seen_at?: string | null;
@@ -1730,6 +1732,7 @@ export type Database = {
           duplicate_reason?: string | null;
           duplicate_of?: string | null;
           referred_by_person?: string | null;
+          referred_by_practitioner_id?: string | null;
           gift_code_used?: string | null;
           phone?: string | null;
           last_seen_at?: string | null;
