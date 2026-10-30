@@ -8,7 +8,7 @@ import {
   RateForm,
 } from "@/components/studio/practice/PracticeControls";
 import { feedbackSummary } from "@/lib/consultation/feedback";
-import { formatRupees, listPractitioners, missingForLive } from "@/lib/practitioners/roster";
+import { formatFee, listPractitioners, missingForLive } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -74,7 +74,7 @@ export default async function PractitionersPage() {
                 <p className="text-sm text-brand-ink">
                   <span className="rounded-full bg-brand-purple-soft px-2.5 py-1">{STATUS_LABEL[p.status] ?? p.status}</span>
                   <span className="ml-2 text-brand-gray">
-                    {p.upcoming} upcoming · {formatRupees(p.feeMinor)} to them, {formatRupees(p.platformMinor)} to us per call
+                    {p.upcoming} upcoming · {formatFee(p.feeMinor, p.rateCurrency)} to them, {formatFee(p.platformMinor, p.rateCurrency)} to us per call
                   </span>
                   {ratings.get(p.id) ? (
                     <span className="mt-1 block text-right text-xs text-brand-gray">
@@ -124,7 +124,7 @@ export default async function PractitionersPage() {
               <div className="space-y-2">
                 <h3 className="text-sm font-medium text-brand-ink">Rate per consultation</h3>
                 <p className="text-xs text-brand-gray">A change applies to bookings made from now; existing bookings keep the rate they were booked at.</p>
-                <RateForm id={p.id} feeMinor={p.feeMinor} platformMinor={p.platformMinor} />
+                <RateForm id={p.id} feeMinor={p.feeMinor} platformMinor={p.platformMinor} currency={p.rateCurrency} />
               </div>
 
               <div className="flex flex-wrap items-start justify-between gap-4 border-t border-brand-lavender/60 pt-4">

@@ -2,6 +2,7 @@ import "server-only";
 
 import type { WeeklyWindow } from "@/lib/consultation/admin";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { formatMoney } from "@/lib/pricing/money";
 
 /**
  * Practitioners, the read side — HANDOVER-52 §3.3, §4.3, §4.4.
@@ -27,6 +28,8 @@ export type PractitionerRow = {
   hasVerifiedDegree: boolean;
   feeMinor: number;
   platformMinor: number;
+  /** The rate's currency: the practitioner's own country's, or PKR. */
+  rateCurrency: string;
   upcoming: number;
   publicConsent: boolean;
 };
@@ -104,6 +107,7 @@ export async function listPractitioners(): Promise<PractitionerRow[]> {
         hasVerifiedDegree: degreeSet.has(p.id),
         feeMinor: rate?.[0]?.practitioner_fee_minor ?? 0,
         platformMinor: rate?.[0]?.platform_fee_minor ?? 0,
+        rateCurrency: rate?.[0]?.currency ?? "PKR",
         upcoming: upcomingCount.get(p.id) ?? 0,
         publicConsent: Boolean(p.public_consent_at),
       };
@@ -134,8 +138,9 @@ export async function earningsSummary(practitionerId: string): Promise<EarningsS
   return { payableMinor, heldMinor, paidThisMonthMinor };
 }
 
-export function formatRupees(minor: number): string {
-  return `Rs ${(minor / 100).toLocaleString("en-PK", { maximumFractionDigits: 0 })}`;
+/** A fee in its own currency: "Rs 1,500", "₦7,500", "£10". */
+export function formatFee(minor: number, currency = "PKR"): string {
+  return formatMoney(minor, currency, 2);
 }
 
 /** One practitioner's weekly hours, in the shape the hours editor takes. */

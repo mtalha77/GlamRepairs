@@ -1,7 +1,7 @@
 import "server-only";
 
 import { notifyStudio } from "@/lib/consultation/booking";
-import { formatSlot } from "@/lib/consultation/format";
+import { formatSlot, formatSlotFor } from "@/lib/consultation/format";
 import { escapeHtml, getResendConfig } from "@/lib/email/resendClient";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -30,8 +30,9 @@ type Notice =
   | { kind: "reminder"; when: "24h" | "1h"; startsAt: string; clientLabel: string }
   | { kind: "note_due"; startsAt: string; clientLabel: string; second: boolean };
 
-function compose(name: string, n: Notice): { subject: string; lines: string[]; cta: { href: string; label: string } } {
-  const when = formatSlot(n.startsAt);
+function compose(name: string, n: Notice, timezone: string | null): { subject: string; lines: string[]; cta: { href: string; label: string } } {
+  // PKT with the practitioner's own time beside it when they are elsewhere.
+  const when = formatSlotFor(n.startsAt, timezone);
   const base = getPublicAppUrl();
   switch (n.kind) {
     case "booked":
@@ -70,17 +71,17 @@ function compose(name: string, n: Notice): { subject: string; lines: string[]; c
   }
 }
 
-async function practitionerContact(practitionerId: string): Promise<{ email: string; name: string } | null> {
+async function practitionerContact(practitionerId: string): Promise<{ email: string; name: string; timezone: string | null } | null> {
   const admin = createAdminSupabaseClient();
   const { data: profile } = await admin
     .from("practitioner_profiles")
-    .select("full_name, user_id, status")
+    .select("full_name, user_id, status, timezone")
     .eq("id", practitionerId)
     .maybeSingle();
   if (!profile?.user_id || profile.status === "offboarded") return null;
   const { data } = await admin.auth.admin.getUserById(profile.user_id);
   const email = data.user?.email;
-  return email ? { email, name: profile.full_name.split(/\s+/)[0] ?? profile.full_name } : null;
+  return email ? { email, name: profile.full_name.split(/\s+/)[0] ?? profile.full_name, timezone: profile.timezone } : null;
 }
 
 async function sendNotice(practitionerId: string, notice: Notice): Promise<{ ok: true } | { ok: false; message: string }> {
@@ -88,7 +89,7 @@ async function sendNotice(practitionerId: string, notice: Notice): Promise<{ ok:
   if (!config) return { ok: false, message: "Email is not configured." };
   const contact = await practitionerContact(practitionerId);
   if (!contact) return { ok: false, message: "The practitioner has no sign-in email." };
-  const { subject, lines, cta } = compose(contact.name, notice);
+  const { subject, lines, cta } = compose(contact.name, notice, contact.timezone);
   const html = `
     <div style="font-family: Arial, Helvetica, sans-serif; line-height: 1.65; color: #2b2b2b; max-width: 560px;">
       <p style="margin: 0 0 12px;">Hi ${escapeHtml(contact.name)},</p>

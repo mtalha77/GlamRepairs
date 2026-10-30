@@ -337,6 +337,7 @@ export async function POST(request: Request) {
       selectedPlan: body.selectedPlan,
       sessionId: body.sessionId,
       showBankDetails: includeBankDetails,
+      international: Boolean(body.pricingRegion && body.pricingRegion !== "PK"),
       leadId: lead.leadId,
     });
     if (!emailResult.ok) {

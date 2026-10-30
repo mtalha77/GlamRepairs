@@ -20,6 +20,11 @@ import {
   updatePractitionerDetails,
   type PractitionerActionResult,
 } from "@/lib/practitioners/practitionerActions";
+import { COUNTRY_TIMEZONES, countryName, timezoneLabel, timezonesFor } from "@/lib/countries/timezones";
+
+const COUNTRY_OPTIONS = Object.keys(COUNTRY_TIMEZONES)
+  .map((code) => ({ code, name: countryName(code) }))
+  .sort((a, b) => a.name.localeCompare(b.name));
 
 const primary = "min-h-11 rounded-xl bg-brand-primary px-4 py-2.5 text-sm text-white disabled:opacity-50";
 const ghost = "min-h-10 rounded-lg border border-brand-border-light px-3 py-1.5 text-sm text-brand-ink hover:border-brand-primary disabled:opacity-50";
@@ -218,12 +223,39 @@ export function PractitionerDetailsForm(props: {
           <input type="number" min={1} value={v.maxPerWeek} onChange={(e) => setV({ ...v, maxPerWeek: Number(e.target.value) })} className={formInputClassName} />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-brand-gray">Country (two letters, shown publicly)</span>
-          <input value={v.countryCode} maxLength={2} placeholder="e.g. NG" onChange={(e) => setV({ ...v, countryCode: e.target.value.toUpperCase() })} className={formInputClassName} />
+          <span className="text-brand-gray">Country (shown publicly; sets their currency)</span>
+          <select
+            value={v.countryCode}
+            onChange={(e) => {
+              const code = e.target.value;
+              // A new country brings its own zones; keep the current one only if it belongs.
+              const zones = timezonesFor(code);
+              setV({ ...v, countryCode: code, timezone: zones.includes(v.timezone) ? v.timezone : zones[0] ?? v.timezone });
+            }}
+            className={formInputClassName}
+          >
+            <option value="">Choose a country</option>
+            {COUNTRY_OPTIONS.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-brand-gray">Timezone (their hours are set in this)</span>
-          <input value={v.timezone} placeholder="e.g. Africa/Lagos" onChange={(e) => setV({ ...v, timezone: e.target.value })} className={formInputClassName} />
+          <select
+            value={v.timezone}
+            onChange={(e) => setV({ ...v, timezone: e.target.value })}
+            className={formInputClassName}
+            disabled={!v.countryCode}
+          >
+            {(timezonesFor(v.countryCode).length ? timezonesFor(v.countryCode) : [v.timezone]).map((zone) => (
+              <option key={zone} value={zone}>
+                {timezoneLabel(zone)}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
       <Feedback result={result} />
@@ -234,7 +266,18 @@ export function PractitionerDetailsForm(props: {
   );
 }
 
-export function RateForm({ id, feeMinor, platformMinor }: { id: string; feeMinor: number; platformMinor: number }) {
+export function RateForm({
+  id,
+  feeMinor,
+  platformMinor,
+  currency,
+}: {
+  id: string;
+  feeMinor: number;
+  platformMinor: number;
+  /** The practitioner's own currency (their country's price, or PKR). */
+  currency: string;
+}) {
   const [prac, setPrac] = useState(String(feeMinor / 100));
   const [plat, setPlat] = useState(String(platformMinor / 100));
   const [note, setNote] = useState("");
@@ -243,11 +286,11 @@ export function RateForm({ id, feeMinor, platformMinor }: { id: string; feeMinor
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-brand-gray">Practitioner (Rs)</span>
+          <span className="text-brand-gray">Practitioner ({currency})</span>
           <input inputMode="numeric" value={prac} onChange={(e) => setPrac(e.target.value)} className={formInputClassName} />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-brand-gray">Platform (Rs)</span>
+          <span className="text-brand-gray">Platform ({currency})</span>
           <input inputMode="numeric" value={plat} onChange={(e) => setPlat(e.target.value)} className={formInputClassName} />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -260,7 +303,7 @@ export function RateForm({ id, feeMinor, platformMinor }: { id: string; feeMinor
         type="button"
         className={ghost}
         disabled={pending}
-        onClick={() => run(() => setPractitionerRate({ id, practitionerRupees: Number(prac), platformRupees: Number(plat), note }))}
+        onClick={() => run(() => setPractitionerRate({ id, practitionerAmount: Number(prac), platformAmount: Number(plat), note }))}
       >
         {pending ? "Saving…" : "Set rate from now"}
       </button>

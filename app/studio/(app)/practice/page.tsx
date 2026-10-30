@@ -12,10 +12,10 @@ import {
   TimeOffControls,
 } from "@/components/studio/practice/PracticeControls";
 import { loadConsultationAdmin } from "@/lib/consultation/admin";
-import { formatDay, formatSlot, TZ_LABEL } from "@/lib/consultation/format";
+import { formatDay, formatSlotFor, TZ_LABEL } from "@/lib/consultation/format";
 import {
   earningsSummary,
-  formatRupees,
+  formatFee,
   hasVerifiedDegree,
   missingForLive,
   ownPractitionerProfile,
@@ -115,7 +115,8 @@ export default async function PracticePage() {
       <div>
         <h1 className="font-serif text-2xl text-brand-primary">My practice</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-brand-gray">
-          {STATUS_COPY[profile.status] ?? profile.status} All times are Pakistan time ({TZ_LABEL}).
+          {STATUS_COPY[profile.status] ?? profile.status} All times are Pakistan time ({TZ_LABEL})
+          {profile.timezone && profile.timezone !== "Asia/Karachi" ? ", with your own time beside them" : ""}.
         </p>
       </div>
 
@@ -135,7 +136,7 @@ export default async function PracticePage() {
             {upcoming.map((a) => (
               <li key={a.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
                 <div className="min-w-0 text-sm">
-                  <p className="font-medium text-brand-ink">{formatSlot(a.startsAt)}</p>
+                  <p className="font-medium text-brand-ink">{formatSlotFor(a.startsAt, profile.timezone)}</p>
                   <p className="text-brand-gray">{a.clientName}</p>
                   {a.joinUrl ? (
                     <a href={a.joinUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex min-h-10 items-center text-brand-primary underline">
@@ -145,7 +146,7 @@ export default async function PracticePage() {
                     <p className="mt-1 text-brand-gray">The video link is created before the call.</p>
                   )}
                 </div>
-                {!gone ? <CannotAttendButton appointmentId={a.id} when={formatSlot(a.startsAt)} /> : null}
+                {!gone ? <CannotAttendButton appointmentId={a.id} when={formatSlotFor(a.startsAt, profile.timezone)} /> : null}
               </li>
             ))}
           </ul>
@@ -160,8 +161,8 @@ export default async function PracticePage() {
             {data.notesDue.map((n) => (
               <li key={n.appointmentId} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
                 <span className="text-brand-ink">
-                  {formatSlot(n.startsAt)} · {n.clientLabel}
-                  {n.heldMinor ? <span className="text-brand-gray"> · {formatRupees(n.heldMinor)} held until the note is written</span> : null}
+                  {formatSlotFor(n.startsAt, profile.timezone)} · {n.clientLabel}
+                  {n.heldMinor ? <span className="text-brand-gray"> · {formatFee(n.heldMinor)} held until the note is written</span> : null}
                 </span>
                 <Link href={`/studio/consultations/${n.appointmentId}/note`} className="inline-flex min-h-10 items-center text-brand-primary underline">
                   Write the note
@@ -178,15 +179,15 @@ export default async function PracticePage() {
         <dl className="grid gap-3 text-sm sm:grid-cols-3">
           <div>
             <dt className="text-brand-gray">To be paid</dt>
-            <dd className="text-lg text-brand-ink">{formatRupees(earnings.payableMinor)}</dd>
+            <dd className="text-lg text-brand-ink">{formatFee(earnings.payableMinor)}</dd>
           </div>
           <div>
             <dt className="text-brand-gray">Held for notes</dt>
-            <dd className="text-lg text-brand-ink">{formatRupees(earnings.heldMinor)}</dd>
+            <dd className="text-lg text-brand-ink">{formatFee(earnings.heldMinor)}</dd>
           </div>
           <div>
             <dt className="text-brand-gray">Paid this month</dt>
-            <dd className="text-lg text-brand-ink">{formatRupees(earnings.paidThisMonthMinor)}</dd>
+            <dd className="text-lg text-brand-ink">{formatFee(earnings.paidThisMonthMinor)}</dd>
           </div>
         </dl>
         <p className="mt-3 text-xs text-brand-gray">
@@ -227,7 +228,7 @@ export default async function PracticePage() {
             {payouts.map((p) => (
               <li key={p.id} className="flex flex-wrap justify-between gap-2 py-2">
                 <span className="text-brand-ink">
-                  {p.period_start.slice(0, 7)} · {formatRupees(p.total_minor)}
+                  {p.period_start.slice(0, 7)} · {formatFee(p.total_minor)}
                 </span>
                 <span className="text-brand-gray">
                   {p.status === "paid" ? `Paid, reference ${p.reference}` : "Approved, payment on its way"} ·{" "}
@@ -269,7 +270,7 @@ export default async function PracticePage() {
 
           <Card title="Your hours">
             <p className="mb-3 text-sm text-brand-gray">Clients can only book inside these hours. Change them whenever you like.</p>
-            <WeeklyHours initial={windows} defaultSlot={data.defaultSlotMinutes} readOnly={false} practitionerId={profile.id} />
+            <WeeklyHours initial={windows} defaultSlot={data.defaultSlotMinutes} readOnly={false} practitionerId={profile.id} timezone={profile.timezone} />
             <div className="mt-5 border-t border-brand-lavender/60 pt-4">
               <DailyLimitForm initial={profile.max_per_day} />
             </div>

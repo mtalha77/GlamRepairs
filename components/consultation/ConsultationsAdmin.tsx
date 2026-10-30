@@ -18,6 +18,7 @@ import {
   type ConsultationActionResult,
 } from "@/lib/consultation/adminActions";
 import { formatDay, formatSlot, formatTime, TZ_LABEL } from "@/lib/consultation/format";
+import { timezoneLabel } from "@/lib/countries/timezones";
 
 /**
  * Studio → Consultations — HANDOVER-50 §3.
@@ -72,7 +73,7 @@ function Feedback({ result }: { result: ConsultationActionResult | null }) {
   return null;
 }
 
-function formatRupees(minor: number): string {
+function formatFee(minor: number): string {
   return `Rs ${(minor / 100).toLocaleString("en-PK", { maximumFractionDigits: 0 })}`;
 }
 
@@ -91,12 +92,15 @@ export function WeeklyHours({
   defaultSlot,
   readOnly,
   practitionerId,
+  timezone,
 }: {
   initial: WeeklyWindow[];
   defaultSlot: number;
   readOnly: boolean;
   /** Whose hours; omitted for the default practitioner (Ayma). */
   practitionerId?: string;
+  /** The practitioner's timezone: their hours are entered, and slots generated, in it. */
+  timezone?: string | null;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<WeeklyWindow[]>(initial);
@@ -136,7 +140,9 @@ export function WeeklyHours({
         Weekly hours
       </h2>
       <p className="mt-1 max-w-2xl text-sm leading-relaxed text-brand-gray">
-        The hours you take calls each week, in Pakistan time. Clients only ever see times built from this. The gap is from
+        The hours you take calls each week, in{" "}
+        {!timezone || timezone === "Asia/Karachi" ? "Pakistan time" : `your own time (${timezoneLabel(timezone)})`}. Clients
+        only ever see times built from this. The gap is from
         one call starting to the next: 15 minute calls on a 20 minute gap leaves 5 minutes between them.
       </p>
 
@@ -610,7 +616,7 @@ export default function ConsultationsAdmin({
             const held = data.notesDue.reduce((n, d) => n + (d.heldMinor ?? 0), 0);
             return held > 0 ? (
               <p className="mt-1 text-sm text-amber-950">
-                {formatRupees(held)} is held until {data.notesDue.length === 1 ? "it is" : "they are"} written.
+                {formatFee(held)} is held until {data.notesDue.length === 1 ? "it is" : "they are"} written.
               </p>
             ) : null;
           })()}
@@ -619,7 +625,7 @@ export default function ConsultationsAdmin({
               <li key={d.appointmentId} className="flex flex-wrap items-center justify-between gap-2">
                 <span>
                   {formatSlot(d.startsAt)} · {d.clientLabel}
-                  {d.heldMinor ? <span className="text-amber-950"> · {formatRupees(d.heldMinor)} held</span> : null}
+                  {d.heldMinor ? <span className="text-amber-950"> · {formatFee(d.heldMinor)} held</span> : null}
                 </span>
                 <a href={`/studio/consultations/${d.appointmentId}/note`} className="inline-flex min-h-10 items-center font-medium text-brand-primary underline underline-offset-2">
                   Write note

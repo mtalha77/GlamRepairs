@@ -35,6 +35,12 @@ export type PlanThankYouPayload = {
    * anything the browser sent.
    */
   showBankDetails?: boolean;
+  /**
+   * Talha, 29 October 2026: a client quoted outside Pakistan pays by
+   * international transfer, and is sent the account details on WhatsApp
+   * rather than the Pakistani bank block.
+   */
+  international?: boolean;
 };
 
 /** Bank block for the HTML part. The text part uses buildPaymentLines(). */
@@ -126,11 +132,19 @@ export async function sendPlanThankYouEmail(
   );
   const includePayment = isPaidPlan && payload.showBankDetails !== false;
   const reference = leadDisplayRef(payload.sessionId);
+  const internationalText =
+    `Payment from outside Pakistan is by international bank transfer${planPrice ? ` (${planPrice})` : ""}. ` +
+    "Message us on WhatsApp and we will send the account details. Ask your bank to send it with all charges " +
+    `paid by you, so the full amount arrives.${reference ? ` Your reference is ${reference}.` : ""}`;
   const paymentBlockHtml = includePayment
-    ? paymentHtml(planPrice ?? null, reference)
+    ? payload.international
+      ? `<p style="margin: 0 0 12px; padding: 12px 14px; background: #fff7e5; border-radius: 10px;">${escapeHtml(internationalText)}</p>`
+      : paymentHtml(planPrice ?? null, reference)
     : "";
   const paymentBlockText = includePayment
-    ? buildPaymentLines({ amount: planPrice, reference })
+    ? payload.international
+      ? internationalText
+      : buildPaymentLines({ amount: planPrice, reference })
     : "";
 
   const whatsappDisplay = getWhatsAppDisplayNumber();
