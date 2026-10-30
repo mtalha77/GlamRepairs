@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
+import { countryName } from "@/lib/countries/timezones";
 
 import { useSectionArrows } from "@/lib/hooks/useSectionArrows";
 import type { Review } from "@/lib/reviews";
@@ -124,7 +125,7 @@ export default function ReviewsDrum({ reviews, countryNames }: { reviews: Review
                       &ldquo;{review.quote}&rdquo;
                     </blockquote>
                     <figcaption className="mt-4 text-[0.8125rem] text-brand-gray">
-                      <span className="font-medium text-brand-ink">{review.name}</span>, {review.city}
+                      <span className="font-medium text-brand-ink">{review.name}</span>, {countryName(review.country)}
                     </figcaption>
                   </>
                 ) : null}

@@ -184,6 +184,22 @@ const BANNED = [
     allow: ["/join", "/join/apply"],
   },
   {
+    /*
+     * Handover 61 Part 7.2: track-aware rather than absolute. "Doctor",
+     * "diagnose" and "dermatologist" are correct in a disclaimer ("we do
+     * not diagnose") and in referral advice ("see a doctor or
+     * dermatologist"), so they are not banned as words. What is banned is
+     * the claim that this service, or an aesthetics practitioner, does it.
+     * When a PMDC-verified doctor's profile goes live, add that profile's
+     * path to `allow` rather than loosening the pattern.
+     */
+    re: /\bwe (?:diagnose|prescribe)\b|\bpractitioners? (?:will |can |who )?(?:diagnose|prescribe)|\bour (?:doctors?|dermatologists?)\b|\bdiagnosed by (?:a|our|the) (?:practitioner|team)/i,
+    why:
+      "Medical vocabulary on the aesthetics track. Only an MBBS doctor with a " +
+      "verified PMDC registration may diagnose, and only on their own profile " +
+      "(Handover 61 Part 7.2).",
+  },
+  {
     re: /Dr\.?\s+Ayma/i,
     why:
       "Not a physician. 'Dr.' is the single fastest way to lose a YMYL " +

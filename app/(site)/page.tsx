@@ -37,7 +37,7 @@ import { faqSchema, graph } from "@/lib/seo/schema";
  */
 export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata("/", {
-    title: "Online Skin Assessment Pakistan, Read by Hand",
+    title: "Online Skin Assessment, Read by Hand",
     description:
       "Answer a few questions, send a few photos, and a certified practitioner " +
       "reads your skin and writes you a plan you keep. No clinic, no waiting room.",
@@ -99,7 +99,6 @@ export default async function Home() {
         subtitle="No clinic. No commute. Just clarity."
         showTrustLine
         showSampleLink
-        showCompareStrip
       />
       <TrustPrivacySection />
       <FaqSection faqs={faqs} proofs={faqProofsFromPlan(paidPlan)} />

@@ -19,7 +19,10 @@
 export type Review = {
   quote: string;
   name: string;
-  /** City only. Never a full address, and never a surname the client did not give. */
+  /**
+   * City only. Never a full address, and never a surname the client did not give.
+   * Kept for the record: the site shows the country instead (Handover 61 Part 8.2).
+   */
   city: string;
   /**
    * ISO country code, for the filter chips (HANDOVER-61 Part 2). The chips

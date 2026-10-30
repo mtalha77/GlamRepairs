@@ -439,6 +439,18 @@ export function canonicalOg(
 }
 
 /**
+ * Talha, the Managing Director (always spelled out, never "MD"). Every
+ * surface that shows his photograph reads it from here, so replacing it is
+ * one line (Handover 61 Part 10: the old photo went stale because it had
+ * been pasted into several places).
+ */
+export const MANAGING_DIRECTOR = {
+  name: "Muhammad Talha",
+  title: "Managing Director",
+  photo: "/images/team/muhammad-talha.webp",
+} as const;
+
+/**
  * Practitioner and hiring enquiries only. Clients use SITE.phone.
  *
  * Two numbers on purpose (Talha, 19 October 2026), not an inconsistency:
