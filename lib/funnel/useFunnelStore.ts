@@ -41,7 +41,7 @@ type FunnelState = {
    * screen must then show payment instructions — keying on `giftCode` would
    * hide them and leave that client with no idea how to pay.
    */
-  paymentOutcome: { showBankDetails: boolean; isGifted: boolean } | null;
+  paymentOutcome: { showBankDetails: boolean; isGifted: boolean; amountDue?: string | null } | null;
   /**
    * True when the plan was chosen on pricing before the funnel.
    * Skips the in-funnel plan selection step.
@@ -75,7 +75,7 @@ type FunnelState = {
   setSelectedPlan: (plan: string | null) => void;
   setGiftCode: (code: string | null) => void;
   setPaymentOutcome: (
-    outcome: { showBankDetails: boolean; isGifted: boolean } | null,
+    outcome: { showBankDetails: boolean; isGifted: boolean; amountDue?: string | null } | null,
   ) => void;
   setPlanPreselected: (preselected: boolean) => void;
   setSelfieUrl: (url: string | null) => void;

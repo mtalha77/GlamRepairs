@@ -37,6 +37,8 @@ export type NavLink = {
 
 export const navLinks: NavLink[] = [
   { label: "About", href: "/about" },
+  // Talha, 30 October 2026: the practitioners, beside About.
+  { label: "Practitioners", href: "/practitioners" },
   /**
    * HANDOVER-22 §3 — between About and Pricing on purpose. A visitor who has
    * just read who we are and is about to see a price is exactly the person

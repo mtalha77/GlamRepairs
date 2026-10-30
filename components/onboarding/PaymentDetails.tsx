@@ -144,7 +144,8 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
     );
   }
 
-  const amount = planId ? formatRegionPrice(region, planId) : null;
+  // A partial discount code: the server's figure from the row, not the list price.
+  const amount = paymentOutcome?.amountDue ?? (planId ? formatRegionPrice(region, planId) : null);
   const planName = planId ? PLAN_NAMES[planId] : null;
 
   /*
@@ -172,8 +173,8 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
           ) : (
             <>Payment from outside Pakistan is by international bank transfer.</>
           )}{" "}
-          Message us on WhatsApp and we will send the account details. Ask your bank to send it with all charges paid by
-          you (often shown as &ldquo;OUR&rdquo;), so the full amount arrives.
+          {/* Talha, 30 October 2026: no mention of bank charges or fees to clients. */}
+          Message us on WhatsApp and we will send the account details.
         </p>
         {reference ? (
           <div className="mt-4 rounded-xl border border-brand-light/60 bg-brand-light/10 px-3.5 py-3">

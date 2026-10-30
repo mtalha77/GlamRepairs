@@ -12,24 +12,31 @@ import { abs, canonicalOg } from "@/lib/seo/site";
  * /practitioners (Handover 63 Part 2). Indexed, in the sitemap, and linked
  * to every profile, which all link back here. The opposite of the funnel.
  *
- * Below three approved practitioners this is a 404, not a "coming soon"
- * page: a dead URL Google remembers is worse than no URL. Same gate as the
- * homepage deck, counted from the same view.
+ * With no public practitioner this is a 404. Since it is in the top menu
+ * (30 October 2026) it renders from the first one, and is kept out of the
+ * index until the directory threshold is met, the same gate the sitemap
+ * and the homepage deck use, counted from the same view.
  */
 
 const TITLE = "Choose Your Aesthetics Practitioner";
 const DESCRIPTION =
   "Every practitioner publishes their qualification with its reference number and the languages they work in. Filter by country, language and what they read, then choose.";
 
-export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
-  ...canonicalOg("/practitioners", { title: TITLE, description: DESCRIPTION }),
-};
+export async function generateMetadata(): Promise<Metadata> {
+  // Linked from the top menu (30 October 2026), so it exists from the first
+  // public practitioner; below the directory threshold it is not indexed.
+  const open = (await listPublicPractitioners(null)).length >= DIRECTORY_MIN_PRACTITIONERS;
+  return {
+    title: TITLE,
+    description: DESCRIPTION,
+    ...canonicalOg("/practitioners", { title: TITLE, description: DESCRIPTION }),
+    ...(open ? {} : { robots: { index: false, follow: true } }),
+  };
+}
 
 export default async function PractitionersPage() {
   const practitioners = await listPublicPractitioners(visitorPrice(await getServerPricingRegion()));
-  if (practitioners.length < DIRECTORY_MIN_PRACTITIONERS) notFound();
+  if (!practitioners.length) notFound();
 
   return (
     <>

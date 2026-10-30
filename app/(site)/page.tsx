@@ -70,6 +70,10 @@ export default async function Home() {
       ))} />
       <Hero h1={await pageH1("/", "A person reads your skin. Not an algorithm.")} />
       <SkinAssessment />
+      {/* Talha, 30 October 2026: moved up from above the reviews. The hero
+          says a person reads your skin; this is that person, straight
+          after. Renders nothing with no public practitioner. */}
+      <PractitionerStrip />
       <ProblemSection />
       <WhatWeDoSection />
       {/*
@@ -83,10 +87,6 @@ export default async function Home() {
         (This supersedes the HANDOVER-12 §5 placement, which put the same
         section after the value proposition and before the FAQ.)
       */}
-      {/* Handover 63 Part 1 — directly above the reviews: the people are
-          real, then clients liked them. Renders nothing below three
-          approved practitioners. */}
-      <PractitionerStrip />
       <TestimonialsSection />
       <PricingSection
         /*
