@@ -21,27 +21,26 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Air quality and your skin, by city",
   description:
-    "Live particulate readings for cities across Pakistan, and what each one means for your skin, written by a certified practitioner.",
+    "Live PM2.5 readings for cities in Pakistan, the UK, the Gulf, Nigeria, North America, Australia and Bangladesh, and what each one means for your skin.",
   ...canonicalOg("/air-quality"),
 };
 
 export default async function AirQualityIndexPage() {
   const pages = await listPublishedAreaPages();
 
-  const zones = pages.reduce<Map<string, { name: string; summary: string | null; cities: typeof pages }>>(
-    (acc, p) => {
-      const key = p.zoneSlug ?? "other";
-      const entry = acc.get(key) ?? {
-        name: p.zoneName ?? "Other cities",
-        summary: p.zoneSummary,
-        cities: [],
-      };
-      entry.cities.push(p);
-      acc.set(key, entry);
-      return acc;
-    },
-    new Map(),
-  );
+  // By country, then by climate zone within it (30 October 2026: cities
+  // outside Pakistan). The list arrives in sort order, so Pakistan leads.
+  type Zone = { name: string; summary: string | null; cities: typeof pages };
+  const countries = new Map<string, Map<string, Zone>>();
+  for (const p of pages) {
+    const zones = countries.get(p.countryName) ?? new Map<string, Zone>();
+    const key = p.zoneSlug ?? "other";
+    const entry = zones.get(key) ?? { name: p.zoneName ?? "Other cities", summary: p.zoneSummary, cities: [] };
+    entry.cities.push(p);
+    zones.set(key, entry);
+    countries.set(p.countryName, zones);
+  }
+  const multiCountry = countries.size > 1;
 
   const trail: Crumb[] = [
     { name: "Home", path: "/" },
@@ -68,12 +67,19 @@ export default async function AirQualityIndexPage() {
           City pages are being prepared and will appear here shortly.
         </p>
       ) : (
-        <div className="mt-10 space-y-10">
+        <div className="mt-10 space-y-12">
+          {[...countries.entries()].map(([country, zones]) => (
+          <div key={country} className="space-y-10">
+          {multiCountry ? (
+            <h2 className="border-b border-brand-lavender/70 pb-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand-gray">
+              {country}
+            </h2>
+          ) : null}
           {[...zones.entries()].map(([slug, zone]) => (
             <section key={slug}>
-              <h2 className="font-serif text-2xl leading-snug text-brand-primary">
+              <h3 className="font-serif text-2xl leading-snug text-brand-primary">
                 {zone.name}
-              </h2>
+              </h3>
               {zone.summary ? (
                 <p className="mt-2 text-sm leading-relaxed text-brand-gray">
                   {zone.summary}
@@ -99,6 +105,8 @@ export default async function AirQualityIndexPage() {
                 ))}
               </ul>
             </section>
+          ))}
+          </div>
           ))}
         </div>
       )}
