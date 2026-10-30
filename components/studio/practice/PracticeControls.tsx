@@ -17,6 +17,7 @@ import {
   setPractitionerRate,
   suspendPractitioner,
   updateOwnBio,
+  updatePractitionerBio,
   updatePractitionerDetails,
   type PractitionerActionResult,
 } from "@/lib/practitioners/practitionerActions";
@@ -117,7 +118,8 @@ export function PhotoUpload({ current, profileId }: { current: string | null; pr
   );
 }
 
-export function BioForm({ initial }: { initial: string }) {
+/** The practitioner's own bio, or, with `profileId`, the studio editing it for them. */
+export function BioForm({ initial, profileId }: { initial: string; profileId?: string }) {
   const [bio, setBio] = useState(initial);
   const { result, pending, run } = useAction();
   return (
@@ -127,7 +129,7 @@ export function BioForm({ initial }: { initial: string }) {
         {bio.trim().length > 80 ? "Long enough" : `More than 80 characters needed (${bio.trim().length} so far)`}
       </p>
       <Feedback result={result} />
-      <button type="button" className={primary} disabled={pending} onClick={() => run(() => updateOwnBio(bio))}>
+      <button type="button" className={primary} disabled={pending} onClick={() => run(() => (profileId ? updatePractitionerBio({ id: profileId, bio }) : updateOwnBio(bio)))}>
         {pending ? "Saving…" : "Save bio"}
       </button>
     </div>
