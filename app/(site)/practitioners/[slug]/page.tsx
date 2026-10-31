@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import ProfileSlots from "@/components/practitioners/ProfileSlots";
 import JsonLd from "@/components/seo/JsonLd";
 import { countryName, timezoneLabel } from "@/lib/countries/timezones";
-import { firstName, RECOMMENDED_SLUG } from "@/lib/practitioners/card";
+import { firstName, RECOMMENDED_SLUG, showRecommendedBadge } from "@/lib/practitioners/card";
 import {
   directoryIsOpen,
   getPublicPractitioner,
@@ -187,9 +187,9 @@ export default async function PractitionerProfilePage({ params }: Props) {
               {p.name}
             </nav>
             <h1 className="text-[33px] font-bold leading-[1.08] tracking-[-0.8px] lg:text-[43px] lg:tracking-[-1.2px]">{p.name}</h1>
-            <p className="mt-[7px] font-serif text-[19px] italic text-brand-lavender">{p.role}</p>
+            <p className="mt-[7px] font-serif text-[19px] italic text-white/85">{p.role}</p>
             <div className="mt-[18px] flex flex-wrap gap-[9px]">
-              {p.recommended ? <span className="rounded-full bg-white px-3.5 py-[7px] text-[13px] font-semibold text-brand-primary">Recommended</span> : null}
+              {p.recommended && showRecommendedBadge(all.length) ? <span className="rounded-full bg-white px-3.5 py-[7px] text-[13px] font-semibold text-brand-primary">Recommended</span> : null}
               {country ? <span className={pill}>{country}</span> : null}
               {p.languages.length ? <span className={pill}>{p.languages.join(", ")}</span> : null}
               {found.degreeVerified ? (

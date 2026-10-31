@@ -7,9 +7,11 @@ import {
   PractitionerDetailsForm,
   PractitionerStatusButtons,
   RateForm,
+  ReadinessChecklist,
 } from "@/components/studio/practice/PracticeControls";
 import { feedbackSummary } from "@/lib/consultation/feedback";
-import { formatFee, listPractitioners, missingForLive } from "@/lib/practitioners/roster";
+import { gatesFor, readinessFor } from "@/lib/practitioners/readiness";
+import { formatFee, listPractitioners } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -44,6 +46,7 @@ export default async function PractitionersPage() {
         .in("profile_id", practitioners.map((p) => p.id))
     : { data: [] };
   const appFor = new Map((apps ?? []).map((a) => [a.profile_id, a.id]));
+  const readiness = await readinessFor(practitioners.map((p) => p.id));
 
   return (
     <div className="space-y-6">
@@ -61,7 +64,7 @@ export default async function PractitionersPage() {
 
       {practitioners.length ? (
         practitioners.map((p) => {
-          const missing = missingForLive(p);
+          const ready = readiness.get(p.id);
           const appId = appFor.get(p.id);
           return (
             <section key={p.id} className="space-y-5 rounded-2xl border border-brand-lavender/70 bg-white p-5">
@@ -86,18 +89,16 @@ export default async function PractitionersPage() {
                 </p>
               </header>
 
-              {missing.length && p.status !== "offboarded" ? (
-                <div className="rounded-xl bg-brand-cream-card px-4 py-3 text-sm">
-                  <p className="font-medium text-brand-ink">Missing</p>
-                  <ul className="mt-1 list-disc pl-5 text-brand-gray">
-                    {missing.map((m) => (
-                      <li key={m}>{m}</li>
-                    ))}
-                  </ul>
-                  {p.status === "approved" ? (
-                    <p className="mt-2 text-xs text-brand-gray">Already live. These are checked only when a profile is made live.</p>
-                  ) : null}
-                </div>
+              {ready && p.status !== "offboarded" ? (
+                <ReadinessChecklist
+                  id={p.id}
+                  gates={gatesFor(ready)}
+                  live={ready.live}
+                  approved={ready.approved}
+                  consented={ready.consented}
+                  accepting={ready.accepting}
+                  canReview={ready.can_review}
+                />
               ) : null}
 
               {!p.hasAccount ? <p className="text-sm text-brand-gray">No sign-in account linked yet.</p> : null}

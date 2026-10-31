@@ -48,7 +48,7 @@ export default function TrustPrivacySection() {
     <section className="relative overflow-hidden bg-white px-4 sm:px-6 lg:px-12">
       <div className="relative -mx-4 aspect-[4/3] min-h-[16rem] w-auto sm:-mx-6 sm:aspect-[1440/668] sm:min-h-[26rem] lg:-mx-12 lg:min-h-[32rem]">
         <Image
-          src="/images,svgs/privacy_bubbles_bg.png"
+          src="/images,svgs/privacy_bubbles_bg.webp"
           alt=""
           fill
           sizes="100vw"

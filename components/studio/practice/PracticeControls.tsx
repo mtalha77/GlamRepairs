@@ -11,9 +11,12 @@ import {
   makePractitionerLive,
   offboardPractitionerAsAdmin,
   reassignAppointment,
+  recordPractitionerAgreement,
   removeOwnTimeOff,
   saveOwnPublicProfile,
   setOwnDailyLimit,
+  setPractitionerAccepting,
+  setPractitionerCanReview,
   setPractitionerRate,
   suspendPractitioner,
   updateOwnBio,
@@ -343,6 +346,115 @@ export function RateForm({
       >
         {pending ? "Saving…" : "Set rate from now"}
       </button>
+    </div>
+  );
+}
+
+type ReadinessGate = { key: string; label: string; done: boolean; owner: "you" | "them"; note?: string };
+
+/**
+ * Handover 65 §0.3: "cannot go live" without saying which gate is open was
+ * the defect. Every gate, ticked or not, with who can clear it, and the
+ * studio's own switches next to the rows they clear.
+ */
+export function ReadinessChecklist({
+  id,
+  gates,
+  live,
+  approved,
+  consented,
+  accepting,
+  canReview,
+}: {
+  id: string;
+  gates: ReadinessGate[];
+  live: boolean;
+  approved: boolean;
+  consented: boolean;
+  accepting: boolean;
+  canReview: boolean;
+}) {
+  const { result, pending, run } = useAction();
+  const [version, setVersion] = useState("");
+  const [signedOn, setSignedOn] = useState("");
+  const open = gates.filter((g) => !g.done);
+  const onYou = open.filter((g) => g.owner === "you").length;
+  const onThem = open.length - onYou;
+  return (
+    <div className="space-y-3 rounded-xl border border-brand-lavender/70 bg-brand-surface-alt px-4 py-3">
+      <p className="text-sm font-medium text-brand-ink">
+        {live ? "On the website." : "Not on the website yet."}{" "}
+        <span className="font-normal text-brand-gray">
+          {open.length
+            ? [onYou ? `${onYou} waiting on you` : null, onThem ? `${onThem} waiting on them` : null].filter(Boolean).join(", ") + "."
+            : "Nothing outstanding."}
+        </span>
+      </p>
+      <ul className="space-y-1.5">
+        {gates.map((g) => (
+          <li key={g.key} className="flex flex-wrap items-start gap-x-2.5 gap-y-0.5 text-sm">
+            <span
+              aria-hidden
+              className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                g.done ? "bg-brand-success/15 text-brand-success-strong" : "bg-brand-error/10 text-brand-error-strong"
+              }`}
+            >
+              {g.done ? "\u2713" : "\u2715"}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="sr-only">{g.done ? "Done: " : "Open: "}</span>
+              <span className={g.done ? "text-brand-gray" : "text-brand-ink"}>{g.label}</span>
+              {g.note ? <span className="block text-xs text-brand-gray">{g.note}</span> : null}
+            </span>
+            {!g.done ? (
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.06em] ${
+                  g.owner === "you" ? "bg-brand-primary text-white" : "bg-brand-lavender text-brand-primary"
+                }`}
+              >
+                {g.owner === "you" ? "Waiting on you" : "Waiting on them"}
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+
+      <div className="flex flex-wrap items-end gap-2 border-t border-brand-lavender/60 pt-3">
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
+          <span className="text-brand-gray">Agreement version they signed</span>
+          <input value={version} onChange={(e) => setVersion(e.target.value)} placeholder="e.g. v1 October 2026" className={formInputClassName} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-brand-gray">Signed on</span>
+          <input type="date" value={signedOn} onChange={(e) => setSignedOn(e.target.value)} className={formInputClassName} />
+        </label>
+        <button
+          type="button"
+          className={ghost}
+          disabled={pending || !version.trim() || !signedOn}
+          onClick={() => run(() => recordPractitionerAgreement({ id, version, signedOn }))}
+        >
+          Record agreement
+        </button>
+      </div>
+
+      {approved ? (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={ghost}
+            disabled={pending || (!accepting && !consented)}
+            title={!accepting && !consented ? "They switch their profile on first, in My practice." : undefined}
+            onClick={() => run(() => setPractitionerAccepting({ id, on: !accepting }))}
+          >
+            {accepting ? "Stop new clients" : "Start taking clients"}
+          </button>
+          <button type="button" className={ghost} disabled={pending} onClick={() => run(() => setPractitionerCanReview({ id, on: !canReview }))}>
+            {canReview ? "Stop assigning reports" : "Allow assigning reports"}
+          </button>
+        </div>
+      ) : null}
+      <Feedback result={result} />
     </div>
   );
 }

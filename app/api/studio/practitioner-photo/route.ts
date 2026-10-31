@@ -1,5 +1,7 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
+import { PRACTITIONERS_TAG } from "@/lib/practitioners/directory";
 import { storeProfilePhoto } from "@/lib/practitioners/photo";
 import { ownPractitionerProfile } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
@@ -37,5 +39,6 @@ export async function POST(request: Request) {
 
   const stored = await storeProfilePhoto(profileId, Buffer.from(await file.arrayBuffer()), file.type);
   if (!stored.ok) return NextResponse.json({ ok: false, error: stored.error }, { status: 400 });
+  revalidateTag(PRACTITIONERS_TAG, { expire: 0 });
   return NextResponse.json({ ok: true, url: stored.url });
 }

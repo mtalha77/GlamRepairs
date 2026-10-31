@@ -61,13 +61,13 @@ export async function hasReviewingTeam(): Promise<boolean> {
  * cannot name one of them.
  */
 export async function consultationPractitionerLine(): Promise<string> {
+  // Handover 65 §4.2: read the go-live rule from its one source, not a
+  // copy of it, so this line can never name someone the site hides.
   const { data } = await createAdminSupabaseClient()
-    .from("practitioner_profiles")
-    .select("full_name, title")
-    .eq("status", "approved")
-    .eq("accepting_clients", true)
+    .from("practitioner_public")
+    .select("display_name, role_title")
     .limit(2);
-  if (data?.length === 1) return `${data[0].full_name}, ${data[0].title}`;
+  if (data?.length === 1) return `${data[0].display_name}, ${data[0].role_title}`;
   return "A practitioner from our team";
 }
 

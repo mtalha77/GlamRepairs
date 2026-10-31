@@ -18,7 +18,6 @@ import {
   earningsSummary,
   formatFee,
   hasVerifiedDegree,
-  missingForLive,
   ownPractitionerProfile,
   weeklyWindowsFor,
 } from "@/lib/practitioners/roster";
@@ -26,6 +25,7 @@ import { listOwnPayouts } from "@/lib/practitioners/payouts";
 import { monthLabel, practitionerMonths, showMoney } from "@/lib/practitioners/revenue";
 import { referralPath } from "@/lib/practitioners/referral";
 import { abs } from "@/lib/seo/site";
+import { gatesFor, readinessFor } from "@/lib/practitioners/readiness";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -111,14 +111,10 @@ export default async function PracticePage() {
     return { id: b.id, label: first === last ? first : `${first} to ${last}`, reason: b.reason };
   });
   const gone = profile.status === "offboarded";
-  const missing = missingForLive({
-    photoUrl: profile.photo_url,
-    profilePhotoVerified: profile.profile_photo_verified,
-    bio: profile.bio ?? "",
-    hasVerifiedDegree: degree,
-    payoutMethod: profile.payout_method,
-    publicConsent: Boolean(profile.public_consent_at),
-  });
+  // Handover 65 §0.3: the same gates the studio sees, from her side.
+  const ready = (await readinessFor([profile.id])).get(profile.id);
+  const gates = ready ? gatesFor(ready) : [];
+  const open = gates.filter((g) => !g.done);
   const upcoming = data.appointments.filter((a) => !a.ended);
 
   return (
@@ -131,11 +127,24 @@ export default async function PracticePage() {
         </p>
       </div>
 
-      {missing.length && !gone ? (
+      {open.length && !gone ? (
         <Card title="Before you go live">
-          <ul className="list-disc space-y-1 pl-5 text-sm text-brand-ink">
-            {missing.map((m) => (
-              <li key={m}>{m}</li>
+          <ul className="space-y-1.5 text-sm">
+            {gates.map((g) => (
+              <li key={g.key} className="flex flex-wrap items-start gap-x-2.5">
+                <span aria-hidden className={g.done ? "text-brand-success-strong" : "text-brand-error-strong"}>
+                  {g.done ? "\u2713" : "\u2715"}
+                </span>
+                <span className={`min-w-0 flex-1 ${g.done ? "text-brand-gray" : "text-brand-ink"}`}>
+                  <span className="sr-only">{g.done ? "Done: " : "Open: "}</span>
+                  {g.label}
+                </span>
+                {!g.done ? (
+                  <span className="text-xs font-semibold text-brand-primary">
+                    {g.owner === "them" ? "Waiting on you" : "Waiting on the studio"}
+                  </span>
+                ) : null}
+              </li>
             ))}
           </ul>
         </Card>

@@ -3,7 +3,7 @@ import Image from "next/image";
 const dayPhotos = [
   {
     label: "Day 0",
-    src: "/svgs/Rectangle 3467687.svg",
+    src: "/images/onboarding-intro-1.webp",
     alt: "Skin at day zero",
     width: 155,
     height: 190,
@@ -11,7 +11,7 @@ const dayPhotos = [
   },
   {
     label: "Day 30",
-    src: "/svgs/Rectangle 3467688.svg",
+    src: "/images/onboarding-intro-2.webp",
     alt: "Skin at day thirty",
     width: 163,
     height: 195,
