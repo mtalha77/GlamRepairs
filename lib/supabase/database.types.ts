@@ -219,6 +219,47 @@ export type Database = {
         };
         Relationships: [];
       };
+      card_payments: {
+        Row: {
+          id: string;
+          lead_id: string;
+          provider: string;
+          environment: string;
+          tracker: string | null;
+          amount_minor: number;
+          currency: string;
+          status: string;
+          provider_state: string | null;
+          created_at: string;
+          updated_at: string;
+          paid_at: string | null;
+          last_event: unknown;
+        };
+        Insert: {
+          id?: string;
+          lead_id: string;
+          provider?: string;
+          environment: string;
+          tracker?: string | null;
+          amount_minor: number;
+          currency: string;
+          status?: string;
+          provider_state?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          paid_at?: string | null;
+          last_event?: unknown;
+        };
+        Update: {
+          tracker?: string | null;
+          status?: string;
+          provider_state?: string | null;
+          updated_at?: string;
+          paid_at?: string | null;
+          last_event?: unknown;
+        };
+        Relationships: [];
+      };
       practitioner_blackouts: {
         Row: {
           id: string;
@@ -1671,6 +1712,8 @@ export type Database = {
           test_session: string | null;
           preferred_practitioner_id: string | null;
           referred_by_practitioner_id: string | null;
+          payment_method: string | null;
+          payment_reference: string | null;
           test_reason: string | null;
           // HOTFIX-7 §1 — "record what was quoted": the pricing_regions.code
           // and currency the visitor actually saw/chose at submission, and
@@ -1712,6 +1755,10 @@ export type Database = {
           duplicate_of?: string | null;
           referred_by_person?: string | null;
           referred_by_practitioner_id?: string | null;
+          payment_method?: string | null;
+          payment_reference?: string | null;
+          payment_verified_at?: string | null;
+          payment_verified_by?: string | null;
           gift_code_used?: string | null;
           phone?: string | null;
           last_seen_at?: string | null;
@@ -1758,6 +1805,10 @@ export type Database = {
           duplicate_of?: string | null;
           referred_by_person?: string | null;
           referred_by_practitioner_id?: string | null;
+          payment_method?: string | null;
+          payment_reference?: string | null;
+          payment_verified_at?: string | null;
+          payment_verified_by?: string | null;
           gift_code_used?: string | null;
           phone?: string | null;
           last_seen_at?: string | null;

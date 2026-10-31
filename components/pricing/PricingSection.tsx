@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import CurrencySwitcher from "@/components/pricing/CurrencySwitcher";
+import { cardPaymentsAvailable } from "@/lib/payments/safepay";
 import PricingCard from "@/components/pricing/PricingCard";
 import { getServerPricingRegion, getVisitorCountry } from "@/lib/pricing/geo";
 import { listActivePricingRegions } from "@/lib/pricing/regions";
@@ -83,8 +84,11 @@ export default async function PricingSection({
           </div>
           {region.code !== "PK" ? (
             <p className="mt-3 font-sans text-sm text-brand-gray">
-              Prices in {currencyName(region.currency)}. Paying from outside Pakistan is by international bank
-              transfer: message us on WhatsApp and we will send the details.
+              Prices in {currencyName(region.currency)}.{" "}
+              {/* 31 October 2026: card first once Safepay takes this currency. */}
+              {cardPaymentsAvailable(region.currency)
+                ? "Pay by card, or by international bank transfer if you prefer."
+                : "Paying from outside Pakistan is by international bank transfer: message us on WhatsApp and we will send the details."}
             </p>
           ) : null}
         </header>

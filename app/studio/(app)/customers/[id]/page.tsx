@@ -20,6 +20,7 @@ import ReportHistory from "@/components/studio/ReportHistory";
 import ReviewForm from "@/components/studio/ReviewForm";
 import ReviewList from "@/components/studio/ReviewList";
 import VerifyPaymentButton from "@/components/studio/VerifyPaymentButton";
+import CardPaymentPanel from "@/components/studio/CardPaymentPanel";
 import { getLeadConsultation } from "@/lib/consultation/forLead";
 import { formatBookingWhatsAppMessage } from "@/lib/funnel/formatBookingSummary";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
@@ -367,6 +368,7 @@ export default async function CustomerDetailPage({
               paymentStatus={customer.paymentStatus}
               canVerify={member.canVerifyPayment}
             />
+            {member.canVerifyPayment ? <CardPaymentPanel leadId={customer.id} /> : null}
           </div>
           <div className="rounded-2xl border border-brand-lavender/70 bg-white p-5">
             <h2 className="mb-4 font-serif text-xl text-brand-primary">Status</h2>

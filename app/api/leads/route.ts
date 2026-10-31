@@ -19,6 +19,7 @@ import {
 import { deleteUnreferencedPhotos } from "@/lib/leads/deleteLeadPhotos";
 import { extendHoldOnSubmit } from "@/lib/consultation/slots";
 import { formatMoney } from "@/lib/pricing/money";
+import { cardEligibility, cardPayUrl } from "@/lib/payments/cardCheckout";
 import { resolvePricingRegion } from "@/lib/pricing/regions";
 import { logSuppressedEmail } from "@/lib/testPortal/email";
 import { getTestSession, scopedSessionId } from "@/lib/testPortal/session";
@@ -229,7 +230,7 @@ export async function POST(request: Request) {
       // read. Treated as an ordinary paid lead: showing payment
       // instructions to a developer is harmless, hiding them would mask a
       // regression in the real path.
-      payment: { showBankDetails: true, isGifted: false, amountDue: null },
+      payment: { showBankDetails: true, isGifted: false, amountDue: null, cardAvailable: false },
     });
   }
 
@@ -323,6 +324,11 @@ export async function POST(request: Request) {
   const includeBankDetails = computeShowBankDetails(paymentFacts);
   const gifted = isGiftedLead(paymentFacts);
 
+  // 31 October 2026: card payment through Safepay, when it is configured
+  // and this lead's currency is one the merchant account takes.
+  // A test lead can only ever reach the Safepay sandbox (cardEligibility).
+  const cardAvailable = !gifted ? (await cardEligibility(lead.leadId)).ok : false;
+
   // A code that took part of the price off: the client is told, and
   // emailed, the discounted amount the row now carries, not the list price.
   let amountDue: string | null = null;
@@ -350,6 +356,7 @@ export async function POST(request: Request) {
       sessionId: body.sessionId,
       showBankDetails: includeBankDetails,
       international: Boolean(body.pricingRegion && body.pricingRegion !== "PK"),
+      cardPayUrl: cardAvailable ? cardPayUrl(lead.leadId) : null,
       leadId: lead.leadId,
     });
     if (!emailResult.ok) {
@@ -369,6 +376,7 @@ export async function POST(request: Request) {
       showBankDetails: includeBankDetails,
       isGifted: gifted,
       amountDue,
+      cardAvailable,
     },
   });
 }
