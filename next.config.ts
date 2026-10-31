@@ -30,6 +30,13 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     /*
+     * Handover 65 §3.4: the default list ends at 3840, so a full-bleed
+     * `sizes="100vw"` image on a 2x laptop (1440 x 2 = 2880) fetched the
+     * 3840 rendition: the homepage hero and the privacy background did.
+     * Capped at 2048, which is past what any of these images shows at.
+     */
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    /*
      * HANDOVER-45 — media-library images are served from Supabase Storage.
      * Only the public `blog-images` bucket is allowed, by path, so the image
      * optimiser cannot be pointed at anything else on that host (the

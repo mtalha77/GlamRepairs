@@ -85,6 +85,9 @@ export type Database = {
           assessments_count: number | null;
           practitioner_quote: string | null;
           credential_ref: string | null;
+          accepted_terms_at: string | null;
+          accepted_terms_version: string | null;
+          track: string;
         };
         Insert: {
           id?: string;
@@ -156,6 +159,8 @@ export type Database = {
           credential_ref?: string | null;
           country_code?: string | null;
           country_name?: string | null;
+          accepted_terms_at?: string | null;
+          accepted_terms_version?: string | null;
         };
         Relationships: [];
       };
@@ -2505,6 +2510,34 @@ export type Database = {
           languages: string[] | null;
           next_available_at: string | null;
           bio: string | null;
+        };
+        Relationships: [];
+      };
+      /** Handover 65 §0.3: every gate between a profile and the website. Service role only. */
+      practitioner_readiness: {
+        Row: {
+          id: string;
+          slug: string;
+          full_name: string;
+          status: string;
+          track: string;
+          approved: boolean;
+          terms_signed: boolean;
+          terms_version: string | null;
+          terms_signed_at: string | null;
+          consented: boolean;
+          accepting: boolean;
+          can_review: boolean;
+          photo_verified: boolean;
+          has_photo: boolean;
+          bio_ok: boolean;
+          payout_set: boolean;
+          has_account: boolean;
+          licence_ok: boolean;
+          degree_verified: boolean;
+          live: boolean;
+          probation_reports_remaining: number | null;
+          probation_waived: boolean;
         };
         Relationships: [];
       };

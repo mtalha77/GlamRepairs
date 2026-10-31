@@ -1,9 +1,11 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
+
 import { formatMoney } from "@/lib/pricing/money";
 import type { PricingRegion } from "@/lib/pricing/regions";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { RECOMMENDED_SLUG, type CardPractitioner, type SampleAvatar } from "@/lib/practitioners/card";
+import { RECOMMENDED_SLUG, showRecommendedBadge, type CardPractitioner, type SampleAvatar } from "@/lib/practitioners/card";
 
 /**
  * Handover 63 (and 61 Part 1): who appears on the practitioner card.
@@ -92,31 +94,55 @@ function fromPublic(row: PublicRow, price: string | null): CardPractitioner {
   };
 }
 
+/**
+ * The view's rows, shared across requests for five minutes (Handover 65
+ * §3.2). practitioner_public runs correlated counts over reports and
+ * feedback per row, and every public page that shows a card read it fresh
+ * on every request, the directory twice (metadata and page). The rows hold
+ * no visitor-specific data; the visitor's price is applied after. Studio
+ * changes that affect them call revalidateTag(PRACTITIONERS_TAG).
+ */
+export const PRACTITIONERS_TAG = "practitioner-public";
+
+const publicRows = unstable_cache(
+  async (): Promise<PublicRow[]> => {
+    const { data, error } = await createAdminSupabaseClient()
+      .from("practitioner_public")
+      .select("*")
+      .order("next_available_at", { ascending: true, nullsFirst: false })
+      .order("display_name");
+    // Thrown, not returned, so a failed read is never cached.
+    if (error) throw new Error(error.message);
+    return (data ?? []) as PublicRow[];
+  },
+  ["practitioner-public-rows"],
+  { revalidate: 300, tags: [PRACTITIONERS_TAG] },
+);
+
+async function readPublicRows(): Promise<PublicRow[] | null> {
+  try {
+    return await publicRows();
+  } catch (err) {
+    console.error("[practitioners] list", (err as Error).message);
+    return null;
+  }
+}
+
 /** Every public practitioner: the recommended one first, then soonest available. */
 export async function listPublicPractitioners(price: string | null): Promise<CardPractitioner[]> {
-  const { data, error } = await createAdminSupabaseClient()
-    .from("practitioner_public")
-    .select("*")
-    .order("next_available_at", { ascending: true, nullsFirst: false })
-    .order("display_name");
-  if (error) {
-    console.error("[practitioners] list", error.message);
-    return [];
-  }
-  return ((data ?? []) as PublicRow[])
+  const rows = (await readPublicRows()) ?? [];
+  const cards = rows
     .map((row) => fromPublic(row, price))
-    .sort((a, b) => Number(b.recommended) - Number(a.recommended));
+    .sort((a, b) => Number(b.slug === RECOMMENDED_SLUG) - Number(a.slug === RECOMMENDED_SLUG));
+  // Ayma still leads every list; the badge only appears once there is a
+  // real choice to recommend within (Handover 65 §2.3).
+  const badge = showRecommendedBadge(cards.length);
+  return cards.map((c) => ({ ...c, recommended: badge && c.recommended }));
 }
 
 export async function getPublicPractitioner(slug: string, price: string | null): Promise<PublicProfile | null> {
-  const { data, error } = await createAdminSupabaseClient()
-    .from("practitioner_public")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
-  if (error) console.error("[practitioners] get", error.message);
-  if (!data) return null;
-  const row = data as PublicRow;
+  const row = ((await readPublicRows()) ?? []).find((r) => r.slug === slug);
+  if (!row) return null;
   const card = fromPublic(row, price);
   const notes = row.focus_notes ?? {};
   return {
@@ -152,14 +178,8 @@ export async function nextOpenSlots(practitionerId: string, limit = 3): Promise<
 
 /** The gate, counted from the same view the cards read. */
 export async function directoryIsOpen(): Promise<boolean> {
-  const { count, error } = await createAdminSupabaseClient()
-    .from("practitioner_public")
-    .select("id", { count: "exact", head: true });
-  if (error) {
-    console.error("[practitioners] count", error.message);
-    return false;
-  }
-  return (count ?? 0) >= DIRECTORY_MIN_PRACTITIONERS;
+  const rows = await readPublicRows();
+  return (rows?.length ?? 0) >= DIRECTORY_MIN_PRACTITIONERS;
 }
 
 type SampleRow = {

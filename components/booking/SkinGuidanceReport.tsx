@@ -13,12 +13,13 @@ import {
   reportPatient,
   reportPhotos,
 } from "@/components/booking/skinGuidanceReportData";
+import { LOGO_ASSET } from "@/components/home/Logo";
 import FunnelStepGuard from "@/components/funnel/FunnelStepGuard";
 import { BOOKING_REPORT_UNLOCK } from "@/lib/funnel/funnelProgress";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
 import { buildWhatsAppBookingSummaryLink } from "@/lib/funnel/whatsapp";
 
-const reportLogo = "/svgs/GLAM REPAIR LOGO-08 2 (1).svg";
+const reportLogo = LOGO_ASSET.color;
 
 const SKIN_TYPE_LABELS: Record<string, string> = {
   dry: "Dry skin",
@@ -220,10 +221,10 @@ export default function SkinGuidanceReport() {
       <article className="mx-auto w-full max-w-[40rem] rounded-[2rem] border border-brand-lavender/60 bg-white px-5 py-7 shadow-sm sm:px-8 sm:py-9">
         <header className="text-center">
           <Image
-            src={reportLogo}
+            src={reportLogo.src}
             alt="Glam Repairs"
-            width={121}
-            height={45}
+            width={reportLogo.width}
+            height={reportLogo.height}
             priority
             unoptimized
             className="mx-auto h-10 w-auto sm:h-11"

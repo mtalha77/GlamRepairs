@@ -14,14 +14,16 @@ const navPillBase =
   "inline-flex h-[39px] items-center justify-center whitespace-nowrap rounded-[50px] font-sans uppercase leading-none transition-colors";
 
 /**
- * The left pill row and the Get Started pill are sized separately.
+ * The pill row and the Get Started pill are sized separately.
  *
- * HANDOVER-22 §3 added a fourth link, and the logo is absolutely centred:
- * at 1024px it occupies 409–616px, leaving ~359px for the whole left row.
- * Four pills at 16px/25px need ~590px, so they would run under the logo.
- * Shrinking the type and padding below xl is what buys the room back.
+ * Handover 65 §1: the logo used to be absolutely centred, so it reserved no
+ * space and any extra link ran underneath it. It now sits in its own track
+ * on the left (logo | links | Get Started), so the row can only ever push,
+ * never overlap. Budget at 1280px with today's five links: logo ~120px,
+ * links ~673px, Get Started ~155px, against 1180px of row; a sixth label of
+ * average length still fits. Below xl the smaller type keeps it inside 924px.
  */
-const navLinkPill = `${navPillBase} px-[14px] text-[13px] xl:px-[25px] xl:text-[16px]`;
+const navLinkPill = `${navPillBase} px-[14px] text-[13px] xl:px-[20px] xl:text-[16px]`;
 const navCtaPill = `${navPillBase} px-[25px] text-[16px]`;
 
 export type NavLink = {
@@ -108,8 +110,8 @@ export default function Navbar({ className = "", theme = "dark" }: NavbarProps) 
   };
 
   const getStartedClass = isLight
-    ? `${navCtaPill} ml-auto bg-[#ead7ff] text-brand-primary hover:bg-[#e0c8f5]`
-    : `${navCtaPill} ml-auto bg-[rgba(234,215,255,0.5)] text-white hover:bg-[rgba(234,215,255,0.7)]`;
+    ? `${navCtaPill} bg-[#ead7ff] text-brand-primary hover:bg-[#e0c8f5]`
+    : `${navCtaPill} bg-[rgba(234,215,255,0.5)] text-white hover:bg-[rgba(234,215,255,0.7)]`;
 
   const logoVariant = isLight ? "color" : "white";
   const logoClass = isLight ? NAVBAR_LOGO_COLOR_CLASS : NAVBAR_LOGO_CLASS;
@@ -169,11 +171,27 @@ export default function Navbar({ className = "", theme = "dark" }: NavbarProps) 
     <header
       className={`absolute inset-x-0 top-0 z-30 h-[4.5rem] md:h-20 xl:h-24 ${className}`.trim()}
     >
+      {/*
+        Handover 65 §1.2: over a photograph the white links depended on
+        whatever part of the image happened to sit behind them. A soft scrim
+        gives them a floor without boxing the header in. Dark theme only;
+        the light header already sits on white.
+      */}
+      {isLight ? null : (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[150%] bg-gradient-to-b from-black/45 via-black/20 to-transparent"
+        />
+      )}
       <nav
         aria-label="Main"
-        className="relative mx-auto hidden h-full max-w-[1440px] items-center justify-between px-[50px] lg:flex"
+        className="mx-auto hidden h-full max-w-[1440px] items-center gap-6 px-[50px] lg:flex"
       >
-        <div className="flex items-center gap-[8px] xl:gap-[15px]">
+        <Link href="/" aria-label="Glam Repairs home" className="shrink-0">
+          <Logo className={logoClass} variant={logoVariant} />
+        </Link>
+
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-[8px] xl:gap-[15px]">
           {navLinks.map((link) => (
             <Link
               key={link.label}
@@ -185,15 +203,7 @@ export default function Navbar({ className = "", theme = "dark" }: NavbarProps) 
           ))}
         </div>
 
-        <Link
-          href="/"
-          aria-label="Glam Repairs home"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        >
-          <Logo className={logoClass} variant={logoVariant} />
-        </Link>
-
-        <Link href={onboardingHref} className={getStartedClass}>
+        <Link href={onboardingHref} className={`${getStartedClass} shrink-0`}>
           Get Started
         </Link>
       </nav>

@@ -22,6 +22,14 @@ export type SampleAvatar = {
  */
 export const RECOMMENDED_SLUG = "ayma-arif";
 
+/**
+ * Handover 65 §2.3: "Recommended" on one card out of one or two reads as a
+ * sales label, not a recommendation. Below three public practitioners she
+ * still leads every list, without the badge.
+ */
+export const RECOMMENDED_BADGE_MIN = 3;
+export const showRecommendedBadge = (publicCount: number) => publicCount >= RECOMMENDED_BADGE_MIN;
+
 export type CardPractitioner = {
   slug: string;
   name: string;
@@ -32,7 +40,7 @@ export type CardPractitioner = {
   initials: string;
   avatar: SampleAvatar | null;
   sample: boolean;
-  /** Shown first, with a "Recommended" badge. */
+  /** Carries the "Recommended" badge (see showRecommendedBadge). */
   recommended: boolean;
   years: number | null;
   reads: number | null;

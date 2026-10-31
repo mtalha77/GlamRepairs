@@ -2,13 +2,14 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { ChatIcon, PhoneIcon } from "@/components/ui/ContactIcons";
 import LocalHoursNote from "@/components/home/LocalHoursNote";
+import { LOGO_ASSET } from "@/components/home/Logo";
 import Link from "next/link";
 
 import { BOOKING_START_HREF } from "@/components/booking/bookingConfig";
 import { SITE } from "@/lib/seo/site";
 
-const CTA_IMAGE = "/images,svgs/cta_ginger_woman.png";
-const FOOTER_LOGO = "/svgs/GLAM REPAIR LOGO-08 2 (1).svg";
+const CTA_IMAGE = "/images,svgs/cta_ginger_woman.webp";
+const FOOTER_LOGO = LOGO_ASSET.color;
 
 const contactEmail = "glamrepairs@gmail.com";
 
@@ -195,11 +196,12 @@ export default function Footer() {
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
             <div className="lg:max-w-xs">
               <Image
-                src={FOOTER_LOGO}
+                src={FOOTER_LOGO.src}
                 alt="Glam Repairs"
-                width={121}
-                height={45}
-                className="h-12 w-auto sm:h-14"
+                width={FOOTER_LOGO.width}
+                height={FOOTER_LOGO.height}
+                unoptimized
+                className="h-11 w-auto sm:h-[52px]"
               />
               {/* Handover 61 Part 8.2: the positioning line that is true today. */}
               <p className="mt-4 font-serif text-base italic text-brand-primary">

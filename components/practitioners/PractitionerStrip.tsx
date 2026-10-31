@@ -26,7 +26,7 @@ export default async function PractitionerStrip() {
   const open = all.length >= DIRECTORY_MIN_PRACTITIONERS;
   const practitioners = open
     ? all
-    : all.filter((p) => p.recommended).slice(0, 1);
+    : all.slice(0, 1); // the recommended practitioner leads the list
   if (!practitioners.length) return null;
   const solo = practitioners[0];
 

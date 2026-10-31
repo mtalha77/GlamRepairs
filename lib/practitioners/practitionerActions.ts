@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 import { notifyStudio } from "@/lib/consultation/booking";
 import { formatSlot } from "@/lib/consultation/format";
@@ -8,6 +8,7 @@ import { notifyPractitionerOfBooking } from "@/lib/consultation/practitionerNoti
 import { repickUrl } from "@/lib/consultation/slots";
 import { sendConsultationEmail } from "@/lib/email/sendConsultationEmail";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
+import { PRACTITIONERS_TAG } from "@/lib/practitioners/directory";
 import { defaultPractitionerId, ownPractitionerProfile } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -41,6 +42,8 @@ async function self() {
 }
 
 function revalidate() {
+  // Public cards read a cached copy of practitioner_public (Handover 65 §3.2).
+  updateTag(PRACTITIONERS_TAG);
   revalidatePath("/studio/practitioners");
   revalidatePath("/studio/practice");
   revalidatePath("/studio/consultations");
@@ -161,14 +164,29 @@ export async function setPractitionerRate(input: {
   return { ok: true, message: "New rate in force from now. Bookings already made keep their fee." };
 }
 
-/** Approve the profile: the database refuses without a verified degree, a checked photo and a payout method. */
+/**
+ * Approve the profile: the database refuses without a verified degree, a
+ * checked photo, a payout method and a recorded agreement.
+ *
+ * Handover 65 Part 0: this used to set accepting_clients and can_review
+ * too, and the database refuses accepting_clients before the practitioner
+ * has consented to being shown. So a practitioner who had not ticked her
+ * consent yet could not be approved at all, and the order the handover
+ * gives (approve, then she consents) was impossible. Now approval only
+ * approves; taking clients follows her consent, and assigning reports is
+ * a separate decision (see setPractitionerCanReview).
+ */
 export async function makePractitionerLive(id: string): Promise<PractitionerActionResult> {
   const g = await superAdmin();
   if ("error" in g) return { ok: false, error: g.error as string };
+  const admin = createAdminSupabaseClient();
+  const { data: row } = await admin.from("practitioner_profiles").select("public_consent_at").eq("id", id).maybeSingle();
+  if (!row) return { ok: false, error: "Practitioner not found." };
+  const consented = Boolean(row.public_consent_at);
   const now = new Date().toISOString();
-  const { error } = await createAdminSupabaseClient()
+  const { error } = await admin
     .from("practitioner_profiles")
-    .update({ status: "approved", approved_at: now, approved_by: g.userId, accepting_clients: true, can_review: true, edited_by: g.userId, updated_at: now })
+    .update({ status: "approved", approved_at: now, approved_by: g.userId, accepting_clients: consented, edited_by: g.userId, updated_at: now })
     .eq("id", id);
   if (error) {
     const m = error.message;
@@ -176,11 +194,75 @@ export async function makePractitionerLive(id: string): Promise<PractitionerActi
     if (m.includes("photograph")) return { ok: false, error: "Tick the photograph as checked first." };
     if (m.includes("payout method")) return { ok: false, error: "Record a payout method first." };
     if (m.includes("approved_needs_detail")) return { ok: false, error: "They need a photograph and a bio of more than 80 characters." };
-    if (m.includes("public_needs_consent")) return { ok: false, error: "They have not agreed to their profile being shown yet. They switch it on in My practice." };
+    if (m.includes("approved_requires_terms")) return { ok: false, error: "Record their signed practitioner agreement first." };
+    if (m.includes("medical_requires_verified_pmdc")) return { ok: false, error: "Verify their PMDC registration first." };
     return { ok: false, error: m };
   }
   revalidate();
-  return { ok: true, message: "Live. Their hours now produce bookable times." };
+  return {
+    ok: true,
+    message: consented
+      ? "Approved. Their profile is on the website and their hours produce bookable times."
+      : "Approved. Their profile appears once they switch it on in My practice.",
+  };
+}
+
+/**
+ * Record the practitioner agreement they signed (Handover 65 §0.4). The
+ * agreement is a written document sent outside the site, so the studio
+ * records which version came back signed and when. This is a contract
+ * record, not the public-profile consent, which only the practitioner
+ * can give.
+ */
+export async function recordPractitionerAgreement(input: { id: string; version: string; signedOn: string }): Promise<PractitionerActionResult> {
+  const g = await superAdmin();
+  if ("error" in g) return { ok: false, error: g.error as string };
+  const version = input.version.trim().slice(0, 60);
+  if (version.length < 2) return { ok: false, error: "Name the version they signed, for example v1 October 2026." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.signedOn)) return { ok: false, error: "Enter the date they signed it." };
+  const signed = new Date(`${input.signedOn}T12:00:00Z`);
+  if (Number.isNaN(signed.getTime()) || signed.getTime() > Date.now() + 86_400_000) return { ok: false, error: "That date is in the future." };
+  const now = new Date().toISOString();
+  const { error } = await createAdminSupabaseClient()
+    .from("practitioner_profiles")
+    .update({ accepted_terms_at: signed.toISOString(), accepted_terms_version: version, edited_by: g.userId, updated_at: now })
+    .eq("id", input.id);
+  if (error) return { ok: false, error: error.message };
+  revalidate();
+  return { ok: true, message: `Recorded: ${version}, signed ${input.signedOn}.` };
+}
+
+/** Taking new clients on or off. The database refuses "on" before they have consented to being shown. */
+export async function setPractitionerAccepting(input: { id: string; on: boolean }): Promise<PractitionerActionResult> {
+  const g = await superAdmin();
+  if ("error" in g) return { ok: false, error: g.error as string };
+  const { error } = await createAdminSupabaseClient()
+    .from("practitioner_profiles")
+    .update({ accepting_clients: input.on, edited_by: g.userId, updated_at: new Date().toISOString() })
+    .eq("id", input.id);
+  if (error) {
+    if (error.message.includes("public_needs_consent")) return { ok: false, error: "They have not switched their profile on yet. Only they can, in My practice." };
+    if (error.message.includes("inactive_not_accepting")) return { ok: false, error: "A suspended practitioner cannot take clients." };
+    return { ok: false, error: error.message };
+  }
+  revalidate();
+  return { ok: true, message: input.on ? "Taking new clients." : "Not taking new clients. Existing bookings stay." };
+}
+
+/** Whether reports can be assigned to them. Probation (five reports) still applies. */
+export async function setPractitionerCanReview(input: { id: string; on: boolean }): Promise<PractitionerActionResult> {
+  const g = await superAdmin();
+  if ("error" in g) return { ok: false, error: g.error as string };
+  const { error } = await createAdminSupabaseClient()
+    .from("practitioner_profiles")
+    .update({ can_review: input.on, edited_by: g.userId, updated_at: new Date().toISOString() })
+    .eq("id", input.id);
+  if (error) {
+    if (error.message.includes("inactive_not_accepting")) return { ok: false, error: "A suspended practitioner cannot be assigned reports." };
+    return { ok: false, error: error.message };
+  }
+  revalidate();
+  return { ok: true, message: input.on ? "Reports can be assigned to them. Their first five are checked before sending." : "No new reports will be assigned to them." };
 }
 
 export async function suspendPractitioner(input: { id: string; reason: string }): Promise<PractitionerActionResult> {
@@ -496,7 +578,13 @@ export async function saveOwnPublicProfile(input: {
       ...(input.consent
         ? p.public_consent_at
           ? {}
-          : { public_consent_at: now, public_consent_version: PUBLIC_CONSENT_VERSION }
+          : {
+              public_consent_at: now,
+              public_consent_version: PUBLIC_CONSENT_VERSION,
+              // Handover 65 §0.2: once approved, switching the profile on is
+              // what puts her on the site, so it also opens her to clients.
+              ...(p.status === "approved" ? { accepting_clients: true } : {}),
+            }
         : { public_consent_at: null, public_consent_version: null }),
       updated_at: now,
     })
