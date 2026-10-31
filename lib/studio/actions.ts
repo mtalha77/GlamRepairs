@@ -62,7 +62,7 @@ import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 import { sendPaymentConfirmedEmail } from "@/lib/clients/paymentConfirmed";
 import { discardNewAuthUser } from "@/lib/studio/discardNewAuthUser";
 import { issueWelcomeLink, spendWelcomeLink } from "@/lib/studio/welcomeLinks";
-import { metaConfigured, sendMetaServerEvent } from "@/lib/analytics/metaServer";
+import { confirmLeadPayment } from "@/lib/payments/confirmLeadPayment";
 
 function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "";
@@ -585,70 +585,13 @@ export async function verifyCustomerPaymentAction(formData: FormData) {
     redirect("/studio/customers");
   }
 
-  const supabase = await createServerSupabaseClient();
-  // Read before the update: the confirmation email goes on the change only.
-  const { data: before } = await supabase.from("leads").select("payment_status").eq("id", id).maybeSingle();
-  const { error } = await supabase
-    .from("leads")
-    .update({
-      payment_status: "verified",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id);
-
-  if (error) {
-    console.error("[verifyCustomerPaymentAction]", error.message);
+  // 31 October 2026: the same steps a confirmed card payment runs (booking,
+  // the confirmation email, the Purchase event), from one function.
+  const result = await confirmLeadPayment(id, { actorId: member.userId, method: "bank_transfer" });
+  if (!result.ok) {
     redirect(`/studio/customers/${id}?error=save`);
   }
-
-  /*
-   * HANDOVER-50 §6 — payment verified turns a held consultation time into
-   * a booking. Every outcome is surfaced: booked, booked without a video
-   * link (studio told to add one), lost after the hold lapsed (client
-   * emailed to choose again), or no time chosen. A failure here never
-   * undoes the payment verification above.
-   */
-  let booking = "";
-  try {
-    const outcome = await bookConsultationForLead(id, {
-      appBase: getPublicAppUrl(),
-      actorId: member.userId,
-    });
-    booking =
-      outcome.kind === "booked"
-        ? outcome.linkMissing
-          ? "booked_no_link"
-          : "booked"
-        : outcome.kind;
-  } catch (err) {
-    console.error("[verifyCustomerPaymentAction] booking", (err as Error).message);
-    booking = "error";
-  }
-
-  // HANDOVER-60 — payment confirmed, with the client's sign-in link.
-  if (before?.payment_status !== "verified") await sendPaymentConfirmedEmail(id, booking);
-
-  // Handover 64 Part 6.4: the Purchase, sent from the server only, once per
-  // lead (the event id is the lead id). Never for a test lead. A no-op until
-  // the Pixel id and Conversions API token are configured.
-  if (before?.payment_status !== "verified" && metaConfigured()) {
-    const { data: paid } = await createAdminSupabaseClient()
-      .from("leads")
-      .select("email, phone_e164, final_price, currency, is_test")
-      .eq("id", id)
-      .maybeSingle();
-    if (paid && !paid.is_test && Number(paid.final_price ?? 0) > 0) {
-      await sendMetaServerEvent({
-        event: "Purchase",
-        eventId: `purchase-${id}`,
-        email: paid.email,
-        phone: paid.phone_e164,
-        value: Number(paid.final_price),
-        currency: paid.currency ?? "PKR",
-        actionSource: "system_generated",
-      });
-    }
-  }
+  const booking = result.booking;
 
   revalidatePath(`/studio/customers/${id}`);
   revalidatePath("/studio/customers");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import PayByCardButton from "@/components/payments/PayByCardButton";
 import { trackMeta } from "@/lib/analytics/meta";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
@@ -146,6 +147,21 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
 
   // A partial discount code: the server's figure from the row, not the list price.
   const amount = paymentOutcome?.amountDue ?? (planId ? formatRegionPrice(region, planId) : null);
+
+  // 31 October 2026: card payment through Safepay, offered first when the
+  // server says it is available for this lead. Bank transfer stays below.
+  const cardOption =
+    paymentOutcome?.cardAvailable && sessionId ? (
+      <div className="mt-4 rounded-xl border border-brand-primary/25 bg-brand-purple-soft/60 px-3.5 py-3.5">
+        <PayByCardButton sessionId={sessionId} label={amount ? `Pay ${amount} by card` : "Pay by card"} />
+        <p className="mt-2 text-center text-xs leading-relaxed text-brand-gray">
+          Secure payment on Safepay. Your assessment starts as soon as it goes through.
+        </p>
+        <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.08em] text-brand-gray">
+          Or pay by bank transfer
+        </p>
+      </div>
+    ) : null;
   const planName = planId ? PLAN_NAMES[planId] : null;
 
   /*
@@ -164,6 +180,7 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
         <h2 className="font-serif text-lg text-brand-primary sm:text-xl">
           Almost done. Here&apos;s how to pay
         </h2>
+        {cardOption}
         <p className="mt-2 text-sm leading-relaxed text-brand-ink sm:text-[0.9375rem]">
           {amount ? (
             <>
@@ -208,6 +225,7 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
       <h2 className="font-serif text-lg text-brand-primary sm:text-xl">
         Almost done. Here&apos;s how to pay
       </h2>
+      {cardOption}
       <p className="mt-2 text-sm leading-relaxed text-brand-ink sm:text-[0.9375rem]">
         {amount ? (
           <>

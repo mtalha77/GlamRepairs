@@ -58,6 +58,8 @@ export type LeadSubmitSuccess = {
      * emailed the full price).
      */
     amountDue: string | null;
+    /** Card payment through Safepay is available for this lead (31 October 2026). */
+    cardAvailable: boolean;
   };
 };
 

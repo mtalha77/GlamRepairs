@@ -41,6 +41,12 @@ export type PlanThankYouPayload = {
    * rather than the Pakistani bank block.
    */
   international?: boolean;
+  /**
+   * 31 October 2026: a signed link to pay by card through Safepay, when
+   * card payment is available for this client's currency. Shown first,
+   * above the bank details.
+   */
+  cardPayUrl?: string | null;
 };
 
 /** Bank block for the HTML part. The text part uses buildPaymentLines(). */
@@ -136,16 +142,21 @@ export async function sendPlanThankYouEmail(
     `Payment from outside Pakistan is by international bank transfer${planPrice ? ` (${planPrice})` : ""}. ` +
     // No mention of bank charges or fees to clients (Talha, 30 October 2026).
     `Message us on WhatsApp and we will send the account details.${reference ? ` Your reference is ${reference}.` : ""}`;
-  const paymentBlockHtml = includePayment
+  const cardHtml =
+    includePayment && payload.cardPayUrl
+      ? `<p style="margin: 0 0 14px;"><a href="${escapeHtml(payload.cardPayUrl)}" style="display: inline-block; background: #662d91; color: #fff; text-decoration: none; padding: 12px 22px; border-radius: 999px;">Pay by card</a></p><p style="margin: 0 0 12px; color: #4a4a4a; font-size: 14px;">Or pay by bank transfer:</p>`
+      : "";
+  const cardText = includePayment && payload.cardPayUrl ? `Pay by card: ${payload.cardPayUrl}\nOr pay by bank transfer:\n` : "";
+  const paymentBlockHtml = cardHtml + (includePayment
     ? payload.international
       ? `<p style="margin: 0 0 12px; padding: 12px 14px; background: #fff7e5; border-radius: 10px;">${escapeHtml(internationalText)}</p>`
       : paymentHtml(planPrice ?? null, reference)
-    : "";
-  const paymentBlockText = includePayment
+    : "");
+  const paymentBlockText = cardText + (includePayment
     ? payload.international
       ? internationalText
       : buildPaymentLines({ amount: planPrice, reference })
-    : "";
+    : "");
 
   const whatsappDisplay = getWhatsAppDisplayNumber();
   // The screenshot prefill asks for proof of a transfer. A gifted client has
