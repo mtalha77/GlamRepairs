@@ -10,7 +10,8 @@ import {
   ReadinessChecklist,
 } from "@/components/studio/practice/PracticeControls";
 import { feedbackSummary } from "@/lib/consultation/feedback";
-import { agreementStatusMap } from "@/lib/practitioners/agreements";
+import AgreementPanel from "@/components/studio/agreements/AgreementPanel";
+import { agreementStatusMap, listAcceptances, listAgreements } from "@/lib/practitioners/agreements";
 import { gatesFor, readinessFor } from "@/lib/practitioners/readiness";
 import { formatFee, listPractitioners } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
@@ -47,10 +48,13 @@ export default async function PractitionersPage() {
         .in("profile_id", practitioners.map((p) => p.id))
     : { data: [] };
   const appFor = new Map((apps ?? []).map((a) => [a.profile_id, a.id]));
-  const [readiness, agreements] = await Promise.all([
+  const [readiness, agreements, acceptances, versions] = await Promise.all([
     readinessFor(practitioners.map((p) => p.id)),
     agreementStatusMap(practitioners.map((p) => p.id)),
+    listAcceptances(),
+    listAgreements(),
   ]);
+  const effectiveFrom = new Map(versions.map((v) => [v.version, v.effective_from]));
 
   return (
     <div className="space-y-6">
@@ -104,6 +108,14 @@ export default async function PractitionersPage() {
                   canReview={ready.can_review}
                 />
               ) : null}
+
+              {/* Handover 66 §9.1: what they have signed, on their own record. */}
+              <AgreementPanel
+                practitionerId={p.id}
+                status={agreements.get(p.id) ?? null}
+                acceptances={acceptances.filter((a) => a.practitioner_id === p.id)}
+                requiredSince={effectiveFrom.get(agreements.get(p.id)?.required_version ?? "") ?? null}
+              />
 
               {!p.hasAccount ? <p className="text-sm text-brand-gray">No sign-in account linked yet.</p> : null}
 

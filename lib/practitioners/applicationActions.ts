@@ -303,8 +303,8 @@ export async function approvePractitionerApplication(input: {
   revalidatePath(PATH);
   revalidatePath(`${PATH}/${input.id}`);
   return login.ok
-    ? { ok: true, message: `Approved. ${login.message}` }
-    : { ok: true, message: `Approved, and the profile is created, but the sign-in step failed: ${login.error} Use "Send sign-in link" to retry.` };
+    ? { ok: true, message: `Accepted, profile created. ${login.message} Next: Practitioners shows the checklist before they can go live.` }
+    : { ok: true, message: `Accepted and the profile is created, but the sign-in step failed: ${login.error} Use "Send sign-in link" to retry.` };
 }
 
 async function carryOverToProfile(

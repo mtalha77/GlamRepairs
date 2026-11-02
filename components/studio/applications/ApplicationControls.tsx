@@ -255,11 +255,11 @@ export function ApplicationDecision({
               disabled={pending || !canApprove}
               aria-describedby={canApprove ? undefined : "approve-blocked"}
               onClick={() => {
-                if (!window.confirm("Approve this application? A pending profile and a sign-in account will be created.")) return;
+                if (!window.confirm("Accept this application? A profile and a sign-in account are created. The profile does not go live until you make it live under Practitioners, once its checklist is complete.")) return;
                 run(() => approvePractitionerApplication({ id, note }));
               }}
             >
-              {pending ? "Working…" : "Approve"}
+              {pending ? "Working…" : "Accept and create profile"}
             </button>
             <button type="button" className={ghost} disabled={pending} onClick={() => setMode("changes")}>
               Request changes…

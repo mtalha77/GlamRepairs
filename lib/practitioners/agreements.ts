@@ -32,6 +32,8 @@ export type AgreementStatus = {
   accepted_at: string | null;
   evidence: string | null;
   up_to_date: boolean;
+  /** The old application tickbox. Not an acceptance of any document; shown only to be retired. */
+  legacy_accepted_terms_at: string | null;
 };
 
 export type Acceptance = {
@@ -70,7 +72,8 @@ export function unfinishedMarkers(body: string): string[] {
 }
 
 const AGREEMENT_COLUMNS = "version, track, title, body, body_sha256, effective_from, published, published_at, created_at";
-const STATUS_COLUMNS = "practitioner_id, slug, full_name, track, required_version, accepted_version, accepted_at, evidence, up_to_date";
+const STATUS_COLUMNS =
+  "practitioner_id, slug, full_name, track, required_version, accepted_version, accepted_at, evidence, up_to_date, legacy_accepted_terms_at";
 
 export async function getAgreement(version: string): Promise<Agreement | null> {
   const { data } = await createAdminSupabaseClient().from("practitioner_agreements").select(AGREEMENT_COLUMNS).eq("version", version).maybeSingle();

@@ -40,6 +40,27 @@ export type StudioNotificationType =
 export type Database = {
   public: {
     Tables: {
+      /** Handover 66 §9.3 — every opening of a signed agreement PDF. Append only. */
+      agreement_access_log: {
+        Row: {
+          id: string;
+          practitioner_id: string;
+          agreement_version: string;
+          viewer_id: string | null;
+          viewer_is_owner: boolean;
+          action: "download_signed";
+          at: string;
+        };
+        Insert: {
+          practitioner_id: string;
+          agreement_version: string;
+          viewer_id?: string | null;
+          viewer_is_owner: boolean;
+          action: "download_signed";
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       /** Handover 66 — one row per agreement version. Published rows are frozen by trigger. */
       practitioner_agreements: {
         Row: {
