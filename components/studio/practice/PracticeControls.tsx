@@ -11,7 +11,6 @@ import {
   makePractitionerLive,
   offboardPractitionerAsAdmin,
   reassignAppointment,
-  recordPractitionerAgreement,
   removeOwnTimeOff,
   saveOwnPublicProfile,
   setOwnDailyLimit,
@@ -375,8 +374,6 @@ export function ReadinessChecklist({
   canReview: boolean;
 }) {
   const { result, pending, run } = useAction();
-  const [version, setVersion] = useState("");
-  const [signedOn, setSignedOn] = useState("");
   const open = gates.filter((g) => !g.done);
   const onYou = open.filter((g) => g.owner === "you").length;
   const onThem = open.length - onYou;
@@ -419,24 +416,6 @@ export function ReadinessChecklist({
         ))}
       </ul>
 
-      <div className="flex flex-wrap items-end gap-2 border-t border-brand-lavender/60 pt-3">
-        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
-          <span className="text-brand-gray">Agreement version they signed</span>
-          <input value={version} onChange={(e) => setVersion(e.target.value)} placeholder="e.g. v1 October 2026" className={formInputClassName} />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-brand-gray">Signed on</span>
-          <input type="date" value={signedOn} onChange={(e) => setSignedOn(e.target.value)} className={formInputClassName} />
-        </label>
-        <button
-          type="button"
-          className={ghost}
-          disabled={pending || !version.trim() || !signedOn}
-          onClick={() => run(() => recordPractitionerAgreement({ id, version, signedOn }))}
-        >
-          Record agreement
-        </button>
-      </div>
 
       {approved ? (
         <div className="flex flex-wrap gap-2">

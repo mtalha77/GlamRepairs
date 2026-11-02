@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { AgreementStatus } from "@/lib/practitioners/agreements";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /**
@@ -51,7 +52,7 @@ export async function readinessFor(ids: string[]): Promise<Map<string, Readiness
  * The checklist, in the order the gates are cleared. Approval is checked by
  * the database against the rows above it, so those come first.
  */
-export function gatesFor(r: ReadinessRow): Gate[] {
+export function gatesFor(r: ReadinessRow, agreement?: AgreementStatus | null): Gate[] {
   const gates: Gate[] = [
     { key: "account", label: "Signed in to the studio at least once", done: r.has_account, owner: "them" },
     { key: "degree", label: "Degree document verified", done: r.degree_verified, owner: "you" },
@@ -63,15 +64,7 @@ export function gatesFor(r: ReadinessRow): Gate[] {
     },
     { key: "bio", label: "Bio of more than 80 characters", done: r.bio_ok, owner: "them" },
     { key: "payout", label: "Payout method recorded", done: r.payout_set, owner: "you" },
-    {
-      key: "terms",
-      label: "Practitioner agreement signed",
-      done: r.terms_signed,
-      owner: "you",
-      note: r.terms_signed
-        ? `${r.terms_version}${r.terms_signed_at ? `, ${r.terms_signed_at.slice(0, 10)}` : ""}`
-        : "Send the agreement, then record the version they signed below.",
-    },
+    agreementGate(r, agreement ?? null),
   ];
   if (r.track === "medical") {
     gates.push({ key: "licence", label: "PMDC registration verified in the last six months", done: r.licence_ok, owner: "you" });
@@ -98,4 +91,32 @@ export function gatesFor(r: ReadinessRow): Gate[] {
     },
   );
   return gates;
+}
+
+/**
+ * Handover 66 §6: the agreement row reads the acceptance records. Once a
+ * version is published it waits on them (they accept it in the studio);
+ * before that it waits on you (publish one under Agreements).
+ */
+function agreementGate(r: ReadinessRow, a: AgreementStatus | null): Gate {
+  if (a?.required_version) {
+    return {
+      key: "terms",
+      label: `Practitioner agreement ${a.required_version} accepted`,
+      done: a.up_to_date,
+      owner: "them",
+      note: a.up_to_date
+        ? `${a.evidence ?? "accepted"}${a.accepted_at ? `, ${a.accepted_at.slice(0, 10)}` : ""}`
+        : "They read and accept it in the studio; it opens on their next sign-in.",
+    };
+  }
+  return {
+    key: "terms",
+    label: "Practitioner agreement accepted",
+    done: r.terms_signed,
+    owner: "you",
+    note: r.terms_signed
+      ? `${r.terms_version}, recorded before agreement versions existed`
+      : "No agreement version is published yet. Publish one under Agreements.",
+  };
 }

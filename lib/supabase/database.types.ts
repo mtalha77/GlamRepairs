@@ -40,6 +40,71 @@ export type StudioNotificationType =
 export type Database = {
   public: {
     Tables: {
+      /** Handover 66 — one row per agreement version. Published rows are frozen by trigger. */
+      practitioner_agreements: {
+        Row: {
+          version: string;
+          track: "all" | "aesthetics" | "medical";
+          title: string;
+          body: string;
+          body_sha256: string;
+          effective_from: string;
+          published: boolean;
+          published_at: string | null;
+          created_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          version: string;
+          track?: "all" | "aesthetics" | "medical";
+          title: string;
+          body: string;
+          /** Set by trigger from body; never supplied. */
+          body_sha256?: string;
+          effective_from?: string;
+          published?: boolean;
+          published_at?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          track?: "all" | "aesthetics" | "medical";
+          title?: string;
+          body?: string;
+          effective_from?: string;
+          published?: boolean;
+          published_at?: string | null;
+        };
+        Relationships: [];
+      };
+      /** Handover 66 — append only; (agreement_version, body_sha256) must match a real version. */
+      practitioner_agreement_acceptances: {
+        Row: {
+          id: string;
+          practitioner_id: string;
+          agreement_version: string;
+          body_sha256: string;
+          accepted_at: string;
+          accepted_ip: string | null;
+          user_agent: string | null;
+          pdf_path: string | null;
+          evidence: "clickwrap" | "countersigned" | "founder-implied" | "imported";
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          practitioner_id: string;
+          agreement_version: string;
+          body_sha256: string;
+          accepted_at?: string;
+          accepted_ip?: string | null;
+          user_agent?: string | null;
+          pdf_path?: string | null;
+          evidence?: "clickwrap" | "countersigned" | "founder-implied" | "imported";
+          note?: string | null;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       /**
        * HANDOVER-50 — consultation booking. Slots are held while a client
        * pays and booked when payment is verified; the booking functions are
@@ -2402,6 +2467,22 @@ export type Database = {
       };
     };
     Views: {
+      /** Handover 66 — each practitioner against the version in force for their track. */
+      practitioner_agreement_status: {
+        Row: {
+          practitioner_id: string;
+          slug: string;
+          full_name: string;
+          track: string;
+          required_version: string | null;
+          accepted_version: string | null;
+          accepted_at: string | null;
+          evidence: string | null;
+          up_to_date: boolean;
+          legacy_accepted_terms_at: string | null;
+        };
+        Relationships: [];
+      };
       /** What a signed-in client sees. Service role only; scope it to the account. */
       client_portal: {
         Row: {
@@ -2873,6 +2954,11 @@ export type Database = {
       };
     };
     Functions: {
+      /** Handover 66 — latest published, in-force version for a track (or 'all'). */
+      current_agreement_version: {
+        Args: { p_track: string };
+        Returns: string | null;
+      };
       /** HANDOVER-59 — true when this uploader is over 20 files or 100 MB in the last hour. */
       upload_rate_exceeded: {
         Args: { p_ip_hash: string | null; p_lead: string | null; p_max_files?: number; p_max_bytes?: number };
