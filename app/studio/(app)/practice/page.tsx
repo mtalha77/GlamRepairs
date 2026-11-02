@@ -8,9 +8,9 @@ import {
   DailyLimitForm,
   LeaveButton,
   PhotoUpload,
-  PublicProfileForm,
   TimeOffControls,
 } from "@/components/studio/practice/PracticeControls";
+import ProfileEditor from "@/components/studio/practice/ProfileEditor";
 import ReferralLink from "@/components/studio/practice/ReferralLink";
 import { loadConsultationAdmin } from "@/lib/consultation/admin";
 import { formatDay, formatSlotFor, TZ_LABEL } from "@/lib/consultation/format";
@@ -26,6 +26,7 @@ import { monthLabel, practitionerMonths, showMoney } from "@/lib/practitioners/r
 import { referralPath } from "@/lib/practitioners/referral";
 import { abs } from "@/lib/seo/site";
 import { agreementStatusFor } from "@/lib/practitioners/agreements";
+import { nextOpenSlots } from "@/lib/practitioners/directory";
 import { gatesFor, readinessFor } from "@/lib/practitioners/readiness";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -118,6 +119,7 @@ export default async function PracticePage() {
   const gates = ready ? gatesFor(ready, agreement) : [];
   const open = gates.filter((g) => !g.done);
   const upcoming = data.appointments.filter((a) => !a.ended);
+  const nextSlot = await nextOpenSlots(profile.id, 1);
 
   return (
     <div className="space-y-6">
@@ -169,12 +171,36 @@ export default async function PracticePage() {
                 ? "Shown on the website. You agreed on " + formatDay(profile.public_consent_at) + "."
                 : "Not shown anywhere yet. Nothing about you appears on the website until you tick the box below."}
             </p>
-            <PublicProfileForm
-              city={profile.city ?? ""}
-              yearsExperience={profile.years_experience === null ? "" : String(profile.years_experience)}
-              specialisms={(profile.specialisms ?? []).join(", ")}
-              languages={(profile.languages ?? []).join(", ")}
-              consented={Boolean(profile.public_consent_at)}
+            <ProfileEditor
+              initial={{
+                city: profile.city ?? "",
+                yearsExperience: profile.years_experience === null ? "" : String(profile.years_experience),
+                specialisms: profile.specialisms ?? [],
+                languages: (profile.languages ?? []).join(", "),
+                credentials: profile.credentials ?? "",
+                credentialRef: profile.credential_ref ?? "",
+                quote: profile.practitioner_quote ?? "",
+                story: profile.profile_story ?? "",
+                focusNotes: (profile.focus_notes as Record<string, string> | null) ?? {},
+                servesCountries: profile.serves_countries ?? [],
+                consented: Boolean(profile.public_consent_at),
+              }}
+              preview={{
+                name: profile.full_name,
+                initials: profile.full_name
+                  .split(" ")
+                  .slice(0, 2)
+                  .map((w) => w[0] ?? "")
+                  .join("")
+                  .toUpperCase(),
+                photo: profile.photo_url,
+                countryCode: profile.country_code,
+                countryName: profile.country_name,
+                bio: profile.bio ?? "",
+                nextAvailableAt: nextSlot[0] ?? null,
+                degreeVerified: degree,
+                verifiedCredential: profile.credential_verified_at ? profile.credentials : null,
+              }}
             />
           </Card>
         </>
