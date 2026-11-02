@@ -529,6 +529,13 @@ async function saveOwnPublicProfileImpl(input: {
   specialisms: string;
   languages: string;
   consent: boolean;
+  /** Handover 67 §3: the rest of the public card, written by her, not guessed by an admin. */
+  credentials?: string;
+  credentialRef?: string;
+  quote?: string;
+  story?: string;
+  focusNotes?: Record<string, string>;
+  servesCountries?: string[];
 }): Promise<PractitionerActionResult> {
   const g = await self();
   if ("error" in g) return { ok: false, error: g.error as string };
@@ -538,6 +545,37 @@ async function saveOwnPublicProfileImpl(input: {
   if (years !== null && (!Number.isInteger(years) || years < 0 || years > 60)) return { ok: false, error: "Years of experience must be a whole number." };
 
   const p = g.profile;
+  // The card shows three focus areas, so three is the most that can be saved.
+  const focus = list(input.specialisms).slice(0, 3);
+  const extra: Record<string, unknown> = {};
+  if (input.credentials !== undefined) {
+    const c = input.credentials.trim().slice(0, 120);
+    if (c.length < 2) return { ok: false, error: "Write your qualification as it appears on your certificate." };
+    // Unchanged text is left alone, so a studio verification is not cleared by saving.
+    if (c !== (p.credentials ?? "")) extra.credentials = c;
+  }
+  if (input.credentialRef !== undefined) extra.credential_ref = input.credentialRef.trim().slice(0, 200) || null;
+  if (input.quote !== undefined) {
+    const q = input.quote.trim();
+    if (q && (q.length < 10 || q.length > 220)) return { ok: false, error: "Your quote needs to be between 10 and 220 characters, or left empty." };
+    extra.practitioner_quote = q || null;
+  }
+  if (input.story !== undefined) {
+    const st = input.story.replace(/\r\n/g, "\n").trim();
+    if (st.length > 3000) return { ok: false, error: "Your longer story can be up to 3,000 characters." };
+    extra.profile_story = st || null;
+  }
+  if (input.focusNotes !== undefined) {
+    const notes: Record<string, string> = {};
+    for (const area of focus) {
+      const n = (input.focusNotes[area] ?? "").trim().slice(0, 400);
+      if (n) notes[area] = n;
+    }
+    extra.focus_notes = notes;
+  }
+  if (input.servesCountries !== undefined) {
+    extra.serves_countries = [...new Set(input.servesCountries.map((c) => c.trim().toUpperCase()).filter((c) => /^[A-Z]{2}$/.test(c)))];
+  }
   const taking = p.status === "approved" && p.accepting_clients;
   if (!input.consent && taking) {
     return { ok: false, error: "While you are taking clients your profile stays visible. To hide it, ask the studio to pause you first." };
@@ -549,8 +587,9 @@ async function saveOwnPublicProfileImpl(input: {
       edited_by: g.userId,
       city: input.city.trim().slice(0, 80) || null,
       years_experience: years,
-      specialisms: list(input.specialisms),
+      specialisms: focus,
       languages: list(input.languages),
+      ...extra,
       ...(input.consent
         ? p.public_consent_at
           ? {}
@@ -565,7 +604,17 @@ async function saveOwnPublicProfileImpl(input: {
       updated_at: now,
     })
     .eq("id", p.id);
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    if (error.message.includes("medical_credential_needs_medical_track")) {
+      return {
+        ok: false,
+        error: "That reads as a medical qualification. It can only be shown once the studio has verified it, so ask the studio first. Nothing was saved.",
+      };
+    }
+    if (error.message.includes("practitioner_quote_check")) return { ok: false, error: "Your quote needs to be between 10 and 220 characters." };
+    return { ok: false, error: error.message };
+  }
+  updateTag(PRACTITIONERS_TAG);
   revalidate();
   revalidatePath(`/authors/${p.slug}`);
   return { ok: true, message: input.consent ? "Saved. This is what clients see about you." : "Saved. Nothing about you is shown on the site." };

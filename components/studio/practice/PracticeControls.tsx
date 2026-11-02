@@ -12,7 +12,6 @@ import {
   offboardPractitionerAsAdmin,
   reassignAppointment,
   removeOwnTimeOff,
-  saveOwnPublicProfile,
   setOwnDailyLimit,
   setPractitionerAccepting,
   setPractitionerCanReview,
@@ -573,50 +572,6 @@ export function TimeOffControls({ blocks }: { blocks: { id: string; label: strin
       <Feedback result={result} />
       <button type="button" className={primary} disabled={pending || !from || !to} onClick={() => run(() => addOwnTimeOff({ from, to, reason }))}>
         {pending ? "Saving…" : "Block these days"}
-      </button>
-    </div>
-  );
-}
-
-export function PublicProfileForm(props: {
-  city: string;
-  yearsExperience: string;
-  specialisms: string;
-  languages: string;
-  consented: boolean;
-}) {
-  const [v, setV] = useState(props);
-  const { result, pending, run } = useAction();
-  return (
-    <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-brand-gray">City you practise in</span>
-          <input value={v.city} onChange={(e) => setV({ ...v, city: e.target.value })} className={formInputClassName} />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-brand-gray">Years of experience</span>
-          <input inputMode="numeric" value={v.yearsExperience} onChange={(e) => setV({ ...v, yearsExperience: e.target.value })} className={formInputClassName} />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-brand-gray">Specialisms (comma separated)</span>
-          <input value={v.specialisms} placeholder="e.g. Acne, Pigmentation" onChange={(e) => setV({ ...v, specialisms: e.target.value })} className={formInputClassName} />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-brand-gray">Languages (comma separated)</span>
-          <input value={v.languages} onChange={(e) => setV({ ...v, languages: e.target.value })} className={formInputClassName} />
-        </label>
-      </div>
-      <label className="flex min-h-12 items-start gap-3 rounded-xl border border-brand-lavender/60 px-4 py-3 text-sm leading-relaxed text-brand-ink">
-        <input type="checkbox" checked={v.consented} onChange={(e) => setV({ ...v, consented: e.target.checked })} className="mt-1 h-5 w-5 shrink-0" />
-        <span>
-          Show my profile on the GlamRepairs website: my name, photograph, title, qualification, bio, years of experience,
-          city, specialisms, languages and when I am next available. Never my CNIC, documents, phone number or address.
-        </span>
-      </label>
-      <Feedback result={result} />
-      <button type="button" className={primary} disabled={pending} onClick={() => run(() => saveOwnPublicProfile({ ...v, consent: v.consented }))}>
-        {pending ? "Saving…" : "Save profile"}
       </button>
     </div>
   );

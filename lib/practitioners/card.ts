@@ -95,3 +95,13 @@ export function bioExcerpt(bio: string | null | undefined, max = 200): string | 
   if (sentence && sentence[1].length >= max * 0.5) return sentence[1];
   return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:]$/, "")}...`;
 }
+
+/**
+ * Mirrors public.is_medical_credential() in the database, for previews only;
+ * the database is what enforces it. MD and DO in capitals only, so the word
+ * "do" is not mistaken for a degree.
+ */
+export function isMedicalCredential(text: string | null | undefined): boolean {
+  const t = text ?? "";
+  return /\b(MBBS|MBChB|BDS|FCPS|MRCP|FRCP|dermatologists?|physicians?|surgeons?)\b/i.test(t) || /\b(MD|DO)\b/.test(t);
+}

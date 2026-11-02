@@ -197,6 +197,9 @@ export type Database = {
           track: string;
           credential_verified_at: string | null;
           credential_verified_by: string | null;
+          profile_story: string | null;
+          focus_notes: unknown;
+          serves_countries: string[];
         };
         Insert: {
           id?: string;
@@ -270,6 +273,9 @@ export type Database = {
           country_name?: string | null;
           accepted_terms_at?: string | null;
           accepted_terms_version?: string | null;
+          profile_story?: string | null;
+          focus_notes?: unknown;
+          serves_countries?: string[];
         };
         Relationships: [];
       };
