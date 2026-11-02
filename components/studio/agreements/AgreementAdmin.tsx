@@ -8,6 +8,7 @@ import {
   deleteAgreementDraft,
   publishAgreement,
   saveAgreementDraft,
+  sendAgreementReminder,
   type AgreementActionResult,
 } from "@/lib/practitioners/agreementActions";
 
@@ -139,5 +140,22 @@ export function NewDraftToggle() {
     <button type="button" className={ghost} onClick={() => setOpen(true)}>
       New version
     </button>
+  );
+}
+
+/** One click to email a practitioner the link to accept (never the PDF). */
+export function SendReminderButton({ practitionerId }: { practitionerId: string }) {
+  const { result, pending, run } = useAction();
+  return (
+    <div className="space-y-1">
+      <button type="button" className={ghost} disabled={pending} onClick={() => run(() => sendAgreementReminder({ practitionerId }))}>
+        {pending ? "Sending..." : "Send reminder"}
+      </button>
+      {result ? (
+        <p role={result.ok ? "status" : "alert"} className={`text-xs ${result.ok ? "text-brand-success-strong" : "text-brand-error-strong"}`}>
+          {result.ok ? result.message : result.error}
+        </p>
+      ) : null}
+    </div>
   );
 }
