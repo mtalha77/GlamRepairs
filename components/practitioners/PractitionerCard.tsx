@@ -117,15 +117,22 @@ export default function PractitionerCard({
             {p.quote}
           </p>
         ) : null}
-        {p.credentialTitle ? (
+        {p.credentialTitle && p.credentialVerified ? (
           <div className="mt-3.5 flex items-start gap-2.5 rounded-[9px] bg-brand-success/10 px-3 py-2.5">
             <svg viewBox="0 0 16 16" aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-success-strong">
               <path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span className="text-[11.5px] leading-snug text-brand-ink">
+              <span className="sr-only">Verified by Glam Repairs: </span>
               <b className="block font-bold">{p.credentialTitle}</b>
               {p.credentialRef}
             </span>
+          </div>
+        ) : p.credentialTitle ? (
+          // Handover 67 §1.3: stated, not verified, so no tick and no green.
+          <div className="mt-3.5 rounded-[9px] border border-brand-lavender/70 px-3 py-2.5 text-[11.5px] leading-snug text-brand-ink">
+            <b className="block font-bold">{p.credentialTitle}</b>
+            {p.credentialRef}
           </div>
         ) : null}
       </div>

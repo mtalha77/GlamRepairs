@@ -470,6 +470,8 @@ export function practitionerPersonSchema(p: {
   languages: string[];
   credentialTitle: string | null;
   credentialRef: string | null;
+  /** Handover 67 §1.3 / §6.5: hasCredential only for a verified degree. */
+  credentialVerified: boolean;
   description?: string | null;
 }) {
   const reference = p.credentialRef?.match(/Ref\.\s*(.+)$/)?.[1]?.trim() ?? p.credentialRef;
@@ -492,7 +494,7 @@ export function practitionerPersonSchema(p: {
         }
       : {}),
     worksFor: { "@id": abs("/#organization") },
-    ...(p.credentialTitle
+    ...(p.credentialTitle && p.credentialVerified
       ? {
           hasCredential: [
             {
