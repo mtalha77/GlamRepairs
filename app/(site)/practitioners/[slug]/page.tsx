@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import ProfileSlots from "@/components/practitioners/ProfileSlots";
 import JsonLd from "@/components/seo/JsonLd";
 import { countryName, timezoneLabel } from "@/lib/countries/timezones";
-import { firstName, RECOMMENDED_SLUG, showRecommendedBadge } from "@/lib/practitioners/card";
+import { bioExcerpt, firstName, RECOMMENDED_SLUG, showRecommendedBadge } from "@/lib/practitioners/card";
 import {
   directoryIsOpen,
   getPublicPractitioner,
@@ -51,10 +51,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!found) return {};
   const p = found.card;
   const title = `${p.name}, ${p.role}${p.countryName ? ` in ${p.countryName}` : ""}`;
+  // Handover 67 §6.5: their own first sentence, not a template. The
+  // template remains only for a profile with no bio, which the publication
+  // bar keeps off the site anyway.
   const description =
+    bioExcerpt(found.bio, 160) ??
     `${p.name} reads skin photographs online in ${p.languages.join(" and ") || "English"}.` +
-    (p.focus.length ? ` Reads most often: ${p.focus.join(", ").toLowerCase()}.` : "") +
-    (p.credentialTitle ? ` ${p.credentialTitle}.` : "");
+      (p.focus.length ? ` Reads most often: ${p.focus.join(", ").toLowerCase()}.` : "");
   return {
     title,
     description,

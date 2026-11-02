@@ -95,7 +95,10 @@ export default function PractitionerDeck({
   return (
     <div ref={root}>
       <div
-        className="relative h-[712px] w-[min(348px,calc(100vw-2rem))] touch-pan-y select-none [perspective:1400px]"
+        // Handover 67 §2: no fixed height. The cards share one grid cell, so
+        // the deck is as tall as its tallest card and each card is only as
+        // tall as what it has to say; a sparse profile is not padded out.
+        className="relative grid w-[min(348px,calc(100vw-2rem))] touch-pan-y select-none items-start [perspective:1400px]"
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
@@ -122,7 +125,7 @@ export default function PractitionerDeck({
               key={p.slug}
               aria-hidden={i !== 0}
               inert={i !== 0}
-              className="absolute inset-0 cursor-grab will-change-transform active:cursor-grabbing motion-reduce:!transition-none"
+              className="cursor-grab will-change-transform [grid-area:1/1] active:cursor-grabbing motion-reduce:!transition-none"
               style={{
                 transform,
                 opacity,
@@ -133,7 +136,6 @@ export default function PractitionerDeck({
             >
               <PractitionerCard
                 p={p}
-                className="h-full"
                 actions={{
                   chooseHref: `/onboarding?practitioner=${encodeURIComponent(p.slug)}`,
                   profileHref: `/practitioners/${p.slug}`,

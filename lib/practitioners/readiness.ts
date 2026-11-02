@@ -30,6 +30,9 @@ export type ReadinessRow = {
   live: boolean;
   probation_reports_remaining: number | null;
   probation_waived: boolean;
+  profile_complete: boolean;
+  has_bio: boolean;
+  has_focus: boolean;
 };
 
 export type Gate = {
@@ -71,6 +74,16 @@ export function gatesFor(r: ReadinessRow, agreement?: AgreementStatus | null): G
   }
   gates.push(
     { key: "approved", label: "Approved by the studio", done: r.approved, owner: "you" },
+    {
+      // Handover 67 §4: approved and assignable without it; only the public card waits.
+      key: "complete",
+      label: "Profile ready to publish",
+      done: r.profile_complete,
+      owner: "them",
+      note: r.profile_complete
+        ? undefined
+        : `Missing: ${[r.has_bio ? null : "a bio", r.has_focus ? null : "at least one focus area"].filter(Boolean).join(" and ")}. They can be assigned work meanwhile.`,
+    },
     {
       key: "consent",
       label: "Agreed to their profile being shown",

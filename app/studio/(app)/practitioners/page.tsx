@@ -11,6 +11,10 @@ import {
 } from "@/components/studio/practice/PracticeControls";
 import { feedbackSummary } from "@/lib/consultation/feedback";
 import AgreementPanel from "@/components/studio/agreements/AgreementPanel";
+import { formatDay } from "@/lib/consultation/format";
+import { inspectionLink } from "@/lib/gsc/client";
+import { latestPublication } from "@/lib/practitioners/publication";
+import { abs } from "@/lib/seo/site";
 import { agreementStatusMap, listAcceptances, listAgreements } from "@/lib/practitioners/agreements";
 import { gatesFor, readinessFor } from "@/lib/practitioners/readiness";
 import { formatFee, listPractitioners } from "@/lib/practitioners/roster";
@@ -55,6 +59,7 @@ export default async function PractitionersPage() {
     listAgreements(),
   ]);
   const effectiveFrom = new Map(versions.map((v) => [v.version, v.effective_from]));
+  const published = await latestPublication(practitioners.map((p) => p.id));
 
   return (
     <div className="space-y-6">
@@ -107,6 +112,31 @@ export default async function PractitionersPage() {
                   accepting={ready.accepting}
                   canReview={ready.can_review}
                 />
+              ) : null}
+
+              {ready?.live ? (
+                // Handover 67 §6.3: the sitemap is resubmitted automatically; asking Google
+                // to index one page has no API, so this opens Search Console to do it by hand.
+                <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border border-brand-lavender/70 px-4 py-3 text-sm">
+                  <p className="text-brand-ink">
+                    On the website
+                    {published.get(p.id)?.event === "published" ? ` since ${formatDay(published.get(p.id)!.at)}` : ""}.{" "}
+                    <Link href={`/practitioners/${p.slug}`} className="text-brand-primary underline">
+                      View profile
+                    </Link>
+                    {published.get(p.id) && !published.get(p.id)!.sitemap_submitted ? (
+                      <span className="block text-xs text-brand-gray">Sitemap not resubmitted: {published.get(p.id)!.detail}</span>
+                    ) : null}
+                  </p>
+                  <a
+                    href={inspectionLink(abs(`/practitioners/${p.slug}`))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-primary underline"
+                  >
+                    Request indexing (manual, opens Search Console)
+                  </a>
+                </div>
               ) : null}
 
               {/* Handover 66 §9.1: what they have signed, on their own record. */}

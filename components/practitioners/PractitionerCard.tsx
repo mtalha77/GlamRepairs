@@ -116,6 +116,9 @@ export default function PractitionerCard({
           <p className="mt-3.5 border-l-2 border-brand-lavender pl-3 font-serif text-[13.5px] italic leading-relaxed text-brand-gray">
             {p.quote}
           </p>
+        ) : p.bioExcerpt ? (
+          // Handover 67 §2: their own words, when they have not chosen a quote.
+          <p className="mt-3.5 text-[13px] leading-relaxed text-brand-gray">{p.bioExcerpt}</p>
         ) : null}
         {p.credentialTitle && p.credentialVerified ? (
           <div className="mt-3.5 flex items-start gap-2.5 rounded-[9px] bg-brand-success/10 px-3 py-2.5">

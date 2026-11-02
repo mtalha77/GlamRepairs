@@ -5,7 +5,7 @@ import { unstable_cache } from "next/cache";
 import { formatMoney } from "@/lib/pricing/money";
 import type { PricingRegion } from "@/lib/pricing/regions";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { RECOMMENDED_SLUG, showRecommendedBadge, type CardPractitioner, type SampleAvatar } from "@/lib/practitioners/card";
+import { bioExcerpt, RECOMMENDED_SLUG, showRecommendedBadge, type CardPractitioner, type SampleAvatar } from "@/lib/practitioners/card";
 
 /**
  * Handover 63 (and 61 Part 1): who appears on the practitioner card.
@@ -49,6 +49,7 @@ type PublicRow = {
   focus_notes: Record<string, string> | null;
   timezone: string | null;
   degree_verified: boolean;
+  updated_at: string | null;
 };
 
 /** What the full profile page reads beyond the card. */
@@ -86,6 +87,7 @@ function fromPublic(row: PublicRow, price: string | null): CardPractitioner {
     rating: row.rating_count >= 10 ? row.rating : null,
     focus: (row.focus_areas ?? []).slice(0, 3),
     quote: row.practitioner_quote,
+    bioExcerpt: row.practitioner_quote ? null : bioExcerpt(row.bio),
     credentialTitle: row.credential_title,
     credentialRef: row.credential_ref,
     credentialVerified: Boolean(row.degree_verified && row.credential_title),
@@ -177,6 +179,11 @@ export async function nextOpenSlots(practitionerId: string, limit = 3): Promise<
   return (data ?? []).map((s) => s.starts_at as string);
 }
 
+/** Handover 67 §6.2: sitemap rows, from the same view the directory shows. */
+export async function publicSitemapRows(): Promise<{ slug: string; updatedAt: string | null }[]> {
+  return ((await readPublicRows()) ?? []).map((r) => ({ slug: r.slug, updatedAt: r.updated_at }));
+}
+
 /** The gate, counted from the same view the cards read. */
 export async function directoryIsOpen(): Promise<boolean> {
   const rows = await readPublicRows();
@@ -243,6 +250,7 @@ export async function listSamplePractitioners(): Promise<CardPractitioner[]> {
     rating: s.rating_count >= 10 ? s.rating : null,
     focus: s.focus_areas.slice(0, 3),
     quote: s.practitioner_quote,
+    bioExcerpt: null,
     credentialTitle: s.credential_title,
     credentialRef: s.credential_ref,
     credentialVerified: false,
