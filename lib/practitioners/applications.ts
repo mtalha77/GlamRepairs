@@ -22,7 +22,8 @@ export const STATUS_LABEL: Record<PractitionerApplicationStatus, string> = {
   screening: "Screening",
   interview: "Interview",
   test_assessment: "Test assessments",
-  approved: "Approved",
+  // Handover 66 §8.3: stage one of two. Going live is a separate decision.
+  approved: "Accepted, profile created",
   rejected: "Rejected",
   withdrawn: "Withdrawn",
 };

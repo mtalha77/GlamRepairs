@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AgreementDraftEditor, NewDraftToggle, PublishAgreementBox } from "@/components/studio/agreements/AgreementAdmin";
 import { formatDay } from "@/lib/consultation/format";
 import { listAcceptances, listAgreements, listAgreementStatus, unfinishedMarkers } from "@/lib/practitioners/agreements";
+import { readinessFor } from "@/lib/practitioners/readiness";
 import { requireStudioMember } from "@/lib/studio/member";
 
 export const dynamic = "force-dynamic";
@@ -18,9 +19,15 @@ export default async function AgreementsPage() {
   if (!member) redirect("/studio/login");
   if (!member.isSuperAdmin) redirect("/studio");
 
-  const [agreements, status, acceptances] = await Promise.all([listAgreements(), listAgreementStatus(), listAcceptances()]);
+  const [agreements, statusRows, acceptances] = await Promise.all([listAgreements(), listAgreementStatus(), listAcceptances()]);
+  const readiness = await readinessFor(statusRows.map((s) => s.practitioner_id));
   const hasCopy = (practitionerId: string, version: string) =>
     acceptances.some((a) => a.practitioner_id === practitionerId && a.agreement_version === version && a.pdf_path);
+  // §9.2: read the view as it is; only the order is decided here, outstanding first.
+  const outstanding = (s: (typeof statusRows)[number]) => Boolean(s.required_version) && !s.up_to_date;
+  const status = [...statusRows].sort((a, b) => Number(outstanding(b)) - Number(outstanding(a)) || a.full_name.localeCompare(b.full_name));
+  const liveNotUpToDate = status.filter((s) => readiness.get(s.practitioner_id)?.live && outstanding(s));
+  const acceptedCount = (version: string) => acceptances.filter((a) => a.agreement_version === version).length;
 
   return (
     <div className="space-y-6">
@@ -34,14 +41,24 @@ export default async function AgreementsPage() {
       </div>
 
       <section className="space-y-3 rounded-2xl border border-brand-lavender/70 bg-white p-5">
-        <h2 className="font-serif text-lg text-brand-primary">Who has accepted</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-serif text-lg text-brand-primary">Who has accepted</h2>
+          {/* §9.2: should be zero once the website gate reads acceptances; anything else has got past it. */}
+          <p className={`text-sm font-medium ${liveNotUpToDate.length ? "text-brand-error-strong" : "text-brand-success-strong"}`}>
+            Live but not up to date: {liveNotUpToDate.length}
+            {liveNotUpToDate.length ? ` (${liveNotUpToDate.map((s) => s.full_name).join(", ")})` : ""}
+          </p>
+        </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[34rem] text-left text-sm">
+          <table className="w-full min-w-[42rem] text-left text-sm">
             <thead className="text-xs uppercase tracking-[0.06em] text-brand-gray">
               <tr>
                 <th className="py-2 pr-3 font-medium">Practitioner</th>
                 <th className="py-2 pr-3 font-medium">Needs</th>
                 <th className="py-2 pr-3 font-medium">Accepted</th>
+                <th className="py-2 pr-3 font-medium" title="The old application checkbox. Not an acceptance of any agreement. This column will be removed.">
+                  Legacy tickbox (to be retired)
+                </th>
                 <th className="py-2 font-medium">Copy</th>
               </tr>
             </thead>
@@ -61,6 +78,9 @@ export default async function AgreementsPage() {
                     ) : (
                       <span className="text-brand-gray">n/a</span>
                     )}
+                  </td>
+                  <td className="py-2 pr-3 text-brand-gray">
+                    {s.legacy_accepted_terms_at ? formatDay(s.legacy_accepted_terms_at) : "none"}
                   </td>
                   <td className="py-2">
                     {s.up_to_date && s.accepted_version && hasCopy(s.practitioner_id, s.accepted_version) ? (
@@ -95,8 +115,10 @@ export default async function AgreementsPage() {
                 </h2>
                 <p className="text-xs text-brand-gray">
                   {a.published ? `Published ${a.published_at ? formatDay(a.published_at) : ""}` : "Draft, not visible to practitioners"}
-                  {" · "}in force from {formatDay(a.effective_from)} · SHA-256 {a.body_sha256.slice(0, 16)}...
+                  {" · "}in force from {formatDay(a.effective_from)} · {acceptedCount(a.version)}{" "}
+                  {acceptedCount(a.version) === 1 ? "acceptance" : "acceptances"}
                 </p>
+                <p className="mt-1 break-all font-mono text-[11px] text-brand-gray">SHA-256 {a.body_sha256}</p>
               </div>
               <a href={`/api/studio/agreement-pdf?version=${encodeURIComponent(a.version)}`} className="text-sm text-brand-primary underline">
                 PDF of this text

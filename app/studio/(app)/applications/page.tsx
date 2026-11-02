@@ -18,7 +18,7 @@ const card = "rounded-2xl border border-brand-lavender/70 bg-white p-5";
 
 function inviteState(i: { accepted_at: string | null; revoked_at: string | null; expires_at: string; application_id: string | null }) {
   if (i.revoked_at) return "Revoked";
-  if (i.accepted_at) return "Approved";
+  if (i.accepted_at) return "Accepted, profile created";
   if (i.application_id) return "Applied";
   if (new Date(i.expires_at).getTime() < Date.now()) return "Expired";
   return "Waiting";

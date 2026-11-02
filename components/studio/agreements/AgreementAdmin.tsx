@@ -91,9 +91,13 @@ export function PublishAgreementBox({ version, blockers }: { version: string; bl
   const { result, pending, run } = useAction();
   return (
     <div className="space-y-2 rounded-xl border border-brand-lavender/70 bg-brand-surface-alt p-4">
-      <p className="text-sm text-brand-ink">
-        Publishing freezes {version} permanently and emails every practitioner it applies to, with a link to read and
-        accept it. A change after that means publishing the next version.
+      <p className="text-sm font-medium text-brand-ink">
+        Once published, this version can never be edited, and every practitioner on this track will be asked to accept it
+        again.
+      </p>
+      <p className="text-sm text-brand-gray">
+        Each of them is emailed a link to read and accept it in the studio. A later change means publishing the next
+        version.
       </p>
       {blockers.length ? (
         <p className="text-sm text-brand-error-strong">Cannot be published yet: the text still has {blockers.join(" and ")}.</p>
