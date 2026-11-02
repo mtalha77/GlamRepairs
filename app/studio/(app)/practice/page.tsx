@@ -25,6 +25,7 @@ import { listOwnPayouts } from "@/lib/practitioners/payouts";
 import { monthLabel, practitionerMonths, showMoney } from "@/lib/practitioners/revenue";
 import { referralPath } from "@/lib/practitioners/referral";
 import { abs } from "@/lib/seo/site";
+import { agreementStatusFor } from "@/lib/practitioners/agreements";
 import { gatesFor, readinessFor } from "@/lib/practitioners/readiness";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -112,8 +113,9 @@ export default async function PracticePage() {
   });
   const gone = profile.status === "offboarded";
   // Handover 65 §0.3: the same gates the studio sees, from her side.
-  const ready = (await readinessFor([profile.id])).get(profile.id);
-  const gates = ready ? gatesFor(ready) : [];
+  const [readyMap, agreement] = await Promise.all([readinessFor([profile.id]), agreementStatusFor(profile.id)]);
+  const ready = readyMap.get(profile.id);
+  const gates = ready ? gatesFor(ready, agreement) : [];
   const open = gates.filter((g) => !g.done);
   const upcoming = data.appointments.filter((a) => !a.ended);
 

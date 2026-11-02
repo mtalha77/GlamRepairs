@@ -194,7 +194,7 @@ export async function makePractitionerLive(id: string): Promise<PractitionerActi
     if (m.includes("photograph")) return { ok: false, error: "Tick the photograph as checked first." };
     if (m.includes("payout method")) return { ok: false, error: "Record a payout method first." };
     if (m.includes("approved_needs_detail")) return { ok: false, error: "They need a photograph and a bio of more than 80 characters." };
-    if (m.includes("approved_requires_terms")) return { ok: false, error: "Record their signed practitioner agreement first." };
+    if (m.includes("approved_requires_terms")) return { ok: false, error: "They have not accepted the practitioner agreement yet. It opens for them when they sign in to the studio." };
     if (m.includes("medical_requires_verified_pmdc")) return { ok: false, error: "Verify their PMDC registration first." };
     return { ok: false, error: m };
   }
@@ -205,31 +205,6 @@ export async function makePractitionerLive(id: string): Promise<PractitionerActi
       ? "Approved. Their profile is on the website and their hours produce bookable times."
       : "Approved. Their profile appears once they switch it on in My practice.",
   };
-}
-
-/**
- * Record the practitioner agreement they signed (Handover 65 §0.4). The
- * agreement is a written document sent outside the site, so the studio
- * records which version came back signed and when. This is a contract
- * record, not the public-profile consent, which only the practitioner
- * can give.
- */
-export async function recordPractitionerAgreement(input: { id: string; version: string; signedOn: string }): Promise<PractitionerActionResult> {
-  const g = await superAdmin();
-  if ("error" in g) return { ok: false, error: g.error as string };
-  const version = input.version.trim().slice(0, 60);
-  if (version.length < 2) return { ok: false, error: "Name the version they signed, for example v1 October 2026." };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.signedOn)) return { ok: false, error: "Enter the date they signed it." };
-  const signed = new Date(`${input.signedOn}T12:00:00Z`);
-  if (Number.isNaN(signed.getTime()) || signed.getTime() > Date.now() + 86_400_000) return { ok: false, error: "That date is in the future." };
-  const now = new Date().toISOString();
-  const { error } = await createAdminSupabaseClient()
-    .from("practitioner_profiles")
-    .update({ accepted_terms_at: signed.toISOString(), accepted_terms_version: version, edited_by: g.userId, updated_at: now })
-    .eq("id", input.id);
-  if (error) return { ok: false, error: error.message };
-  revalidate();
-  return { ok: true, message: `Recorded: ${version}, signed ${input.signedOn}.` };
 }
 
 /** Taking new clients on or off. The database refuses "on" before they have consented to being shown. */

@@ -26,7 +26,8 @@ export type PractitionerEmail =
   | (Base & { kind: "rejected"; note: string })
   | (Base & { kind: "changes"; message: string; fields: string[]; editUrl: string })
   | (Base & { kind: "sign_in"; signInUrl: string; fee: string | null })
-  | (Base & { kind: "assessment"; assessmentUrl: string; questions: number; minutes: number });
+  | (Base & { kind: "assessment"; assessmentUrl: string; questions: number; minutes: number })
+  | (Base & { kind: "agreement"; title: string; version: string; effectiveFrom: string; reviewUrl: string; renewal: boolean });
 
 const BRAND = "#662d91";
 
@@ -134,6 +135,25 @@ function compose(e: PractitionerEmail): { subject: string; html: string; text: s
         subject: "Welcome to GlamRepairs: set your password",
         html: shell(name, `${lines.map(p).join("")}${button(e.signInUrl, "Set your password")}`),
         text: [`Hi ${name},`, "", ...lines, "", `Set your password: ${e.signInUrl}`].join("\n"),
+      };
+    }
+    case "agreement": {
+      // Handover 66 §5.3-5.4: a link to read it in the studio, never the
+      // document itself. A signed copy carries a name, an IP address and a
+      // signature event, so it is never attached to an email.
+      const lines = [
+        e.renewal
+          ? `We have published a new version of the ${e.title}: ${e.version}, in force from ${e.effectiveFrom}.`
+          : `The ${e.title} is now published: version ${e.version}, in force from ${e.effectiveFrom}.`,
+        "Please read it in the studio and accept it there. The full text is on the page, with a PDF copy to keep.",
+        e.renewal
+          ? "Your earlier acceptance stays on record. Until you accept the new version, the studio shows it to you first when you sign in."
+          : "Until you accept it, the studio shows it to you first when you sign in.",
+      ];
+      return {
+        subject: `Please review the ${e.title} (${e.version})`,
+        html: shell(name, `${lines.map(p).join("")}${button(e.reviewUrl, "Read and accept")}`),
+        text: [`Hi ${name},`, "", ...lines, "", `Read and accept: ${e.reviewUrl}`].join("\n"),
       };
     }
   }

@@ -10,6 +10,7 @@ import {
   ReadinessChecklist,
 } from "@/components/studio/practice/PracticeControls";
 import { feedbackSummary } from "@/lib/consultation/feedback";
+import { agreementStatusMap } from "@/lib/practitioners/agreements";
 import { gatesFor, readinessFor } from "@/lib/practitioners/readiness";
 import { formatFee, listPractitioners } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
@@ -46,7 +47,10 @@ export default async function PractitionersPage() {
         .in("profile_id", practitioners.map((p) => p.id))
     : { data: [] };
   const appFor = new Map((apps ?? []).map((a) => [a.profile_id, a.id]));
-  const readiness = await readinessFor(practitioners.map((p) => p.id));
+  const [readiness, agreements] = await Promise.all([
+    readinessFor(practitioners.map((p) => p.id)),
+    agreementStatusMap(practitioners.map((p) => p.id)),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -92,7 +96,7 @@ export default async function PractitionersPage() {
               {ready && p.status !== "offboarded" ? (
                 <ReadinessChecklist
                   id={p.id}
-                  gates={gatesFor(ready)}
+                  gates={gatesFor(ready, agreements.get(p.id))}
                   live={ready.live}
                   approved={ready.approved}
                   consented={ready.consented}

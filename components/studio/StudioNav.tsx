@@ -41,6 +41,8 @@ const STUDIO_ADMIN_LINKS = [
   { href: "/studio/applications", label: "Applications" },
   // HANDOVER-52 — rates, status, photographs, offboarding.
   { href: "/studio/practitioners", label: "Practitioners" },
+  // Handover 66 — agreement versions and who has accepted which.
+  { href: "/studio/agreements", label: "Agreements" },
   { href: "/studio/payouts", label: "Payouts" },
   { href: "/studio/revenue", label: "Revenue" },
   // HANDOVER-58 — country switches, legal status and prices.
@@ -53,6 +55,7 @@ const PRACTITIONER_LINKS = [
   { href: "/studio/practice", label: "My practice" },
   { href: "/studio/consultations", label: "Consultations" },
   { href: "/studio/notifications", label: "Notifications" },
+  { href: "/studio/agreement", label: "Agreement" },
 ] as const;
 
 type StudioNavProps = {
