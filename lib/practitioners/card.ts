@@ -50,6 +50,12 @@ export type CardPractitioner = {
   quote: string | null;
   credentialTitle: string | null;
   credentialRef: string | null;
+  /**
+   * Handover 67 §1.3: the studio has verified the degree document. Only
+   * then does the credential carry the green tick and go into structured
+   * data; otherwise it is shown as stated, without a claim of verification.
+   */
+  credentialVerified: boolean;
   languages: string[];
   nextAvailableAt: string | null;
   price: string | null;
