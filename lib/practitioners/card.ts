@@ -48,6 +48,8 @@ export type CardPractitioner = {
   rating: number | null;
   focus: string[];
   quote: string | null;
+  /** Handover 67 §2: the opening of their bio, shown when there is no pull quote. */
+  bioExcerpt: string | null;
   credentialTitle: string | null;
   credentialRef: string | null;
   /**
@@ -79,3 +81,17 @@ export function availabilityLabel(iso: string, now = new Date()): string {
 }
 
 export const firstName = (name: string) => name.split(" ")[0];
+
+/**
+ * The opening of a bio, cut at a sentence end where one falls inside the
+ * limit, otherwise at a word with an ellipsis. Never mid-word.
+ */
+export function bioExcerpt(bio: string | null | undefined, max = 200): string | null {
+  const text = (bio ?? "").replace(/\s+/g, " ").trim();
+  if (!text) return null;
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const sentence = cut.match(/^(.*[.!?])\s/);
+  if (sentence && sentence[1].length >= max * 0.5) return sentence[1];
+  return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:]$/, "")}...`;
+}

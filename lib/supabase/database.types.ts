@@ -40,6 +40,27 @@ export type StudioNotificationType =
 export type Database = {
   public: {
     Tables: {
+      /** Handover 67 §6.2 — when a profile went on or came off the website. Append only. */
+      practitioner_publication_events: {
+        Row: {
+          id: string;
+          practitioner_id: string;
+          event: "published" | "unpublished";
+          at: string;
+          actor_id: string | null;
+          sitemap_submitted: boolean;
+          detail: string | null;
+        };
+        Insert: {
+          practitioner_id: string;
+          event: "published" | "unpublished";
+          actor_id?: string | null;
+          sitemap_submitted?: boolean;
+          detail?: string | null;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       /** Handover 66 §9.3 — every opening of a signed agreement PDF. Append only. */
       agreement_access_log: {
         Row: {
@@ -174,6 +195,8 @@ export type Database = {
           accepted_terms_at: string | null;
           accepted_terms_version: string | null;
           track: string;
+          credential_verified_at: string | null;
+          credential_verified_by: string | null;
         };
         Insert: {
           id?: string;
@@ -2640,6 +2663,9 @@ export type Database = {
           live: boolean;
           probation_reports_remaining: number | null;
           probation_waived: boolean;
+          profile_complete: boolean;
+          has_bio: boolean;
+          has_focus: boolean;
         };
         Relationships: [];
       };

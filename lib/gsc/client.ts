@@ -17,6 +17,9 @@ import { createSign } from "node:crypto";
 export const GSC_SITE = process.env.GSC_SITE_URL?.trim() || "sc-domain:glamrepairs.com";
 
 const SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
+// Handover 67 §6.3: resubmitting a sitemap is a write, so it needs the full
+// scope. Requested only for that call; everything else stays read-only.
+const WRITE_SCOPE = "https://www.googleapis.com/auth/webmasters";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const API = "https://searchconsole.googleapis.com";
 
@@ -49,15 +52,16 @@ function readKey(): ServiceAccount {
 const b64url = (input: Buffer | string) =>
   Buffer.from(input).toString("base64").replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
 
-let cached: { token: string; expiresAt: number } | null = null;
+const cachedTokens = new Map<string, { token: string; expiresAt: number }>();
 
-async function accessToken(): Promise<string> {
+async function accessToken(scope: string = SCOPE): Promise<string> {
+  const cached = cachedTokens.get(scope);
   if (cached && cached.expiresAt - 60_000 > Date.now()) return cached.token;
   const key = readKey();
   const now = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claims = b64url(
-    JSON.stringify({ iss: key.client_email, scope: SCOPE, aud: TOKEN_URL, iat: now, exp: now + 3600 }),
+    JSON.stringify({ iss: key.client_email, scope, aud: TOKEN_URL, iat: now, exp: now + 3600 }),
   );
   const signer = createSign("RSA-SHA256");
   signer.update(`${header}.${claims}`);
@@ -76,7 +80,7 @@ async function accessToken(): Promise<string> {
   if (!res.ok || !body.access_token) {
     throw new Error(`Google token exchange failed (${res.status}): ${body.error_description ?? "no detail"}`);
   }
-  cached = { token: body.access_token, expiresAt: Date.now() + (body.expires_in ?? 3600) * 1000 };
+  cachedTokens.set(scope, { token: body.access_token, expiresAt: Date.now() + (body.expires_in ?? 3600) * 1000 });
   return body.access_token;
 }
 
@@ -167,4 +171,28 @@ export async function inspectUrl(inspectionUrl: string): Promise<InspectionResul
     indexingState: r.indexingState ?? null,
     lastCrawlTime: r.lastCrawlTime ?? null,
   };
+}
+
+/**
+ * Resubmit a sitemap (Handover 67 §6.3). This is the supported, automated
+ * route; there is no API for "Request indexing" on an ordinary page.
+ * Needs the service account to have Full permission on the property.
+ */
+export async function submitSitemap(sitemapUrl: string): Promise<void> {
+  const url = `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(GSC_SITE)}/sitemaps/${encodeURIComponent(sitemapUrl)}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${await accessToken(WRITE_SCOPE)}` },
+    cache: "no-store",
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Sitemap submit failed (${res.status}): ${text.slice(0, 200)}`);
+  }
+}
+
+/** The URL inspection screen for one page, for the studio's manual "Request indexing" link. */
+export function inspectionLink(pageUrl: string): string {
+  return `https://search.google.com/search-console/inspect?resource_id=${encodeURIComponent(GSC_SITE)}&id=${encodeURIComponent(pageUrl)}`;
 }

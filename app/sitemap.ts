@@ -3,7 +3,7 @@ import { abs } from "@/lib/seo/site";
 import { listAuthors } from "@/lib/seo/authors";
 import { listPublishedForSitemap } from "@/lib/studio/blog";
 import { listPublishedAreaPages } from "@/lib/airQuality/areaPages";
-import { DIRECTORY_MIN_PRACTITIONERS, listPublicPractitioners } from "@/lib/practitioners/directory";
+import { DIRECTORY_MIN_PRACTITIONERS, publicSitemapRows } from "@/lib/practitioners/directory";
 
 /**
  * sitemap.xml
@@ -103,7 +103,9 @@ async function airQualityEntries(): Promise<MetadataRoute.Sitemap> {
  * 404, and a sitemap must not list a 404.
  */
 async function practitionerEntries(): Promise<MetadataRoute.Sitemap> {
-  const practitioners = await listPublicPractitioners(null);
+  // Handover 67 §6.2: generated from practitioner_public, so the sitemap can
+  // never list someone the directory does not show, nor miss someone it does.
+  const practitioners = await publicSitemapRows();
   if (practitioners.length < DIRECTORY_MIN_PRACTITIONERS) return [];
   return [
     { url: abs("/practitioners"), changeFrequency: "weekly", priority: 0.8 },
@@ -111,6 +113,7 @@ async function practitionerEntries(): Promise<MetadataRoute.Sitemap> {
       url: abs(`/practitioners/${p.slug}`),
       changeFrequency: "monthly" as const,
       priority: 0.6,
+      ...(p.updatedAt ? { lastModified: new Date(p.updatedAt) } : {}),
     })),
   ];
 }

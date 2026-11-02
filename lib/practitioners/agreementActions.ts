@@ -18,6 +18,7 @@ import {
   VERSION_PATTERN,
 } from "@/lib/practitioners/agreements";
 import { PRACTITIONERS_TAG } from "@/lib/practitioners/directory";
+import { withPublication } from "@/lib/practitioners/publication";
 import { ownPractitionerProfile } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -68,7 +69,7 @@ function clientIp(h: Headers): string | null {
  * published text. The signed PDF is written before the row, so a row never
  * points at a file that does not exist.
  */
-export async function acceptPractitionerAgreement(input: { version: string; agreed: boolean }): Promise<AgreementActionResult> {
+async function acceptPractitionerAgreementImpl(input: { version: string; agreed: boolean }): Promise<AgreementActionResult> {
   if (input.agreed !== true) return { ok: false, error: "Tick the box to accept." };
   const { user, member } = await requireStudioMember();
   if (!user || !member) return { ok: false, error: "Not signed in." };
@@ -306,4 +307,12 @@ export async function deleteAgreementDraft(version: string): Promise<AgreementAc
   if (error) return { ok: false, error: error.message };
   revalidate();
   return { ok: true, message: `Deleted the ${version} draft.` };
+}
+
+/** Accepting can be the last gate before the website (Handover 67 §6.2). */
+export async function acceptPractitionerAgreement(input: { version: string; agreed: boolean }): Promise<AgreementActionResult> {
+  const { user } = await requireStudioMember();
+  const profile = user ? await ownPractitionerProfile(user.id) : null;
+  if (!profile) return acceptPractitionerAgreementImpl(input);
+  return withPublication(profile.id, user?.id ?? null, () => acceptPractitionerAgreementImpl(input));
 }

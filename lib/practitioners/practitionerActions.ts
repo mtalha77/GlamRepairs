@@ -9,6 +9,7 @@ import { repickUrl } from "@/lib/consultation/slots";
 import { sendConsultationEmail } from "@/lib/email/sendConsultationEmail";
 import { getPublicAppUrl } from "@/lib/leads/photoShortLink";
 import { PRACTITIONERS_TAG } from "@/lib/practitioners/directory";
+import { withPublication } from "@/lib/practitioners/publication";
 import { defaultPractitionerId, ownPractitionerProfile } from "@/lib/practitioners/roster";
 import { requireStudioMember } from "@/lib/studio/member";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -176,7 +177,7 @@ export async function setPractitionerRate(input: {
  * approves; taking clients follows her consent, and assigning reports is
  * a separate decision (see setPractitionerCanReview).
  */
-export async function makePractitionerLive(id: string): Promise<PractitionerActionResult> {
+async function makePractitionerLiveImpl(id: string): Promise<PractitionerActionResult> {
   const g = await superAdmin();
   if ("error" in g) return { ok: false, error: g.error as string };
   const admin = createAdminSupabaseClient();
@@ -208,7 +209,7 @@ export async function makePractitionerLive(id: string): Promise<PractitionerActi
 }
 
 /** Taking new clients on or off. The database refuses "on" before they have consented to being shown. */
-export async function setPractitionerAccepting(input: { id: string; on: boolean }): Promise<PractitionerActionResult> {
+async function setPractitionerAcceptingImpl(input: { id: string; on: boolean }): Promise<PractitionerActionResult> {
   const g = await superAdmin();
   if ("error" in g) return { ok: false, error: g.error as string };
   const { error } = await createAdminSupabaseClient()
@@ -240,7 +241,7 @@ export async function setPractitionerCanReview(input: { id: string; on: boolean 
   return { ok: true, message: input.on ? "Reports can be assigned to them. Their first five are checked before sending." : "No new reports will be assigned to them." };
 }
 
-export async function suspendPractitioner(input: { id: string; reason: string }): Promise<PractitionerActionResult> {
+async function suspendPractitionerImpl(input: { id: string; reason: string }): Promise<PractitionerActionResult> {
   const g = await superAdmin();
   if ("error" in g) return { ok: false, error: g.error as string };
   if (input.reason.trim().length < 5) return { ok: false, error: "Give a reason." };
@@ -254,7 +255,7 @@ export async function suspendPractitioner(input: { id: string; reason: string })
   return { ok: true, message: "Suspended. No new times are offered; booked consultations stay until you reassign them." };
 }
 
-export async function offboardPractitionerAsAdmin(id: string): Promise<PractitionerActionResult> {
+async function offboardPractitionerAsAdminImpl(id: string): Promise<PractitionerActionResult> {
   const g = await superAdmin();
   if ("error" in g) return { ok: false, error: g.error as string };
   return offboard(id, g.userId, "Offboarded by a super admin");
@@ -298,7 +299,7 @@ async function saveBio(profileId: string, slug: string | null, text: string, by:
   return { ok: true, message: "Bio saved." };
 }
 
-export async function updateOwnBio(bio: string): Promise<PractitionerActionResult> {
+async function updateOwnBioImpl(bio: string): Promise<PractitionerActionResult> {
   const g = await self();
   if ("error" in g) return { ok: false, error: g.error as string };
   const text = bio.trim();
@@ -308,7 +309,7 @@ export async function updateOwnBio(bio: string): Promise<PractitionerActionResul
 }
 
 /** The studio writing a practitioner's bio for them (Talha, 30 October 2026). */
-export async function updatePractitionerBio(input: { id: string; bio: string }): Promise<PractitionerActionResult> {
+async function updatePractitionerBioImpl(input: { id: string; bio: string }): Promise<PractitionerActionResult> {
   const g = await superAdmin();
   if ("error" in g) return { ok: false, error: g.error as string };
   const text = input.bio.trim();
@@ -383,7 +384,7 @@ export async function cannotAttend(appointmentId: string): Promise<PractitionerA
 }
 
 /** Leave GlamRepairs (Talha, 10 October 2026). Bookings go to Ayma. */
-export async function leaveGlamRepairs(reason: string): Promise<PractitionerActionResult> {
+async function leaveGlamRepairsImpl(reason: string): Promise<PractitionerActionResult> {
   const g = await self();
   if ("error" in g) return { ok: false, error: g.error as string };
   return offboard(g.profile.id, g.userId, reason.trim() || "Left of their own accord");
@@ -522,7 +523,7 @@ const PUBLIC_CONSENT_VERSION = "practice-2026-10";
  * shown until she agrees; while she is taking clients the profile has to
  * stay visible (the database enforces it), so withdrawing means pausing.
  */
-export async function saveOwnPublicProfile(input: {
+async function saveOwnPublicProfileImpl(input: {
   city: string;
   yearsExperience: string;
   specialisms: string;
@@ -568,4 +569,54 @@ export async function saveOwnPublicProfile(input: {
   revalidate();
   revalidatePath(`/authors/${p.slug}`);
   return { ok: true, message: input.consent ? "Saved. This is what clients see about you." : "Saved. Nothing about you is shown on the site." };
+}
+
+// ── Going on or off the website (Handover 67 §6.2) ──────────────────────
+// Each of these can move a practitioner into or out of practitioner_public.
+// The wrapper reads that before and after; on a change it resubmits the
+// sitemap and records when. The bodies above are unchanged.
+
+async function actorId(): Promise<string | null> {
+  const { user } = await requireStudioMember();
+  return user?.id ?? null;
+}
+
+async function ownProfileId(): Promise<string | null> {
+  const { user } = await requireStudioMember();
+  return user ? ((await ownPractitionerProfile(user.id))?.id ?? null) : null;
+}
+
+export async function makePractitionerLive(id: string): Promise<PractitionerActionResult> {
+  return withPublication(id, await actorId(), () => makePractitionerLiveImpl(id));
+}
+
+export async function offboardPractitionerAsAdmin(id: string): Promise<PractitionerActionResult> {
+  return withPublication(id, await actorId(), () => offboardPractitionerAsAdminImpl(id));
+}
+
+export async function setPractitionerAccepting(input: { id: string; on: boolean }): Promise<PractitionerActionResult> {
+  return withPublication(input.id, await actorId(), () => setPractitionerAcceptingImpl(input));
+}
+
+export async function suspendPractitioner(input: { id: string; reason: string }): Promise<PractitionerActionResult> {
+  return withPublication(input.id, await actorId(), () => suspendPractitionerImpl(input));
+}
+
+export async function updatePractitionerBio(input: { id: string; bio: string }): Promise<PractitionerActionResult> {
+  return withPublication(input.id, await actorId(), () => updatePractitionerBioImpl(input));
+}
+
+export async function updateOwnBio(bio: string): Promise<PractitionerActionResult> {
+  const id = await ownProfileId();
+  return id ? withPublication(id, await actorId(), () => updateOwnBioImpl(bio)) : updateOwnBioImpl(bio);
+}
+
+export async function leaveGlamRepairs(reason: string): Promise<PractitionerActionResult> {
+  const id = await ownProfileId();
+  return id ? withPublication(id, await actorId(), () => leaveGlamRepairsImpl(reason)) : leaveGlamRepairsImpl(reason);
+}
+
+export async function saveOwnPublicProfile(input: Parameters<typeof saveOwnPublicProfileImpl>[0]): Promise<PractitionerActionResult> {
+  const id = await ownProfileId();
+  return id ? withPublication(id, await actorId(), () => saveOwnPublicProfileImpl(input)) : saveOwnPublicProfileImpl(input);
 }
