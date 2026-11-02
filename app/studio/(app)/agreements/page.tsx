@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { AgreementDraftEditor, NewDraftToggle, PublishAgreementBox } from "@/components/studio/agreements/AgreementAdmin";
+import { AgreementDraftEditor, NewDraftToggle, PublishAgreementBox, SendReminderButton } from "@/components/studio/agreements/AgreementAdmin";
 import { formatDay } from "@/lib/consultation/format";
 import { listAcceptances, listAgreements, listAgreementStatus, unfinishedMarkers } from "@/lib/practitioners/agreements";
 import { readinessFor } from "@/lib/practitioners/readiness";
@@ -59,7 +59,7 @@ export default async function AgreementsPage() {
                 <th className="py-2 pr-3 font-medium" title="The old application checkbox. Not an acceptance of any agreement. This column will be removed.">
                   Legacy tickbox (to be retired)
                 </th>
-                <th className="py-2 font-medium">Copy</th>
+                <th className="py-2 font-medium">Copy or reminder</th>
               </tr>
             </thead>
             <tbody>
@@ -90,6 +90,8 @@ export default async function AgreementsPage() {
                       >
                         Signed PDF
                       </a>
+                    ) : outstanding(s) ? (
+                      <SendReminderButton practitionerId={s.practitioner_id} />
                     ) : null}
                   </td>
                 </tr>

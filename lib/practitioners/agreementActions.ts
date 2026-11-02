@@ -253,6 +253,51 @@ export async function publishAgreement(input: { version: string; confirm: string
   };
 }
 
+/**
+ * Email one practitioner a reminder to accept the version in force: a link
+ * to the studio page, never the document. For when the publish email was
+ * missed, or a practitioner joins after a version was published.
+ */
+export async function sendAgreementReminder(input: { practitionerId: string }): Promise<AgreementActionResult> {
+  const g = await superAdmin();
+  if ("error" in g) return { ok: false, error: g.error as string };
+  const admin = createAdminSupabaseClient();
+  const { data: p } = await admin
+    .from("practitioner_profiles")
+    .select("id, full_name, user_id, track, offboarded_at")
+    .eq("id", input.practitionerId)
+    .maybeSingle();
+  if (!p || p.offboarded_at) return { ok: false, error: "Practitioner not found." };
+  if (!p.user_id) return { ok: false, error: "They have no studio sign-in yet, so there is nowhere to accept it." };
+  const required = await currentAgreementVersion(p.track);
+  if (!required) return { ok: false, error: "No agreement is published for their track." };
+  const agreement = await getAgreement(required);
+  if (!agreement) return { ok: false, error: "No agreement is published for their track." };
+  const { data: done } = await admin
+    .from("practitioner_agreement_acceptances")
+    .select("id")
+    .eq("practitioner_id", p.id)
+    .eq("agreement_version", required)
+    .maybeSingle();
+  if (done) return { ok: false, error: `${p.full_name} has already accepted ${required}.` };
+  const { data: u } = await admin.auth.admin.getUserById(p.user_id);
+  const email = u?.user?.email;
+  if (!email) return { ok: false, error: "Their account has no email address." };
+  const { data: prior } = await admin.from("practitioner_agreement_acceptances").select("id").eq("practitioner_id", p.id).limit(1);
+  const res = await sendPractitionerEmail({
+    kind: "agreement",
+    toEmail: email,
+    name: p.full_name,
+    title: agreement.title,
+    version: agreement.version,
+    effectiveFrom: agreement.effective_from.slice(0, 10),
+    reviewUrl: `${getPublicAppUrl()}/studio/agreement`,
+    renewal: Boolean(prior?.length),
+  });
+  if (!res.ok) return { ok: false, error: `The email did not send: ${res.message}` };
+  return { ok: true, message: `Reminder sent to ${email}.` };
+}
+
 /** A draft that was never published can be thrown away. */
 export async function deleteAgreementDraft(version: string): Promise<AgreementActionResult> {
   const g = await superAdmin();
