@@ -8,6 +8,7 @@ const PUBLIC_STUDIO_PATHS = [
   "/studio/auth/callback",
   "/studio/invite",
   "/studio/welcome",
+  "/studio/forgot-password",
 ];
 
 /** Read by the studio layout to keep a practitioner's seat on her own pages. */
