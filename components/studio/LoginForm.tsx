@@ -11,7 +11,7 @@ const ERROR_COPY: Record<string, string> = {
   invalid: "Those credentials did not match a studio account.",
   auth: "Sign-in link expired. Please sign in again.",
   expired:
-    "That invite or email link is invalid or has expired. Ask the owner to send a new invite, then click Accept invite on the page.",
+    "That invite or email link is invalid or has expired. Use Forgot your password below for a new one, or ask the owner to send a new invite.",
   schema:
     "Studio tables are missing. Run the studio SQL migration in Supabase, then try again.",
 };
@@ -65,6 +65,9 @@ export default function LoginForm({ nextPath, errorCode }: LoginFormProps) {
         />
       </FormField>
       <SignInButton />
+      <a href="/studio/forgot-password" className="block text-center text-sm text-brand-primary hover:underline">
+        Forgot your password?
+      </a>
     </form>
   );
 }
