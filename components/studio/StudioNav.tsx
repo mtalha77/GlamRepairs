@@ -43,6 +43,8 @@ const STUDIO_ADMIN_LINKS = [
   { href: "/studio/practitioners", label: "Practitioners" },
   // Handover 66 — agreement versions and who has accepted which.
   { href: "/studio/agreements", label: "Agreements" },
+  // Handovers 68 and 69: lists, sequences and the send queue's gates.
+  { href: "/studio/outreach", label: "Outreach" },
   { href: "/studio/payouts", label: "Payouts" },
   { href: "/studio/revenue", label: "Revenue" },
   // HANDOVER-58 — country switches, legal status and prices.

@@ -1,0 +1,43 @@
+name: Outreach
+
+# Calls /api/cron/outreach every hour on GitHub's scheduler, because Vercel
+# cron does not fire on this project (see gsc-sync.yml). Each run sends
+# what is due within the daily and hourly caps, in business hours in the
+# recipient's country, and stops on its own if sending is paused. Safe to
+# run twice: a send is claimed before it goes.
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: outreach
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          URL: https://www.glamrepairs.com/api/cron/outreach
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET is not set in this repository's Actions secrets."
+            exit 1
+          fi
+          code=$(curl --silent --show-error --retry 2 --retry-delay 10 --retry-all-errors \
+            --max-time 130 --write-out '%{http_code}' --output response.json \
+            --header "Authorization: Bearer ${CRON_SECRET}" "${URL}")
+          echo "HTTP ${code}"; cat response.json; echo
+          {
+            echo "### Outreach"
+            jq -r '"- sent: \(.sent // 0)\n- stopped: \(.stopped // "no")"' response.json
+            jq -r '.skipped // {} | to_entries[] | "- skipped, \(.key): \(.value)"' response.json
+            jq -r '.errors[]? | "- ⚠️ \(.)"' response.json
+          } >> "$GITHUB_STEP_SUMMARY" || true
+          [ "${code}" = "200" ] || { echo "::error::Outreach run failed (HTTP ${code})."; exit 1; }
