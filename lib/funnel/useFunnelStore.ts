@@ -47,6 +47,12 @@ type FunnelState = {
    * Skips the in-funnel plan selection step.
    */
   planPreselected: boolean;
+  /**
+   * Handover 70 §1.6: the team's own session, opened with `?test=1`. Sent
+   * with every save so the row is marked is_test from its first write.
+   * One way: nothing in the funnel can set it back to false.
+   */
+  markTest: boolean;
   /** Public selfie URL after upload (Supabase Storage); used in WhatsApp message. */
   selfieUrl: string | null;
   /**
@@ -78,6 +84,7 @@ type FunnelState = {
     outcome: { showBankDetails: boolean; isGifted: boolean; amountDue?: string | null; cardAvailable?: boolean } | null,
   ) => void;
   setPlanPreselected: (preselected: boolean) => void;
+  setMarkTest: () => void;
   setSelfieUrl: (url: string | null) => void;
   unlockFlowStep: (flow: FunnelFlow, step: number) => void;
   setCurrentStepValid: (valid: boolean) => void;
@@ -105,6 +112,7 @@ export const useFunnelStore = create<FunnelState>()(
       giftCode: null,
       paymentOutcome: null,
       planPreselected: false,
+      markTest: false,
       selfieUrl: null,
       bookingUnlockedStep: 1,
       onboardingUnlockedStep: 1,
@@ -128,6 +136,7 @@ export const useFunnelStore = create<FunnelState>()(
       setGiftCode: (code) => set({ giftCode: code }),
       setPaymentOutcome: (outcome) => set({ paymentOutcome: outcome }),
       setPlanPreselected: (preselected) => set({ planPreselected: preselected }),
+      setMarkTest: () => set({ markTest: true }),
       setSelfieUrl: (url) => set({ selfieUrl: url }),
       unlockFlowStep: (flow, step) =>
         set((state) => {
@@ -178,6 +187,7 @@ export const useFunnelStore = create<FunnelState>()(
         giftCode: state.giftCode,
         paymentOutcome: state.paymentOutcome,
         planPreselected: state.planPreselected,
+        markTest: state.markTest,
         selfieUrl: state.selfieUrl,
         bookingUnlockedStep: state.bookingUnlockedStep,
         onboardingUnlockedStep: state.onboardingUnlockedStep,
@@ -196,6 +206,7 @@ export const useFunnelStore = create<FunnelState>()(
           bookingUnlockedStep: bookingUnlocked,
           onboardingUnlockedStep: state.onboardingUnlockedStep ?? 1,
           planPreselected: state.planPreselected ?? false,
+          markTest: state.markTest ?? false,
         };
       },
     },

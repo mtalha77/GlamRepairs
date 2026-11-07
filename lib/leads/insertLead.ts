@@ -10,14 +10,19 @@ export type InsertLeadInput = LeadSubmitPayload & {
   photoPaths: string[];
   /** Handover 63 — the test portal session that wrote this row, if any. */
   testSession?: string | null;
+  /** Handover 70 §1.6: a session opened with ?test=1. */
+  markTest?: boolean;
 };
 
 /**
  * Handover 63 — a test portal lead says so on every write, so it is marked
  * from its first insert and can never be counted as a real client.
  */
-function testFields(testSession: string | null | undefined) {
-  return testSession ? { is_test: true, test_session: testSession } : {};
+function testFields(testSession: string | null | undefined, markTest?: boolean) {
+  if (testSession) return { is_test: true, test_session: testSession };
+  // Handover 70 §1.6: ?test=1 marks the team's own session. One way only:
+  // nothing sent from the browser can set is_test back to false.
+  return markTest ? { is_test: true } : {};
 }
 
 export type InsertLeadResult = {
@@ -71,6 +76,8 @@ export type FunnelProgressInput = {
   giftCode?: string | null;
   /** Handover 63 — the test portal session that wrote this row, if any. */
   testSession?: string | null;
+  /** Handover 70 §1.6: a session opened with ?test=1. */
+  markTest?: boolean;
 };
 
 function restConfig() {
@@ -182,7 +189,7 @@ export async function saveFunnelProgress(input: FunnelProgressInput) {
      */
     last_seen_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    ...testFields(input.testSession),
+    ...testFields(input.testSession, input.markTest),
   };
 
   /**
@@ -300,7 +307,7 @@ export async function insertLead(
     payment_status: "pending" as const,
     funnel_complete: true,
     updated_at: new Date().toISOString(),
-    ...testFields(input.testSession),
+    ...testFields(input.testSession, input.markTest),
   };
 
   const existing = await findLeadBySession(input.sessionId);

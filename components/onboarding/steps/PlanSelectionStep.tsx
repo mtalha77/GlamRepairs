@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import GiftCodeField from "@/components/onboarding/GiftCodeField";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
@@ -12,10 +12,9 @@ import {
 import CurrencySwitcher from "@/components/pricing/CurrencySwitcher";
 import OfferCountdown from "@/components/pricing/OfferCountdown";
 import CredentialsBlock from "@/components/seo/CredentialsBlock";
-import { StepHeader, StepRequiredError } from "@/components/steps";
+import { StepHeader } from "@/components/steps";
 import { resolveUnlockTarget } from "@/lib/funnel/funnelProgress";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
-import { useStepRequiredError } from "@/lib/funnel/useStepAnswer";
 import { type PricingRegion } from "@/lib/pricing/regions";
 import {
   formatOfferEndDate,
@@ -124,9 +123,6 @@ function PlanSelectionFooter({
   canContinue: boolean;
 }) {
   const unlockFlowStep = useFunnelStore((state) => state.unlockFlowStep);
-  const requestStepValidation = useFunnelStore(
-    (state) => state.requestStepValidation,
-  );
   const clearStepValidationAttempt = useFunnelStore(
     (state) => state.clearStepValidationAttempt,
   );
@@ -155,6 +151,11 @@ function PlanSelectionFooter({
         </svg>
       </Link>
 
+      {/*
+        Handover 70 §2.3: a real gate. With no plan chosen this is a
+        disabled button: not clickable, not in the tab order, and announced
+        as unavailable. The hint above the footer says why.
+      */}
       {canContinue ? (
         <Link
           href={nextHref}
@@ -170,8 +171,10 @@ function PlanSelectionFooter({
       ) : (
         <button
           type="button"
-          onClick={requestStepValidation}
-          className="subscribe-fill-btn flex-1 rounded-full bg-brand-light px-6 py-3 text-center text-xs font-normal uppercase tracking-[0.15em] text-white sm:py-3.5 sm:text-sm"
+          disabled
+          aria-disabled="true"
+          aria-describedby="plan-required-hint"
+          className="flex-1 cursor-not-allowed rounded-full bg-brand-light px-6 py-3 text-center text-xs font-normal uppercase tracking-[0.15em] text-white opacity-50 sm:py-3.5 sm:text-sm"
         >
           Continue
         </button>
@@ -211,6 +214,8 @@ export default function PlanSelectionStep({
   const isEarly = step === ONBOARDING_FORM.earlyPlanSelection;
   const paidPlan = plans.find((p) => p.planKey === PAID_PLAN_KEY);
   const router = useRouter();
+  // Handover 70 §2.3: RequirePlan sends a visitor back here with ?need=plan.
+  const sentBack = useSearchParams().get("need") === "plan";
   const selectedPlan = useFunnelStore(
     (state) => state.selectedPlan,
   ) as PlanKey | null;
@@ -220,10 +225,6 @@ export default function PlanSelectionStep({
   const unlockFlowStep = useFunnelStore((state) => state.unlockFlowStep);
   const clearStepValidationAttempt = useFunnelStore(
     (state) => state.clearStepValidationAttempt,
-  );
-  const planError = useStepRequiredError(
-    selectedPlan === null,
-    "Please select a plan.",
   );
 
   // Pricing already chose a plan — skip this step entirely.
@@ -340,7 +341,17 @@ export default function PlanSelectionStep({
         */}
         <GiftCodeField />
 
-        <StepRequiredError message={planError} />
+        {selectedPlan === null ? (
+          <p
+            id="plan-required-hint"
+            role={sentBack ? "alert" : undefined}
+            className={`mt-4 text-sm ${sentBack ? "font-medium text-brand-error-strong" : "text-brand-gray"}`}
+          >
+            {sentBack
+              ? "Choose a plan first. Your answers so far are kept."
+              : "Choose a plan to continue."}
+          </p>
+        ) : null}
       </div>
     </OnboardingShell>
   );

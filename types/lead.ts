@@ -1,5 +1,7 @@
 export type LeadSubmitPayload = {
   sessionId: string;
+  /** Handover 70 §1.6: a session opened with ?test=1. Only ever marks, never unmarks. */
+  markTest?: boolean;
   fullName?: string;
   email?: string;
   selectedPlan?: string | null;

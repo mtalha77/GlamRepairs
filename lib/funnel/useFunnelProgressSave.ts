@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { hasUserEnteredValue } from "@/lib/funnel/autoAnswers";
 import { useFunnelStore } from "@/lib/funnel/useFunnelStore";
 
 function payloadFromStore() {
@@ -27,13 +28,23 @@ function payloadFromStore() {
       state.onboardingUnlockedStep,
       state.bookingUnlockedStep,
     ),
+    // Handover 70 §1.6: a session opened with ?test=1. Only ever true.
+    markTest: state.markTest,
   };
 }
 
+/**
+ * Handover 70 Part 1: no row on page view. The store is the only record
+ * until the visitor has submitted the first step (which unlocks step 2) AND
+ * typed something. Auto-captured answers (timezone, practitioner, referral)
+ * ride along with that first write but never cause one. The old rule, "two
+ * answers", was met on mount by timezone plus the practitioner from a card
+ * link, which is how six page views became six clients.
+ */
 function shouldSave(payload: ReturnType<typeof payloadFromStore>) {
   if (!payload.sessionId) return false;
-  const answerCount = Object.keys(payload.answers ?? {}).length;
-  return Boolean(payload.email || payload.fullName || answerCount >= 2);
+  if (payload.funnelStep < 2) return false;
+  return hasUserEnteredValue(payload);
 }
 
 async function postProgress() {
@@ -54,6 +65,7 @@ async function postProgress() {
 export function useFunnelProgressSave() {
   const timer = useRef<number | null>(null);
   const lastKey = useRef("");
+  const lastStep = useRef<number | null>(null);
 
   useEffect(() => {
     const schedule = () => {
@@ -81,6 +93,16 @@ export function useFunnelProgressSave() {
       ].join("|");
       if (key === lastKey.current) return;
       lastKey.current = key;
+      // Submitting step 1 is the moment the lead is created: write it now
+      // rather than four seconds later, when the visitor may have gone.
+      const step = Math.max(state.onboardingUnlockedStep, state.bookingUnlockedStep);
+      const crossed = lastStep.current !== null && lastStep.current < 2 && step >= 2;
+      lastStep.current = step;
+      if (crossed) {
+        if (timer.current) window.clearTimeout(timer.current);
+        void postProgress();
+        return;
+      }
       schedule();
     });
     const onHide = () => {
