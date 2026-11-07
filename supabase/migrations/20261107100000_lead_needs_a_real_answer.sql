@@ -27,9 +27,12 @@ as $$
   )
 $$;
 
+-- Soft-deleted rows are exempt: one empty row from 6 October was already
+-- deleted from the studio, and rewriting it would only change history.
 alter table public.leads
   add constraint lead_needs_a_real_answer check (
     is_test
+    or deleted_at is not null
     or email is not null
     or phone is not null
     or public.lead_has_real_answer(answers)
