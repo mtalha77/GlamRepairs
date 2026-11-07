@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { hasUserEnteredValue } from "@/lib/funnel/autoAnswers";
 import { isFunnelPlanId } from "@/lib/funnel/plans";
+import { listAcceptedPlanKeys } from "@/lib/plans/planSettings";
 import { saveFunnelProgress } from "@/lib/leads/insertLead";
 import { CLIENT_NOTES_MAX_LENGTH } from "@/lib/funnel/clientNotes";
 import { normaliseGiftCode } from "@/lib/gifts/giftCodes";
@@ -19,6 +21,7 @@ type ProgressBody = {
   funnelStep?: number;
   clientNotes?: string | null;
   giftCode?: string | null;
+  markTest?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -35,11 +38,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
-  const answerCount = body.answers ? Object.keys(body.answers).length : 0;
   const email = body.email?.trim() ?? "";
   const fullName = body.fullName?.trim() ?? "";
-  if (!email && !fullName && answerCount < 2) {
+  // Handover 70 Part 1: nothing the visitor typed, no row. Timezone and the
+  // practitioner from a card link are captured on arrival and used to be
+  // enough on their own ("two answers"), which made every card click a lead.
+  if (!hasUserEnteredValue({ email, fullName, phone: body.phone, answers: body.answers })) {
     return NextResponse.json({ ok: true, skipped: true });
+  }
+
+  // Handover 70 §2.4: a plan, when one is sent, must be one plan_settings has.
+  if (body.selectedPlan) {
+    const accepted = await listAcceptedPlanKeys();
+    if (accepted && !accepted.has(body.selectedPlan)) {
+      return NextResponse.json({ ok: false, reason: "plan" }, { status: 400 });
+    }
   }
 
   const plan = PLAN_OPTIONS.find((item) => item.id === body.selectedPlan);
@@ -71,6 +84,7 @@ export async function POST(request: Request) {
     // thing that decides whether a code grants anything, so a forged value
     // in this payload buys nothing.
     giftCode: !test && body.giftCode ? normaliseGiftCode(body.giftCode) : null,
+    markTest: body.markTest === true,
   });
 
   return NextResponse.json({ ok: true, leadId });

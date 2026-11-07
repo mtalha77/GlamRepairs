@@ -23,6 +23,7 @@ import { cardEligibility, cardPayUrl } from "@/lib/payments/cardCheckout";
 import { resolvePricingRegion } from "@/lib/pricing/regions";
 import { logSuppressedEmail } from "@/lib/testPortal/email";
 import { getTestSession, scopedSessionId } from "@/lib/testPortal/session";
+import { listAcceptedPlanKeys } from "@/lib/plans/planSettings";
 
 function isConfigured() {
   return Boolean(
@@ -176,6 +177,18 @@ export async function POST(request: Request) {
   body.sessionId = scopedSessionId(body.sessionId, test);
   if (test) body.giftCode = null;
 
+  // Handover 70 §2.4: a submitted assessment names a plan plan_settings has.
+  // The plan step gates this in the browser; this is the check that holds.
+  {
+    const accepted = await listAcceptedPlanKeys();
+    if (!body.selectedPlan || (accepted && !accepted.has(body.selectedPlan))) {
+      return NextResponse.json<LeadSubmitResult>(
+        { ok: false, reason: "validation", message: "Please choose a plan before submitting." },
+        { status: 400 },
+      );
+    }
+  }
+
   const photoDataUrls = collectPhotoDataUrls(body);
 
   if (photoDataUrls.length > 0 && !hasRecordedConsent(body.answers)) {
@@ -268,6 +281,7 @@ export async function POST(request: Request) {
     imageUrls,
     photoPaths,
     testSession: test?.sid ?? null,
+    markTest: body.markTest === true,
   });
 
   /*

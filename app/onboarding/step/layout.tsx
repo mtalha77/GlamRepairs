@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import GiftCodeCapture from "@/components/onboarding/GiftCodeCapture";
+import MarkTestFromQuery from "@/components/onboarding/MarkTestFromQuery";
+import RequirePlan from "@/components/onboarding/RequirePlan";
 
 /**
  * Keeps funnel steps out of the search index.
@@ -61,7 +63,11 @@ export default function OnboardingStepLayout({
       */}
       <Suspense fallback={null}>
         <GiftCodeCapture />
+        {/* Handover 70 §1.6: ?test=1 marks the team's own session. */}
+        <MarkTestFromQuery />
       </Suspense>
+      {/* Handover 70 §2.3: no step after the plan step without a plan. */}
+      <RequirePlan />
       {children}
     </>
   );

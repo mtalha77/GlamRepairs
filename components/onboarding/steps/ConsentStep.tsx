@@ -374,6 +374,7 @@ export default function ConsentStep({
       answers: store.answers,
       // HANDOVER-20 Part 2 — the trigger validates and redeems this.
       giftCode: store.giftCode,
+      markTest: store.markTest,
     });
 
     /*

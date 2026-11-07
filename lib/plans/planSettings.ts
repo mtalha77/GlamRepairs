@@ -136,3 +136,26 @@ export function describePhotoCount(plan: PlanSettings): string {
   }
   return `${plan.photosRequired}–${plan.photosMax} photos`;
 }
+
+/**
+ * Handover 70 §2.4: the plans a lead may be written with, read from
+ * `plan_settings` (active rows), never from a list in code. The client-side
+ * plan gate is a convenience; this is the control, because the lead routes
+ * write with the service role.
+ *
+ * Expiry (`available_until`) is deliberately not checked here: the funnel
+ * stops offering an expired plan, and someone who chose it while it was open
+ * must still be able to finish. Null means the table could not be read, and
+ * callers then accept rather than refuse a real client.
+ */
+export async function listAcceptedPlanKeys(): Promise<Set<string> | null> {
+  const { data, error } = await createPublicSupabaseClient()
+    .from("plan_settings")
+    .select("plan_key")
+    .eq("active", true);
+  if (error || !data?.length) {
+    if (error) console.error("[listAcceptedPlanKeys]", error.message);
+    return null;
+  }
+  return new Set((data as { plan_key: string }[]).map((r) => r.plan_key));
+}
