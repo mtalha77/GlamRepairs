@@ -302,7 +302,7 @@ export default async function PractitionerProfilePage({ params }: Props) {
                 <li>No diagnosis, no prescription, and no treatment of medical conditions</li>
                 <li>
                   Anything painful, spreading or bleeding, or a mole that has changed shape or colour, is referred to a doctor and your
-                  fee refunded
+                  fee held as a credit
                 </li>
                 <li>No brand recommendations, and no commission from anyone. Ingredients and strengths only</li>
                 <li>If a photograph cannot be read properly, {first} will ask for another rather than guess</li>

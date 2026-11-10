@@ -216,7 +216,7 @@ export const SAMPLE_ANNOTATIONS: {
   {
     section: "Section 7",
     title: "The limits, stated",
-    body: "If your case needs a doctor we say so and refund you. We would rather lose the sale than sell a routine that cannot help.",
+    body: "If your case needs a doctor we say so and hold your fee as a credit. We would rather lose the sale than sell a routine that cannot help.",
   },
 ];
 

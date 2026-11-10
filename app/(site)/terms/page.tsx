@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Terms & Conditions",
   description:
     "The terms that apply when you buy a skin consultation from Glam Repairs: " +
-    "plans, payment, delivery, refunds, appointments, and your responsibilities.",
+    "plans, payment, delivery, credits, appointments, and your responsibilities.",
   // HOTFIX-31 §4.2 — canonical and og:url from one path.
   ...canonicalOg("/terms"),
   robots: { index: true, follow: true },
