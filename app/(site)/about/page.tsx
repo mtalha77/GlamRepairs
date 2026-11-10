@@ -32,12 +32,15 @@ import WhatWeAreSection from "@/components/about/WhatWeAreSection";
 import WhoRunsItSection from "@/components/about/WhoRunsItSection";
 import OurStorySection from "@/components/about/OurStorySection";
 import HowItWorksSection from "@/components/about/HowItWorksSection";
-import WhyPakistanSection from "@/components/about/WhyPakistanSection";
+import WhereYouLiveSection from "@/components/about/WhereYouLiveSection";
+import YouChooseSection from "@/components/about/YouChooseSection";
 import WhatWeWontDoSection from "@/components/about/WhatWeWontDoSection";
 import FaqSection from "@/components/faq/FaqSection";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
 import { hasReviewingTeam } from "@/lib/practitioners/authorship";
+import { publicRosterFacts } from "@/lib/practitioners/directory";
+import { PRACTITIONER } from "@/lib/seo/authors";
 import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
 import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 
@@ -45,11 +48,10 @@ import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 // strings here are only the fallback for a missing row or failed read.
 export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata("/about", {
-    title: "About Glam Repairs, Skin Care for Pakistan",
+    title: "About Glam Repairs: Skin Read by a Person, Not an Algorithm",
     description:
-      "Glam Repairs provides online skin consultations in Pakistan: a personalised " +
-    "skincare routine built for your skin, your climate and your budget, reviewed " +
-    "by a certified aesthetics practitioner. No brand bias, no AI-generated advice.",
+      "Why we built an online skin assessment, the climates it is written for, and the " +
+      "practitioners who read every set of photographs by hand.",
   });
 }
 
@@ -57,7 +59,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export const revalidate = 3600;
 
 export default async function AboutPage() {
-  const faqs = resolveFaqs("about", undefined, { team: await hasReviewingTeam() });
+  const [team, roster] = await Promise.all([hasReviewingTeam(), publicRosterFacts()]);
+  const faqs = resolveFaqs("about", undefined, { team });
 
   return (
     <>
@@ -76,12 +79,13 @@ export default async function AboutPage() {
         )}
       />
       <main>
-        <AboutHeroSection h1={await pageH1("/about", "Online skin consultations, built for Pakistani skin")} />
+        <AboutHeroSection h1={await pageH1("/about", "Online skin consultations, read by a person")} />
         <WhatWeAreSection />
-        <OurStorySection />
+        <OurStorySection degreeVerified={roster.degreeVerified(PRACTITIONER.slug)} />
+        <YouChooseSection countries={roster.countries} directoryOpen={roster.open} />
         <WhoRunsItSection />
         <HowItWorksSection />
-        <WhyPakistanSection />
+        <WhereYouLiveSection />
         <WhatWeWontDoSection />
         <FaqSection faqs={faqs} />
       </main>

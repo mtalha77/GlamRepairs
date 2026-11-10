@@ -4,12 +4,13 @@ import CredentialsCard from "@/components/about/CredentialsCard";
 import { PRACTITIONER } from "@/lib/seo/authors";
 
 /**
- * "Who reviews your skin" — the named, credentialed practitioner behind every
- * assessment. This is the page's E-E-A-T anchor, so the credential wording
- * here must match lib/seo/authors.ts exactly: BS Cosmetology & Dermatology
- * Science, never a medical title.
+ * "Who reviews your skin". The client chooses the practitioner (10 November
+ * 2026), so this no longer says one named person reads every assessment.
+ * Ayma's paragraph and card stay as the page's E-E-A-T anchor; the
+ * credential wording must match lib/seo/authors.ts exactly: BS Cosmetology &
+ * Dermatology Science, never a medical title.
  */
-export default function OurStorySection() {
+export default function OurStorySection({ degreeVerified = false }: { degreeVerified?: boolean }) {
   return (
     <section className="bg-white px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
       <div className="mx-auto max-w-4xl text-center">
@@ -37,20 +38,15 @@ export default function OurStorySection() {
 
         <AnimatedSlideIn direction="up" delay={240}>
           <div className="mx-auto mt-8 max-w-3xl space-y-5 sm:mt-10">
-            <p className="font-sans text-base leading-relaxed text-brand-ink sm:text-lg lg:text-xl lg:leading-[1.6]">
-              <span className="font-serif italic">{whoReviews.expertName}</span>{" "}
-              {whoReviews.paragraphs[0]}
-            </p>
-            <p className="font-sans text-base leading-relaxed text-brand-ink sm:text-lg lg:text-xl lg:leading-[1.6]">
-              {whoReviews.paragraphs[1]}
-            </p>
+            {whoReviews.paragraphs.map((p) => (
+              <p key={p} className="font-sans text-base leading-relaxed text-brand-ink sm:text-lg lg:text-xl lg:leading-[1.6]">
+                {p}
+              </p>
+            ))}
             {/*
-              HOTFIX-30 §1.2 — the long form, on the second page with room.
-
-              It earns its place here rather than repeating the credential
-              line: this is the paragraph that connects her background to
-              what a client is actually buying, which is whether a
-              photograph can be read at all.
+              Ayma's own paragraph, above her card. It connects her clinic
+              years to what a client is buying: whether a photograph can be
+              read at all.
             */}
             {PRACTITIONER.experienceLong ? (
               <p className="font-sans text-base leading-relaxed text-brand-ink sm:text-lg lg:text-xl lg:leading-[1.6]">
@@ -68,7 +64,7 @@ export default function OurStorySection() {
               read as quietly as the rest. Wider max-width than the old
               block: the two-column credential grid needs the room. */}
           <div className="mx-auto mt-8 max-w-3xl sm:mt-10">
-            <CredentialsCard />
+            <CredentialsCard degreeVerified={degreeVerified} />
           </div>
         </AnimatedSlideIn>
       </div>

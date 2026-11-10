@@ -20,9 +20,12 @@ export default function WhoRunsItSection() {
           <Image
             src={MANAGING_DIRECTOR.photo}
             alt={MANAGING_DIRECTOR.name}
-            width={440}
-            height={440}
-            sizes="(max-width: 640px) 60vw, 220px"
+            // Fixed size, no `sizes`: it never renders wider than 220px, so
+            // 1x and 2x candidates are all it needs. With `sizes` set,
+            // next/image listed every width up to 2048 and used the 2048
+            // variant as the fallback src.
+            width={220}
+            height={220}
             className="mx-auto aspect-square w-[60vw] max-w-[220px] rounded-[28px] object-cover sm:w-full"
           />
         </AnimatedSlideIn>
@@ -33,7 +36,7 @@ export default function WhoRunsItSection() {
               <span className="font-serif italic text-[1.75rem] sm:text-[2.25rem]">Glam Repairs</span>
             </h2>
             <p className="mt-4 font-sans text-base leading-relaxed text-brand-ink sm:text-lg">
-              <span className="font-serif italic">{PAYMENT.accountTitle}</span> runs Glam Repairs alongside Ayma Arif. He looks
+              <span className="font-serif italic">{PAYMENT.accountTitle}</span>, {MANAGING_DIRECTOR.title}, runs Glam Repairs alongside Ayma Arif. He looks
               after the business: payments, the platform, and the practitioners who join it.
             </p>
             <p className="mt-3 font-sans text-base leading-relaxed text-brand-gray sm:text-lg">

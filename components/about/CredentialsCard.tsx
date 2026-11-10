@@ -120,7 +120,13 @@ const rows: Row[] = [
   },
 ];
 
-export default function CredentialsCard() {
+/**
+ * `degreeVerified` comes from practitioner_public.degree_verified, which is
+ * true only once the degree document is marked verified in the studio. The
+ * "Credentials verified" badge shows only then (About page, 10 Nov 2026):
+ * the HEC reference and the rest of the card stand on their own until it is.
+ */
+export default function CredentialsCard({ degreeVerified = false }: { degreeVerified?: boolean }) {
   if (!ayma) return null;
 
   return (
@@ -156,6 +162,7 @@ export default function CredentialsCard() {
           </p>
         </div>
 
+        {degreeVerified ? (
         <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-success/12 px-3 py-1.5 text-xs font-medium text-brand-success-strong">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
             strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5" aria-hidden>
@@ -163,6 +170,7 @@ export default function CredentialsCard() {
           </svg>
           Credentials verified
         </span>
+        ) : null}
       </div>
 
       {/* ── Band 2: what ────────────────────────────────────────────────
