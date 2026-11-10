@@ -135,7 +135,9 @@ function CtaSection() {
           alt="Woman with healthy, radiant skin"
           width={886}
           height={642}
-          sizes="(max-width: 1024px) 90vw, 640px"
+          // Matches the rendered width (28rem, 34rem, 40rem caps), so a
+          // tablet no longer asks for a 90vw image it shows at 544px.
+          sizes="(max-width: 640px) 90vw, (max-width: 1024px) 544px, 640px"
           className="mx-auto h-auto w-full max-w-[28rem] object-contain sm:max-w-[34rem] lg:max-w-[40rem]"
           style={{
             WebkitMaskImage:
