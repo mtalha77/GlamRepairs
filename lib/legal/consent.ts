@@ -15,10 +15,11 @@
  * client's country governs.
  */
 
-export const CONSENT_VERSION = "2026-10-23";
+export const CONSENT_VERSION = "2026-11-10";
 
 /** Every version a client may have been shown. Never remove one. */
-export const CONSENT_VERSIONS = ["2026-10-23"] as const;
+// 2026-11-10: "refund you" became "hold your fee as a credit" (no refunds).
+export const CONSENT_VERSIONS = ["2026-10-23", "2026-11-10"] as const;
 
 export type ConsentPoint = { lead: string; rest: string };
 
@@ -29,7 +30,7 @@ export const CONSENT_POINTS: ConsentPoint[] = [
   },
   {
     lead: "When a clinic is the right choice.",
-    rest: " If your skin is painful, spreading or changing quickly, tell us. We will say so plainly and refund you.",
+    rest: " If your skin is painful, spreading or changing quickly, tell us. We will say so plainly and hold your fee as a credit.",
   },
   {
     lead: "If something is urgent, do not wait for us.",
