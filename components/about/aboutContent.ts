@@ -1,5 +1,3 @@
-import { PRACTITIONER } from "@/lib/seo/authors";
-
 /**
  * Copy for /about, kept as data so the section components stay pure
  * presentation. Rewritten 4 September 2026 — see app/about/page.tsx for the
@@ -14,17 +12,17 @@ import { PRACTITIONER } from "@/lib/seo/authors";
  * carried in structured data.
  */
 
-export const aboutHeroBackground = "/images,svgs/about-hero.png";
+export const aboutHeroBackground = "/images,svgs/about-hero.webp";
 
 export const aboutHero = {
-  headlineLead: "Online skin consultations, built for",
-  headlineEmphasis: "Pakistani skin",
+  headlineLead: "Online skin consultations, read by",
+  headlineEmphasis: "a person",
   subtitle:
     "Healthy skin starts with the right information, not the most expensive " +
     "products. Glam Repairs gives you a personalised skincare routine, " +
     "assessed by a certified aesthetics practitioner, written for the skin " +
     "you actually have, the climate you actually live in, and the products " +
-    "you can actually buy in Pakistan.",
+    "you can actually buy where you are.",
 };
 
 /** "What Glam Repairs is" */
@@ -40,42 +38,54 @@ export const whatWeAre = {
     "It is cosmetic guidance, and we are precise about that because the " +
       "distinction matters. We do not diagnose conditions, prescribe " +
       "medication or provide treatment. That is a doctor's work, and if " +
-      "your concern needs one, our practitioner will tell you so and we " +
-      "will refund you rather than sell you a routine that cannot help. " +
+      "your concern needs one, our practitioner will tell you so and hold " +
+      "your fee as a credit rather than sell you a routine that cannot help. " +
       "What we do is the part most people never get: someone qualified " +
       "looking at your actual skin and explaining what is happening, in " +
       "order, with reasons.",
   ],
 };
 
-/** "Who reviews your skin" — the expert bio. Renders inside OurStorySection. */
+/**
+ * "Who reviews your skin". About page rewrite, 10 November 2026: no single
+ * named person reviews every assessment any more. The client chooses a
+ * practitioner, and that practitioner's name and qualification go on the
+ * assessment. Ayma's own paragraph (PRACTITIONER.experienceLong) and her
+ * credentials card follow these paragraphs.
+ */
 export const whoReviews = {
   headingLead: "Who reviews",
   headingEmphasis: "your skin",
-  subheadingLead: "Reviewed by a",
-  subheadingEmphasis: "certified practitioner.",
-  // HOTFIX-30 §2 — from the constant. Retyped, this was a fourth copy of a
-  // string the site has already had to correct twice.
-  expertName: `${PRACTITIONER.name}, ${PRACTITIONER.credentials},`,
+  subheadingLead: "Reviewed by a certified practitioner,",
+  subheadingEmphasis: "and you choose which one.",
   paragraphs: [
-    /*
-     * HOTFIX-30 Part 3 — "across clinics in Pakistan" was two banned
-     * phrasings at once: vague geography that reads as padding, and
-     * "years working" where the approved word is practice. A named city is
-     * a fact; a country is a gesture.
-     */
-    "spent five years in practice at aesthetic clinics in Lahore, with " +
-      "clients whose concerns ranged from acne and pigmentation to dryness and " +
-      "sensitivity. The pattern she kept seeing is the reason this " +
-      'service exists: the same clients came back, not because the ' +
-      "advice was wrong, but because there was no way to get consistent, " +
-      'personalised guidance between appointments, and no affordable ' +
-      'way to ask "is this working?" six weeks in.',
+    "The pattern our practitioners kept seeing is the reason this service " +
+      "exists: the same clients came back, not because the advice was " +
+      "wrong, but because there was no way to get consistent, personalised " +
+      'guidance between appointments, and no affordable way to ask "is ' +
+      'this working?" six weeks in.',
     "A clinic visit answers one question on one day. Skin does not work " +
-      "on that schedule. Her name, her qualification and her review are " +
-      "attached to every assessment that leaves here. If you want to " +
-      "know who read your photographs, the answer is on this page.",
+      "on that schedule.",
+    "The name and qualification of the practitioner who read your " +
+      "photographs is attached to every assessment that leaves here. If " +
+      "you want to know who read yours, you picked them.",
   ],
+};
+
+/** "You choose who reads your skin". The countries line is generated from practitioner_public. */
+export const youChoose = {
+  headingLead: "You choose who",
+  headingEmphasis: "reads your skin",
+  paragraphs: [
+    "Most services assign you someone. We do not.",
+    "Every practitioner publishes their qualification with its reference " +
+      "number, the languages they work in, the concerns they read most " +
+      "often, and how soon they can take you. Read them and pick. If you " +
+      "would rather we chose, say so and we will.",
+  ],
+  /** Followed by the countries line, then this. */
+  countriesNote: "Where they are affects when they are awake, not whether they can help you.",
+  cta: { label: "Meet the practitioners", href: "/practitioners" },
 };
 
 /** "How a consultation works" — four steps. */
@@ -110,10 +120,16 @@ export const howItWorks = [
   },
 ];
 
-/** "Why skin in Pakistan needs advice written for Pakistan" */
-export const whyPakistan = {
-  headingLead: "Why skin in Pakistan needs advice",
-  headingEmphasis: "written for Pakistan",
+/**
+ * "Why a routine has to know where you live". Retitled 10 November 2026 from
+ * "Why skin in Pakistan needs advice written for Pakistan". Every Pakistani
+ * example stays: the specificity is what makes the service credible. The
+ * third paragraph carries the same reasoning to the other places clients
+ * write from.
+ */
+export const whereYouLive = {
+  headingLead: "Why a routine has to know",
+  headingEmphasis: "where you live",
   paragraphs: [
     "Most skincare advice online is written for temperate climates and " +
       "soft water. It does not survive contact with a Lahore summer.",
@@ -129,8 +145,14 @@ export const whyPakistan = {
       "more intense year-round than the advice written for European skin " +
       "assumes, and it is the single biggest driver of the pigmentation " +
       "concerns we see most.",
+    "The same reasoning applies wherever you are. Hard water in London " +
+      "does what hard water in Lahore does. Air conditioning in Dubai " +
+      "dehydrates skin the way a Toronto winter does, by a different " +
+      "route. Lagos humidity changes which textures work, as Karachi's " +
+      "does. None of this is exotic once someone asks about it, and " +
+      "almost nobody asks.",
     "A routine that ignores all of this is a routine built for someone " +
-      "else's skin. Yours is assessed with these conditions taken as " +
+      "else's skin. Yours is assessed with your conditions taken as " +
       "given, not as an afterthought.",
   ],
 };

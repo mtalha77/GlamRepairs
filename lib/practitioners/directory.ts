@@ -259,3 +259,16 @@ export async function listSamplePractitioners(): Promise<CardPractitioner[]> {
     price: priceBy.get(s.country_code) ?? null,
   }));
 }
+
+/**
+ * About page (10 November 2026): the countries practitioners work from and
+ * whether a given practitioner's degree is verified, from the same cached
+ * view the directory reads, so the page cannot drift from the roster.
+ * Countries come back in the order they first appear, without duplicates.
+ */
+export async function publicRosterFacts(): Promise<{ countries: string[]; degreeVerified: (slug: string) => boolean; open: boolean }> {
+  const rows = (await readPublicRows()) ?? [];
+  const countries = [...new Set(rows.map((r) => r.country_name).filter((c): c is string => Boolean(c)))];
+  const verified = new Set(rows.filter((r) => r.degree_verified).map((r) => r.slug));
+  return { countries, degreeVerified: (slug) => verified.has(slug), open: rows.length >= DIRECTORY_MIN_PRACTITIONERS };
+}

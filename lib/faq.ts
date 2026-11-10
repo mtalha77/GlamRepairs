@@ -216,8 +216,8 @@ export const FAQS: Faq[] = [
     a:
       "No. Glam Repairs provides cosmetic skincare guidance. We do not " +
       "diagnose conditions or prescribe medication. If your concern needs a " +
-      "doctor we will tell you and refund you rather than sell you a routine " +
-      "that cannot help.",
+      "doctor we will tell you and hold your fee as a credit rather than sell " +
+      "you a routine that cannot help.",
   },
   {
     id: "not-satisfied",
@@ -248,7 +248,7 @@ export const FAQS: Faq[] = [
       "you feel unwell with it, see a doctor, and if it is urgent contact your " +
       "local emergency service rather than waiting for us. We give cosmetic " +
       "guidance and do not diagnose. If what we see needs a doctor, we tell " +
-      "you so and refund you rather than write a routine.",
+      "you so and hold your fee as a credit rather than write a routine.",
   },
 
   /* ── Privacy ───────────────────────────────────────────────────────── */
