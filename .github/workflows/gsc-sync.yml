@@ -6,7 +6,8 @@ name: Search Console sync
 #   daily   04:00 PKT (23:00 UTC): re-fetch the last 5 settled days. The
 #           first run after the key is added also backfills 16 months.
 #   weekly  Monday 05:00 PKT (00:00 UTC Mon): URL Inspection of the sitemap.
-#   manual  Actions tab -> Run workflow -> mode: daily, backfill or inspect.
+#   manual  Actions tab -> Run workflow -> mode: daily, backfill, inspect
+#           or sitemap (resubmit the sitemap to Search Console).
 #           backfill with no dates fetches all 16 months, in ~3-month calls.
 
 on:
@@ -16,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "daily, backfill or inspect"
+        description: "daily, backfill, inspect or sitemap"
         default: daily
         required: true
       from:
