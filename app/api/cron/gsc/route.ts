@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { gscConfigured, submitSitemap } from "@/lib/gsc/client";
 import { syncBackfill, syncDaily, syncIndexStatus } from "@/lib/gsc/sync";
 
 /**
@@ -9,6 +10,10 @@ import { syncBackfill, syncDaily, syncIndexStatus } from "@/lib/gsc/sync";
  *                            16-month backfill, if it has never run)
  *   ?mode=backfill&from&to   a date range, YYYY-MM-DD; both optional
  *   ?mode=inspect            URL Inspection for every sitemap URL
+ *   ?mode=sitemap            resubmit /sitemap.xml to Search Console, after
+ *                            a batch of posts goes live by SQL (13 Nov 2026).
+ *                            The only automated nudge Google offers; there
+ *                            is no API for "Request indexing" on a page.
  *
  * Called by .github/workflows/gsc-sync.yml, because Vercel cron does not
  * fire on this project: air_quality_cron_runs shows every run arriving with
@@ -39,6 +44,16 @@ export async function GET(request: Request) {
   const to = params.get("to") ?? undefined;
   if ((from && !DATE.test(from)) || (to && !DATE.test(to))) {
     return NextResponse.json({ ok: false, error: "from and to must be YYYY-MM-DD." }, { status: 400 });
+  }
+
+  if (mode === "sitemap") {
+    if (!gscConfigured()) return NextResponse.json({ ok: false, mode, error: "Search Console is not configured." });
+    try {
+      await submitSitemap("https://www.glamrepairs.com/sitemap.xml");
+      return NextResponse.json({ ok: true, mode, submitted: "https://www.glamrepairs.com/sitemap.xml" });
+    } catch (err) {
+      return NextResponse.json({ ok: false, mode, error: (err as Error).message });
+    }
   }
 
   const results =

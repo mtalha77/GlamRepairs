@@ -35,7 +35,7 @@ export default async function CardPaymentPanel({ leadId }: { leadId: string }) {
     <div className="mt-4 space-y-3 border-t border-brand-lavender/60 pt-4 text-sm">
       {lead?.payment_method ? (
         <p className="text-brand-ink">
-          Paid by {lead.payment_method === "card" ? "card" : "bank transfer"}
+          Paid by {lead.payment_method === "card" ? "card" : lead.payment_method === "credit" ? "credit" : "bank transfer"}
           {lead.payment_reference ? <span className="text-brand-gray"> · {lead.payment_reference}</span> : null}
         </p>
       ) : null}

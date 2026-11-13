@@ -21,6 +21,8 @@ import ReviewForm from "@/components/studio/ReviewForm";
 import ReviewList from "@/components/studio/ReviewList";
 import VerifyPaymentButton from "@/components/studio/VerifyPaymentButton";
 import CardPaymentPanel from "@/components/studio/CardPaymentPanel";
+import CreditPanel from "@/components/studio/CreditPanel";
+import { CREDIT_REASONS, formatCredit, loadClientCredit } from "@/lib/credits/credits";
 import { getLeadConsultation } from "@/lib/consultation/forLead";
 import { formatBookingWhatsAppMessage } from "@/lib/funnel/formatBookingSummary";
 import { leadDisplayRef } from "@/lib/leads/displayRef";
@@ -101,6 +103,15 @@ export default async function CustomerDetailPage({
   if (!customer || !member) {
     notFound();
   }
+
+  // 13 November 2026 — the client's credit, for those who hold or spend it.
+  const seesCredit = member.isSuperAdmin || member.canVerifyPayment;
+  const [credit, priceRow] = seesCredit
+    ? await Promise.all([
+        loadClientCredit(customer.email),
+        createAdminSupabaseClient().from("leads").select("final_price, currency").eq("id", customer.id).maybeSingle(),
+      ])
+    : [null, null];
 
   const isOwner = member.role === "owner";
   // Assigning is the owner's and any super admin's (Ayma, the MD).
@@ -370,6 +381,29 @@ export default async function CustomerDetailPage({
             />
             {member.canVerifyPayment ? <CardPaymentPanel leadId={customer.id} /> : null}
           </div>
+          {credit ? (
+            <div className="rounded-2xl border border-brand-lavender/70 bg-white p-5">
+              <h2 className="mb-4 font-serif text-xl text-brand-primary">Credit</h2>
+              <CreditPanel
+                leadId={customer.id}
+                email={customer.email}
+                currency={priceRow?.data?.currency ?? null}
+                finalPrice={priceRow?.data?.final_price != null ? Number(priceRow.data.final_price) : null}
+                balances={credit.balances.map((b) => ({ ...b, label: formatCredit(b.balance, b.currency) }))}
+                rows={credit.rows.map((r) => ({
+                  id: r.id,
+                  label: r.reason === "applied" ? "Paid an assessment" : CREDIT_REASONS[r.reason],
+                  amount: `${r.amount > 0 ? "+" : ""}${formatCredit(r.amount, r.currency)}`,
+                  when: formatStudioDateTime(r.createdAt),
+                  note: r.note,
+                }))}
+                reasons={CREDIT_REASONS}
+                canHold={member.isSuperAdmin}
+                canPay={member.canVerifyPayment}
+                awaitingPayment={customer.paymentStatus === "pending"}
+              />
+            </div>
+          ) : null}
           <div className="rounded-2xl border border-brand-lavender/70 bg-white p-5">
             <h2 className="mb-4 font-serif text-xl text-brand-primary">Status</h2>
             <CustomerStatusForm

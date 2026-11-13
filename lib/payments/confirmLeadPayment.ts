@@ -22,7 +22,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
  */
 export async function confirmLeadPayment(
   leadId: string,
-  opts: { actorId: string | null; method: "bank_transfer" | "card"; reference?: string | null },
+  opts: { actorId: string | null; method: "bank_transfer" | "card" | "credit"; reference?: string | null },
 ): Promise<{ ok: boolean; booking: string; changed: boolean }> {
   const admin = createAdminSupabaseClient();
   const { data: before } = await admin.from("leads").select("payment_status").eq("id", leadId).maybeSingle();
@@ -56,7 +56,9 @@ export async function confirmLeadPayment(
 
   if (changed) await sendPaymentConfirmedEmail(leadId, booking);
 
-  if (changed && metaConfigured()) {
+  // Paid from credit: the money arrived on an earlier assessment and was
+  // reported then, so a second Purchase would count it twice.
+  if (changed && metaConfigured() && opts.method !== "credit") {
     const { data: paid } = await admin
       .from("leads")
       .select("email, phone_e164, final_price, currency, is_test")
