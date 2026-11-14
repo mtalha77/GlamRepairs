@@ -3,7 +3,10 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 
 import { getClientLead, getClientReport, getPortal, viewablePhotoPaths } from "@/lib/clients/portal";
+import PayWithCredit from "@/components/account/PayWithCredit";
 import { currentClientAccount } from "@/lib/clients/signIn";
+import { clientCreditView } from "@/lib/credits/client";
+import { formatCredit } from "@/lib/credits/credits";
 import { getWhatsAppChatLink } from "@/lib/funnel/whatsapp";
 
 /**
@@ -44,7 +47,8 @@ export default async function AccountPage() {
   const [lead, report] = account.lead_id
     ? await Promise.all([getClientLead(account.lead_id), getClientReport(account.lead_id)])
     : [null, null];
-  const photos = lead ? await viewablePhotoPaths(lead) : [];
+  const [photos, creditView] = await Promise.all([lead ? viewablePhotoPaths(lead) : Promise.resolve([]), clientCreditView(account.email)]);
+  const { credit, pending: awaiting, canPay } = creditView;
   const first = account.full_name?.trim().split(/\s+/)[0];
   const ref = lead?.ref ? ` (reference ${lead.ref})` : "";
   const followUp = getWhatsAppChatLink(`Hi, I would like to book a follow-up for my skin assessment${ref}.`);
@@ -143,6 +147,43 @@ export default async function AccountPage() {
               </a>
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {/* 13 November 2026: credit held instead of a refund, and spent from here. */}
+      {credit.balances.length || credit.rows.length ? (
+        <section className={`${card} mt-5`}>
+          <h2 className="font-serif text-xl text-brand-primary">Your credit</h2>
+          <p className="mt-2 text-[0.9375rem] leading-relaxed text-brand-ink">
+            {credit.balances.length
+              ? `You have ${credit.balances.map((b) => formatCredit(b.balance, b.currency)).join(" and ")} in credit. It does not expire, and it pays for a future assessment.`
+              : "You have no credit left."}
+          </p>
+          {canPay && awaiting ? (
+            <PayWithCredit label={`Pay ${formatCredit(awaiting.finalPrice, awaiting.currency)} for your new assessment from credit`} />
+          ) : awaiting ? (
+            <p className="mt-2 text-sm text-brand-gray">
+              Your new assessment is {formatCredit(awaiting.finalPrice, awaiting.currency)}, which is more than your credit in that currency, so
+              it is paid the usual way. Message us if you would like to put your credit towards it.
+            </p>
+          ) : credit.balances.length ? (
+            <p className="mt-2 text-sm text-brand-gray">
+              To use it, start a new assessment with this email address, then come back here to pay with credit.
+            </p>
+          ) : null}
+          <ul className="mt-4 space-y-1.5 border-t border-brand-lavender/60 pt-3 text-sm">
+            {credit.rows.map((r) => (
+              <li key={r.id} className="flex justify-between gap-3">
+                <span className="text-brand-gray">
+                  {day(r.createdAt)}, {r.reason === "applied" ? "used for an assessment" : "held as credit"}
+                </span>
+                <span className="shrink-0 text-brand-ink">
+                  {r.amount > 0 ? "+" : ""}
+                  {formatCredit(r.amount, r.currency)}
+                </span>
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
 
