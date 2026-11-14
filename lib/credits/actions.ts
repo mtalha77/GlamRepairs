@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 
 import { isCreditReason, normaliseCreditEmail } from "@/lib/credits/credits";
+import { emailCreditHeld } from "@/lib/credits/notify";
 import { confirmLeadPayment } from "@/lib/payments/confirmLeadPayment";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { requireStudioMember } from "@/lib/studio/member";
@@ -41,8 +43,13 @@ export async function holdFeeAsCredit(input: { leadId: string; reason: string; a
     created_by: member.userId,
   } as never);
   if (error) return { ok: false, error: error.message };
+  // The client is told, with a sign-in link: credit is spent from their account.
+  after(() => emailCreditHeld({ leadId: lead.id, amount, currency: lead.currency! }));
   revalidatePath(`/studio/customers/${lead.id}`);
-  return { ok: true, message: `${lead.currency} ${amount} held as credit for ${email}. It pays any future assessment in ${lead.currency}.` };
+  return {
+    ok: true,
+    message: `${lead.currency} ${amount} held as credit for ${email}. They have been emailed how to use it: start a new assessment with this email, then pay from their account.`,
+  };
 }
 
 export async function payWithCredit(leadId: string): Promise<CreditResult> {

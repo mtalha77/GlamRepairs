@@ -225,6 +225,14 @@ export default function PaymentDetails({ region }: { region: PricingRegion }) {
       <h2 className="font-serif text-lg text-brand-primary sm:text-xl">
         Almost done. Here&apos;s how to pay
       </h2>
+      {/*
+        13 November 2026: a client holding credit pays from their account,
+        where being signed in proves the email is theirs. Said to everyone
+        rather than worked out here, so this page never reveals who has credit.
+      */}
+      <p className="mt-2 text-xs leading-relaxed text-brand-gray sm:text-[0.8125rem]">
+        Have a credit with us? <a href="/account" className="font-medium text-brand-primary underline underline-offset-2">Sign in to your account</a> and pay with it instead.
+      </p>
       {cardOption}
       <p className="mt-2 text-sm leading-relaxed text-brand-ink sm:text-[0.9375rem]">
         {amount ? (
