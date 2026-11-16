@@ -133,7 +133,16 @@ export function websiteSchema(brandName: string = SITE.name) {
  * YMYL content that references it, so the credential must be explicit rather
  * than buried in a job title string.
  */
-export function personSchema(author: Author) {
+/**
+ * Handover 73 Part 2: `hasCredential` is emitted only when the degree
+ * document is verified in the database (practitioner_public.degree_verified),
+ * the same rule as the visible badge. The credential text stays visible on
+ * the page either way; it is the machine-readable claim that waits for the
+ * check. Callers pass what the roster says; the default asserts nothing.
+ */
+export type PersonFacts = { credentialsVerified?: boolean; languages?: string[] };
+
+export function personSchema(author: Author, facts: PersonFacts = {}) {
   return {
     "@type": "Person",
     "@id": abs(`/authors/${author.slug}#person`),
@@ -171,7 +180,8 @@ export function personSchema(author: Author) {
      * distinction is the whole value of the attestation, and it needs a
      * sentence — it cannot survive being an `Organization` name in a graph.
      */
-    hasCredential: [
+    ...(facts.languages?.length ? { knowsLanguage: facts.languages } : {}),
+    ...(facts.credentialsVerified ? { hasCredential: [
       {
         "@type": "EducationalOccupationalCredential",
         credentialCategory: "degree",
@@ -212,7 +222,7 @@ export function personSchema(author: Author) {
         recognizedBy: { "@type": "Organization", name: c.issuer },
         ...(c.verifyUrl ? { url: c.verifyUrl } : {}),
       })),
-    ],
+    ] } : {}),
     /*
      * HOTFIX-30 §2.2 — experience is an Occupation, NOT a credential.
      *
@@ -248,9 +258,31 @@ export function personSchema(author: Author) {
           },
         }
       : {}),
-    ...(author.profiles?.length
-      ? { sameAs: author.profiles.map((p) => p.url) }
-      : {}),
+    // Every externally checkable profile: LinkedIn, and the public Coursera
+    // record of the Duke specialization (Handover 73 Part 2).
+    ...(sameAsFor(author).length ? { sameAs: sameAsFor(author) } : {}),
+  };
+}
+
+function sameAsFor(author: Author): string[] {
+  const urls = [
+    ...(author.profiles ?? []).map((p) => p.url),
+    ...CREDENTIALS.filter((c) => c.kind === "course" && author.credentialIds?.includes(c.id) && c.verifyUrl).map((c) => c.verifyUrl as string),
+  ];
+  return [...new Set(urls)];
+}
+
+/** Handover 73 Part 2: the author page is a ProfilePage about the Person. */
+export function profilePageSchema(opts: { path: string; name: string; personSlug: string; dateModified?: string }) {
+  return {
+    "@type": "ProfilePage",
+    "@id": abs(`${opts.path}#profilepage`),
+    url: abs(opts.path),
+    name: opts.name,
+    inLanguage: SITE.language,
+    isPartOf: { "@id": abs("/#website") },
+    mainEntity: { "@id": abs(`/authors/${opts.personSlug}#person`) },
+    ...(opts.dateModified ? { dateModified: opts.dateModified } : {}),
   };
 }
 
@@ -426,6 +458,8 @@ export function reviewedPageSchema(opts: {
   reviewer: Author;
   datePublished: string;
   dateModified?: string;
+  /** studio_blog_posts.reviewed_at: when the review happened, not the last edit. */
+  reviewedAt?: string | null;
 }) {
   return {
     "@type": "WebPage",
@@ -438,7 +472,7 @@ export function reviewedPageSchema(opts: {
     datePublished: opts.datePublished,
     dateModified: opts.dateModified ?? opts.datePublished,
     reviewedBy: { "@id": abs(`/authors/${opts.reviewer.slug}#person`) },
-    lastReviewed: opts.dateModified ?? opts.datePublished,
+    lastReviewed: opts.reviewedAt ?? opts.dateModified ?? opts.datePublished,
     mainEntity: { "@id": abs(`${opts.path}#article`) },
   };
 }

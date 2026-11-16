@@ -43,6 +43,8 @@ const resourceLinks = [
   // HANDOVER-22 §3 and §5b — the two pages that answer "what do I get?" and
   // "why you and not a clinic?", reachable from every page on the site.
   { label: "See a real assessment", href: "/sample-assessment" },
+  { label: "Online consultation in Pakistan", href: "/online-skin-consultation-pakistan" },
+  { label: "How an assessment works", href: "/how-assessments-work" },
   { label: "Compare the options", href: "/compare" },
   { label: "Blog", href: "/blog" },
   { label: "Air quality and your skin", href: "/air-quality" },

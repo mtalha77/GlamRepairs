@@ -5,7 +5,9 @@ import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
 import CredentialsBlock from "@/components/seo/CredentialsBlock";
 import JsonLd from "@/components/seo/JsonLd";
 import { getAuthor, listAuthors } from "@/lib/seo/authors";
-import { breadcrumbSchema, graph, personSchema } from "@/lib/seo/schema";
+import { breadcrumbSchema, graph, personSchema, profilePageSchema } from "@/lib/seo/schema";
+import { personFactsFor } from "@/lib/seo/personFacts";
+import { listPublishedPosts } from "@/lib/studio/blog";
 import { SITE, canonicalOg } from "@/lib/seo/site";
 import { getTitleSuffix } from "@/lib/seo/pageSeo";
 import { formatSlot } from "@/lib/consultation/format";
@@ -93,10 +95,26 @@ export default async function AuthorPage({
     { name: author.name, path: `/authors/${author.slug}` },
   ];
 
+  // Handover 73 Part 2: every article she wrote or reviewed, published only,
+  // and the Person node's credential claim only once the database says the
+  // degree is verified.
+  const [facts, posts] = await Promise.all([personFactsFor(author.slug), listPublishedPosts()]);
+  const hers = posts.filter((p) => p.authorSlug === author.slug || p.reviewerSlug === author.slug);
+  const lastReviewed = hers.map((p) => p.reviewedAt).filter((d): d is string => Boolean(d)).sort().at(-1);
+
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
       <JsonLd
-        data={graph(personSchema(author), breadcrumbSchema(trail))}
+        data={graph(
+          profilePageSchema({
+            path: `/authors/${author.slug}`,
+            name: `${author.name}, ${author.title}`,
+            personSlug: author.slug,
+            dateModified: lastReviewed,
+          }),
+          personSchema(author, facts),
+          breadcrumbSchema(trail),
+        )}
       />
 
       <Breadcrumbs trail={trail} className="mb-10" />
@@ -170,6 +188,33 @@ export default async function AuthorPage({
                 >
                   {p.label}
                 </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {hers.length ? (
+        <section className="mt-10">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-black/45">
+            Written and reviewed by {author.name.split(" ")[0]}
+          </h2>
+          <ul className="mt-4 space-y-4">
+            {hers.map((p) => (
+              <li key={p.slug}>
+                <Link href={`/blog/${p.slug}`} className="font-medium underline-offset-2 hover:underline">
+                  {p.title}
+                </Link>
+                <p className="mt-0.5 text-sm text-black/55">
+                  {p.authorSlug === author.slug && p.reviewerSlug === author.slug
+                    ? "Written and reviewed"
+                    : p.authorSlug === author.slug
+                      ? "Written"
+                      : "Reviewed"}
+                  {p.reviewedAt
+                    ? `, reviewed ${new Date(p.reviewedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}`
+                    : ""}
+                </p>
               </li>
             ))}
           </ul>

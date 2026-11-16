@@ -179,7 +179,7 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
  * where the env is present.
  */
 export async function listPublishedForSitemap(): Promise<
-  { slug: string; updatedAt: string }[]
+  { slug: string; updatedAt: string; cluster: string | null }[]
 > {
   try {
     const supabase = createClient<Database>(
@@ -189,15 +189,16 @@ export async function listPublishedForSitemap(): Promise<
     );
     const { data, error } = await supabase
       .from("studio_blog_posts")
-      .select("slug, updated_at")
+      .select("slug, updated_at, cluster")
       .eq("status", "published");
     if (error) {
       console.error("[listPublishedForSitemap]", error.message);
       return [];
     }
-    return (data ?? []).map((r: { slug: string; updated_at: string }) => ({
+    return (data ?? []).map((r: { slug: string; updated_at: string; cluster: string | null }) => ({
       slug: r.slug,
       updatedAt: r.updated_at,
+      cluster: r.cluster,
     }));
   } catch (err) {
     console.error("[listPublishedForSitemap]", (err as Error).message);

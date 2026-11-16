@@ -261,14 +261,25 @@ export async function listSamplePractitioners(): Promise<CardPractitioner[]> {
 }
 
 /**
- * About page (10 November 2026): the countries practitioners work from and
- * whether a given practitioner's degree is verified, from the same cached
- * view the directory reads, so the page cannot drift from the roster.
- * Countries come back in the order they first appear, without duplicates.
+ * Facts from the same cached view the directory reads, so pages cannot drift
+ * from the roster: the countries practitioners work from (About page,
+ * 10 November 2026), and per practitioner whether the degree document is
+ * verified and the languages they work in (Handover 73: the badge and
+ * `hasCredential` render from `degree_verified`, never from a constant).
  */
-export async function publicRosterFacts(): Promise<{ countries: string[]; degreeVerified: (slug: string) => boolean; open: boolean }> {
+export async function publicRosterFacts(): Promise<{
+  countries: string[];
+  degreeVerified: (slug: string) => boolean;
+  languages: (slug: string) => string[];
+  open: boolean;
+}> {
   const rows = (await readPublicRows()) ?? [];
   const countries = [...new Set(rows.map((r) => r.country_name).filter((c): c is string => Boolean(c)))];
-  const verified = new Set(rows.filter((r) => r.degree_verified).map((r) => r.slug));
-  return { countries, degreeVerified: (slug) => verified.has(slug), open: rows.length >= DIRECTORY_MIN_PRACTITIONERS };
+  const bySlug = new Map(rows.map((r) => [r.slug, r]));
+  return {
+    countries,
+    degreeVerified: (slug) => Boolean(bySlug.get(slug)?.degree_verified),
+    languages: (slug) => bySlug.get(slug)?.languages ?? [],
+    open: rows.length >= DIRECTORY_MIN_PRACTITIONERS,
+  };
 }

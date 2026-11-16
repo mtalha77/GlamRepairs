@@ -13,6 +13,7 @@ import {
   sampleValueCards,
 } from "@/lib/sample/sampleAssessment";
 import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
+import { personFactsFor } from "@/lib/seo/personFacts";
 import {
   breadcrumbSchema,
   graph,
@@ -126,7 +127,7 @@ export default async function SampleAssessmentPage() {
           }),
           // The author node the article references has to exist in the graph,
           // or `author: {"@id": ...}` points at nothing.
-          personSchema(author),
+          personSchema(author, await personFactsFor(author.slug)),
         )}
       />
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import BlogIndex, { type BlogIndexPost } from "@/components/blog/BlogIndex";
 import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
+import { CLUSTERS, isPublishableHub } from "@/lib/blog/clusters";
 import { listPublishedPosts } from "@/lib/studio/blog";
 import { AUTHORS } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph } from "@/lib/seo/schema";
@@ -53,6 +54,10 @@ export default async function BlogIndexPage() {
     readingMinutes: post.readingMinutes,
   }));
 
+  const hubs = Object.entries(CLUSTERS).filter(
+    ([key, c]) => isPublishableHub(c) && posts.some((p) => p.cluster === key),
+  );
+
   /* Declared once, consumed twice — see components/seo/Breadcrumbs. */
   const trail: Crumb[] = [
     { name: "Home", path: "/" },
@@ -74,10 +79,29 @@ export default async function BlogIndexPage() {
         </h1>
         <p className="mt-4 max-w-xl text-lg text-black/65">
           Straight answers about what your skin is actually doing, written and
-          reviewed by a certified practitioner. No brand names, no miracle
-          promises.
+          reviewed by a certified practitioner. No commission from any brand,
+          no miracle promises.
         </p>
       </header>
+
+      {/* Handover 73 Part 4: the topic hubs, only those with published posts. */}
+      {hubs.length ? (
+        <nav aria-label="Topics" className="mt-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-gray">Topics</p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {hubs.map(([key, c]) => (
+              <li key={key}>
+                <Link
+                  href={`/blog/${key}`}
+                  className="inline-flex min-h-10 items-center rounded-full border border-brand-lavender bg-white px-4 text-sm text-brand-ink hover:border-brand-primary hover:text-brand-primary"
+                >
+                  {c.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
 
       <BlogIndex posts={cards} />
 
