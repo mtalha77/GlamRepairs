@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import ClusterHub from "@/components/blog/ClusterHub";
+import EditorialStandards from "@/components/blog/EditorialStandards";
 import RelatedReading from "@/components/blog/RelatedReading";
+import { clusterFor, isPublishableHub } from "@/lib/blog/clusters";
 import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
 import AuthorByline from "@/components/seo/AuthorByline";
 import JsonLd from "@/components/seo/JsonLd";
@@ -15,7 +18,7 @@ import {
 } from "@/lib/seo/schema";
 import Image from "next/image";
 import { getPostHero, hasHero } from "@/lib/blog/postHero";
-import { getPublishedPost } from "@/lib/studio/blog";
+import { getPublishedPost, listPublishedPosts } from "@/lib/studio/blog";
 import { extractHeadings, renderMarkdown, slugifyHeading } from "@/lib/blog/markdown";
 
 export const revalidate = 3600;
@@ -35,6 +38,20 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+
+  // Handover 73 Part 4: /blog/<cluster> is a topic hub.
+  const hub = clusterFor(slug);
+  if (isPublishableHub(hub)) {
+    const hubTitle = `${hub.title} | Glam Repairs`;
+    return {
+      title: { absolute: hubTitle },
+      description: hub.description,
+      alternates: { canonical: `/blog/${slug}` },
+      openGraph: { type: "website", title: hubTitle, description: hub.description, url: `/blog/${slug}` },
+      twitter: { card: "summary", title: hubTitle, description: hub.description },
+    };
+  }
+
   const post = await getPublishedPost(slug);
   if (!post) return {};
 
@@ -99,8 +116,17 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
+  const hub = clusterFor(slug);
+  if (isPublishableHub(hub)) {
+    const posts = (await listPublishedPosts()).filter((p) => p.cluster === slug);
+    if (!posts.length) notFound();
+    return <ClusterHub slug={slug} cluster={hub} posts={posts} />;
+  }
+
   const post = await getPublishedPost(slug);
   if (!post) notFound();
+  const postHub = clusterFor(post.cluster);
 
   const author = getAuthor(post.authorSlug);
   const reviewer = post.reviewerSlug ? getAuthor(post.reviewerSlug) : undefined;
@@ -133,6 +159,8 @@ export default async function BlogPostPage({
   const trail: Crumb[] = [
     { name: "Home", path: "/" },
     { name: "Skin, explained", path: "/blog" },
+    // Handover 73 Part 4: the post sits under its topic hub.
+    ...(post.cluster && isPublishableHub(postHub) ? [{ name: postHub.title, path: `/blog/${post.cluster}` }] : []),
     { name: post.title, path: `/blog/${post.slug}` },
   ];
 
@@ -186,8 +214,15 @@ export default async function BlogPostPage({
           the post sat. */}
       <Breadcrumbs trail={trail} className="mb-8" />
 
-      {post.cluster ? (
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8a63b5]">
+      {post.cluster && isPublishableHub(postHub) ? (
+        <Link
+          href={`/blog/${post.cluster}`}
+          className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-primary hover:underline"
+        >
+          {postHub.title}
+        </Link>
+      ) : post.cluster ? (
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-primary">
           {post.cluster}
         </p>
       ) : null}
@@ -274,6 +309,9 @@ export default async function BlogPostPage({
           </div>
         </section>
       ) : null}
+
+      {/* Handover 73 Part 3.1: one constant, on every article. */}
+      <EditorialStandards />
 
       <RelatedReading
         currentSlug={post.slug}

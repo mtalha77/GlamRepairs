@@ -34,7 +34,7 @@ const SECTIONS = [
   {
     h: "How it is reviewed",
     p: [
-      "Before an article goes live, a qualified reviewer checks it for clinical accuracy. Where an article has been reviewed, the reviewer is named on the page along with the date they checked it.",
+      "Before an article goes live, a qualified reviewer checks it for accuracy against their practice. Every article names its reviewer and shows the date they checked it.",
       "If we cannot get a claim reviewed, we do not publish it.",
     ],
   },
@@ -48,7 +48,7 @@ const SECTIONS = [
   {
     h: "Products and independence",
     p: [
-      "We do not name specific brands in our content, and we do not take payment for coverage. If that ever changes, for example through a disclosed partnership, it will be labelled clearly on the page it affects.",
+      "Some articles discuss specific brands, describing what their products contain and who they suit. No brand pays to appear, we run no affiliate links, and we take no commission from any brand. If that ever changes, for example through a disclosed partnership, it will be labelled clearly on the page it affects.",
     ],
   },
   {
@@ -76,6 +76,12 @@ const SECTIONS = [
       */
       `Our articles are general information. They are not a diagnosis, and they are not a substitute for seeing a doctor. A personalised assessment from us is exactly that: personalised guidance from a ${PRACTITIONER.title.toLowerCase()} — and it is also not a medical diagnosis.`,
       "If a skin concern is painful, spreading, changing shape, or not responding to care, see a doctor. We will tell you when we think that is the right call rather than sell you a routine.",
+    ],
+  },
+  {
+    h: "How an assessment is produced",
+    p: [
+      "Assessments are a separate thing from articles: each is read and written by hand for one person. The questionnaire, the photographs, who reads them and what the report contains are set out step by step on the page linked below.",
     ],
   },
   {
@@ -120,6 +126,12 @@ export default function EditorialPolicyPage() {
           </section>
         ))}
       </div>
+
+      <p className="mt-8">
+        <Link href="/how-assessments-work" className="font-medium text-brand-primary underline underline-offset-2">
+          How an assessment works
+        </Link>
+      </p>
 
       {reviewers.length ? (
         <section className="mt-12 border-t border-black/10 pt-8">

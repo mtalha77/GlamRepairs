@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 
+import { clusterFor } from "@/lib/blog/clusters";
 import { getPublishedPost } from "@/lib/studio/blog";
 import { AUTHORS } from "@/lib/seo/authors";
 import { SITE } from "@/lib/seo/site";
@@ -39,7 +40,8 @@ export default async function BlogOpengraphImage({
   const { slug } = await params;
   const post = await getPublishedPost(slug);
 
-  const title = post?.title ?? SITE.name;
+  // Handover 73 Part 4: a topic hub shares this route.
+  const title = post?.title ?? clusterFor(slug)?.title ?? SITE.name;
   const author = post ? AUTHORS[post.authorSlug] : undefined;
   const cluster = post?.cluster;
 

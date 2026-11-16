@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { abs } from "@/lib/seo/site";
 import { listAuthors } from "@/lib/seo/authors";
+import { CLUSTERS, isPublishableHub } from "@/lib/blog/clusters";
 import { listPublishedForSitemap } from "@/lib/studio/blog";
 import { listPublishedAreaPages } from "@/lib/airQuality/areaPages";
 import { DIRECTORY_MIN_PRACTITIONERS, publicSitemapRows } from "@/lib/practitioners/directory";
@@ -58,6 +59,8 @@ const STATIC_ROUTES: {
   { path: "/join", priority: 0.6, changeFrequency: "monthly" },
   { path: "/contact", priority: 0.5, changeFrequency: "yearly" },
   { path: "/editorial-policy", priority: 0.4, changeFrequency: "yearly" },
+  // Handover 73 Part 3.2 — the assessment process, linked from every article.
+  { path: "/how-assessments-work", priority: 0.5, changeFrequency: "monthly" },
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
 ];
@@ -144,11 +147,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // Handover 73 Part 4: a topic hub is listed once it has a written
+  // introduction and at least one published post. Its date is its newest post's.
+  const hubEntries: MetadataRoute.Sitemap = Object.entries(CLUSTERS)
+    .filter(([key, c]) => isPublishableHub(c) && posts.some((p) => p.cluster === key))
+    .map(([key]) => ({
+      url: abs(`/blog/${key}`),
+      lastModified: new Date(
+        Math.max(...posts.filter((p) => p.cluster === key).map((p) => new Date(p.updatedAt).getTime())),
+      ),
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
+
   return [
     ...staticEntries,
     ...await airQualityEntries(),
     ...await practitionerEntries(),
     ...authorEntries,
+    ...hubEntries,
     ...postEntries,
   ];
 }
