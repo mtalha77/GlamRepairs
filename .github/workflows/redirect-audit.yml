@@ -1,0 +1,53 @@
+name: Redirect audit
+
+# Handover 73 Part 9.1. Search Console lists pages under "Page with
+# redirect" with failed validation, and its API does not return that list.
+# This requests each candidate URL without following redirects and reports
+# the status, the Location header and the final URL, so the cause can be
+# read from evidence rather than guessed. Run by hand from the Actions tab;
+# add URLs to the input to check others.
+
+on:
+  workflow_dispatch:
+    inputs:
+      extra:
+        description: "More URLs, space separated (optional)"
+        required: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request each URL
+        env:
+          EXTRA: ${{ github.event.inputs.extra }}
+        run: |
+          urls="
+          http://glamrepairs.com/
+          https://glamrepairs.com/
+          https://glamrepairs.com/about
+          https://glamrepairs.com/pricing
+          https://glamrepairs.com/onboarding/step/1
+          https://glamrepairs.com/onboarding/step/2
+          http://www.glamrepairs.com/
+          https://www.glamrepairs.com/pricing
+          https://www.glamrepairs.com/index.html
+          https://www.glamrepairs.com/about.html
+          https://www.glamrepairs.com/contact.html
+          https://www.glamrepairs.com/booking
+          https://www.glamrepairs.com/onboarding
+          https://www.glamrepairs.com/onboarding/step/3
+          https://www.glamrepairs.com/blog/
+          https://www.glamrepairs.com/about/
+          $EXTRA"
+          echo "| URL | Status | Location | Final URL (after all hops) | Hops |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          for u in $urls; do
+            first=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 20 "$u" || echo "ERR -")
+            final=$(curl -sSL -o /dev/null -w '%{http_code} %{url_effective} %{num_redirects}' --max-time 30 "$u" || echo "ERR - -")
+            set -- $first; code=$1; loc=${2:--}
+            set -- $final
+            echo "$u -> $code $loc | final $1 $2 ($3 hops)"
+            echo "| $u | $code | $loc | $1 $2 | $3 |" >> "$GITHUB_STEP_SUMMARY"
+          done
