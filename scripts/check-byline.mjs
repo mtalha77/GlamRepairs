@@ -42,6 +42,7 @@ const linkText = (html, attr) => {
 const sitemap = await (await fetch(`${BASE}/sitemap.xml`, { headers: HEADERS })).text();
 const posts = [...sitemap.matchAll(/<loc>([^<]*\/blog\/[^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
 const failures = [];
+let hubs = 0;
 
 for (const path of posts) {
   const html = await (await fetch(`${BASE}${path}`, { headers: HEADERS })).text();
@@ -51,6 +52,13 @@ for (const path of posts) {
   const page = nodes.find((n) => n["@type"] === "WebPage" && n.reviewedBy);
 
   const shownAuthor = linkText(html, "data-byline-author");
+  // A topic hub (/blog/<cluster>) shares the route and has neither a byline
+  // nor an Article. A post always has both, so a page with one and not the
+  // other still fails below.
+  if (!article && !shownAuthor) {
+    hubs++;
+    continue;
+  }
   const schemaAuthor = article?.author?.["@id"] ? person(article.author["@id"])?.name : null;
   if (!shownAuthor || !schemaAuthor || shownAuthor !== schemaAuthor) {
     failures.push(`${path}: byline author "${shownAuthor}" vs schema author "${schemaAuthor}"`);
@@ -64,7 +72,7 @@ for (const path of posts) {
   }
 }
 
-console.log(`Checked ${posts.length} posts against ${BASE}.`);
+console.log(`Checked ${posts.length - hubs} posts against ${BASE} (${hubs} topic hubs skipped).`);
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
