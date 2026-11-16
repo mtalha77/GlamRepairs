@@ -19,12 +19,9 @@
  * prescription). An overstated credential is an E-E-A-T liability, not an
  * asset, on a YMYL page. lib/seo/authors.ts carries the same correction.
  *
- * FAQ: ABOUT_FAQS in components/about/aboutContent.ts is the single source
- * for both the visible accordion below and (once available) the FAQPage
- * schema — they must never diverge. The current faqSchema() helper in
- * lib/seo/schema.ts has a fixed @id and no per-page id param, so the FAQ node
- * is intentionally NOT added to this page's JSON-LD yet; add
- * faqSchema(ABOUT_FAQS, "/about#faq") once that param ships.
+ * FAQ: lib/faq.ts is the one source for every shared question. The
+ * homepage carries the only FAQPage markup for them (Handover 73 Part 8);
+ * this page shows its subset without marking it up a second time.
  */
 import type { Metadata } from "next";
 import AboutHeroSection from "@/components/about/AboutHeroSection";
@@ -41,7 +38,7 @@ import { resolveFaqs } from "@/lib/faq";
 import { hasReviewingTeam } from "@/lib/practitioners/authorship";
 import { publicRosterFacts } from "@/lib/practitioners/directory";
 import { PRACTITIONER } from "@/lib/seo/authors";
-import { breadcrumbSchema, faqSchema, graph } from "@/lib/seo/schema";
+import { breadcrumbSchema, graph } from "@/lib/seo/schema";
 import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 
 // HANDOVER-45 — from `page_seo` ('/about'), edited in Studio → SEO. The
@@ -70,12 +67,9 @@ export default async function AboutPage() {
             { name: "Home", path: "/" },
             { name: "About", path: "/about" },
           ]),
-          // HANDOVER-13 §2 — built from the same array the page renders, so
-          // the markup cannot describe questions the visitor cannot see.
-          faqSchema(
-            faqs.map((faq) => ({ question: faq.q, answer: faq.a })),
-            "/about",
-          ),
+          // Handover 73 Part 8: the homepage carries the one FAQPage for
+          // the questions in lib/faq.ts. The same questions shown here are
+          // not marked up a second time, so the pages never compete.
         )}
       />
       <main>

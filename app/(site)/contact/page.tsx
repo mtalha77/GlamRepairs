@@ -13,9 +13,7 @@ import type { Metadata } from "next";
 import ContactHeroSection from "@/components/contact/ContactHeroSection";
 import ContactSection from "@/components/contact/ContactSection";
 import FaqSection from "@/components/faq/FaqSection";
-import JsonLd from "@/components/seo/JsonLd";
 import { resolveFaqs } from "@/lib/faq";
-import { faqSchema, graph } from "@/lib/seo/schema";
 import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 
 // HANDOVER-45 — from `page_seo` ('/contact'), edited in Studio → SEO. The
@@ -37,10 +35,9 @@ export default async function ContactPage() {
 
   return (
     <>
-      <JsonLd data={graph(faqSchema(
-        faqs.map((faq) => ({ question: faq.q, answer: faq.a })),
-        "/contact",
-      ))} />
+      {/* Handover 73 Part 8: no FAQPage here. The homepage carries the one
+          FAQPage for these shared questions; marking them up again on
+          /contact and /about made the pages compete. */}
       <main>
         <ContactHeroSection h1={await pageH1("/contact", "Get in Touch")} />
         <ContactSection />
