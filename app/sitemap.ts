@@ -53,6 +53,8 @@ const STATIC_ROUTES: {
   // citations rather than just ranking.
   { path: "/compare", priority: 0.8, changeFrequency: "monthly" },
   { path: "/blog", priority: 0.8, changeFrequency: "weekly" },
+  // Handover 73 Part 5 — the Pakistan service page.
+  { path: "/online-skin-consultation-pakistan", priority: 0.8, changeFrequency: "monthly" },
   { path: "/about", priority: 0.7, changeFrequency: "monthly" },
   { path: "/credentials", priority: 0.5, changeFrequency: "monthly" },
   // HANDOVER-54 §2.2 — practitioner recruitment, fed by the careers articles.
