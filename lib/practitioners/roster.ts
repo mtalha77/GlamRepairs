@@ -104,7 +104,9 @@ export async function listPractitioners(): Promise<PractitionerRow[]> {
         countryCode: p.country_code,
         timezone: p.timezone,
         hasAccount: Boolean(p.user_id),
-        hasVerifiedDegree: degreeSet.has(p.id),
+        // Same rule as practitioner_public.degree_verified (16 Nov 2026): a
+        // verified degree document, or a credential an admin recorded as verified.
+        hasVerifiedDegree: degreeSet.has(p.id) || Boolean(p.credential_verified_at),
         feeMinor: rate?.[0]?.practitioner_fee_minor ?? 0,
         platformMinor: rate?.[0]?.platform_fee_minor ?? 0,
         rateCurrency: rate?.[0]?.currency ?? "PKR",
@@ -181,7 +183,15 @@ export function missingForLive(p: {
 }
 
 export async function hasVerifiedDegree(practitionerId: string): Promise<boolean> {
-  const { count } = await createAdminSupabaseClient()
+  const admin = createAdminSupabaseClient();
+  // Same rule as practitioner_public.degree_verified (16 Nov 2026).
+  const { data: profile } = await admin
+    .from("practitioner_profiles")
+    .select("credential_verified_at")
+    .eq("id", practitionerId)
+    .maybeSingle();
+  if (profile?.credential_verified_at) return true;
+  const { count } = await admin
     .from("practitioner_documents")
     .select("id", { count: "exact", head: true })
     .eq("practitioner_id", practitionerId)
