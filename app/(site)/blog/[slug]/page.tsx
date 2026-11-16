@@ -168,6 +168,7 @@ export default async function BlogPostPage({
                   reviewer,
                   datePublished: post.publishedAt ?? post.createdAt,
                   dateModified: post.updatedAt,
+                  reviewedAt: post.reviewedAt,
                 }),
               ]
             : []),
@@ -231,7 +232,7 @@ export default async function BlogPostPage({
           author={author}
           reviewer={reviewer}
           datePublished={post.publishedAt ?? post.createdAt}
-          dateModified={post.updatedAt}
+          reviewedAt={post.reviewedAt}
         />
       </div>
 

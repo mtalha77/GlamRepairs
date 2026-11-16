@@ -27,15 +27,19 @@ export default function AuthorByline({
   author,
   reviewer,
   datePublished,
-  dateModified,
+  reviewedAt,
 }: {
   author: Author;
   reviewer?: Author;
   datePublished: string;
+  /**
+   * Handover 73 Part 1.2: studio_blog_posts.reviewed_at, the date the review
+   * happened. Not updated_at: an edit is not a review.
+   */
+  reviewedAt?: string | null;
+  /** Accepted for older callers; the review date is what is shown. */
   dateModified?: string;
 }) {
-  const updated = dateModified && dateModified !== datePublished;
-
   return (
     <div className="flex flex-col gap-3 border-y border-black/10 py-5 text-sm">
       <div className="flex items-center gap-3">
@@ -50,25 +54,38 @@ export default function AuthorByline({
           />
         ) : null}
         <div className="leading-snug">
+          {/*
+            Handover 73 Part 1. The name in `data-byline-author` must equal
+            the schema author's name; scripts/check-byline.mjs asserts it on
+            every published post after each deploy.
+          */}
           <p>
             <span className="text-black/55">Written by </span>
             <Link
               href={`/authors/${author.slug}`}
+              data-byline-author
               className="font-semibold underline underline-offset-2"
             >
               {author.name}
             </Link>
+            <span className="text-black/55">, {author.title}</span>
           </p>
           <p className="mt-0.5 text-black/55">
-            <time dateTime={datePublished}>Published {fmt(datePublished)}</time>
-            {updated ? (
+            {reviewer && reviewedAt ? (
               <>
+                Reviewed by{" "}
+                <Link
+                  href={`/authors/${reviewer.slug}`}
+                  data-byline-reviewer
+                  className="font-medium text-black/75 underline underline-offset-2"
+                >
+                  {reviewer.name}
+                </Link>{" "}
+                on <time dateTime={reviewedAt}>{fmt(reviewedAt)}</time>
                 {" · "}
-                <time dateTime={dateModified}>
-                  Last reviewed {fmt(dateModified!)}
-                </time>
               </>
             ) : null}
+            <time dateTime={datePublished}>Published {fmt(datePublished)}</time>
           </p>
         </div>
       </div>
@@ -84,21 +101,6 @@ export default function AuthorByline({
           View full profile
         </Link>
       </p>
-
-      {reviewer ? (
-        <p className="rounded-lg bg-black/[0.035] px-3 py-2 text-black/70">
-          <span className="font-semibold text-black/80">
-            Reviewed for accuracy by{" "}
-          </span>
-          <Link
-            href={`/authors/${reviewer.slug}`}
-            className="font-semibold underline underline-offset-2"
-          >
-            {reviewer.name}
-          </Link>
-          , {reviewer.credentials}.
-        </p>
-      ) : null}
 
       <p className="text-xs text-black/45">
         This article is general information, not a diagnosis or a substitute for

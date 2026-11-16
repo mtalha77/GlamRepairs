@@ -27,6 +27,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
 import { graph, organizationSchema, personSchema, websiteSchema } from "@/lib/seo/schema";
 import { getSeoSettings } from "@/lib/seo/pageSeo";
+import { personFactsFor } from "@/lib/seo/personFacts";
 import { SITE } from "@/lib/seo/site";
 import "./globals.css";
 
@@ -185,7 +186,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const practitioner = AUTHORS[DEFAULT_AUTHOR_SLUG];
-  const seoSettings = await getSeoSettings();
+  const [seoSettings, practitionerFacts] = await Promise.all([getSeoSettings(), personFactsFor(DEFAULT_AUTHOR_SLUG)]);
 
   return (
     <html
@@ -202,7 +203,7 @@ export default async function RootLayout({
           data={graph(
             organizationSchema(seoSettings),
             websiteSchema(seoSettings.brandName),
-            personSchema(practitioner),
+            personSchema(practitioner, practitionerFacts),
           )}
         />
 
