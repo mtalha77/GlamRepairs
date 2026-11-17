@@ -37,7 +37,9 @@ import { faqSchema, graph } from "@/lib/seo/schema";
  */
 export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata("/", {
-    title: "Online Skin Assessment, Read by Hand",
+    // Brand first (16 Nov 2026): searches for the domain itself were not
+    // finding the homepage. Studio > SEO holds the live value.
+    title: "Glam Repairs: Skin Assessment, Read by Hand",
     description:
       "Answer a few questions, send a few photos, and a certified practitioner " +
       "reads your skin and writes you a plan you keep. No clinic, no waiting room.",

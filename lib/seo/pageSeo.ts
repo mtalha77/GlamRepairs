@@ -184,7 +184,12 @@ export async function pageMetadata(
   extra: { type?: string } = {},
 ): Promise<Metadata> {
   const [seo, settings] = await Promise.all([getPageSeo(path), getSeoSettings()]);
-  const fullTitle = `${seo?.title ?? fallback.title}${settings.titleSuffix}`;
+  // A title that already names the brand (the homepage leads with it, for
+  // searches of the domain itself) does not get the suffix a second time.
+  const base = seo?.title ?? fallback.title;
+  const fullTitle = base.toLowerCase().includes(settings.brandName.toLowerCase())
+    ? base
+    : `${base}${settings.titleSuffix}`;
   const description = seo?.metaDescription ?? fallback.description;
   const image = seo?.ogImage ?? settings.defaultOgImage;
   const ogImage = image
