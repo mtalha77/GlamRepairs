@@ -21,10 +21,13 @@ export const listServedCountries = unstable_cache(
     const { data: plans } = await db.from("plans_public").select("region_code");
     const codes = [...new Set((plans ?? []).map((p: { region_code: string }) => p.region_code))];
     if (!codes.length) return ["Pakistan"];
-    const { data: countries } = await db.from("countries").select("code, name").in("code", codes);
-    const names = (countries ?? []).map((c: { code: string; name: string }) => c.name).filter(Boolean);
-    return names.length ? names.sort() : ["Pakistan"];
+    // Names from ICU, not the countries table: that table is service-role
+    // only (RLS, no anon grant), so reading it here silently returned nothing
+    // and collapsed the list back to Pakistan.
+    const names = new Intl.DisplayNames(["en"], { type: "region" });
+    const out = codes.map((c) => names.of(c)).filter((n): n is string => !!n && n.length > 2);
+    return out.length ? out.sort() : ["Pakistan"];
   },
-  ["served-countries"],
+  ["served-countries-v2"],
   { revalidate: 3600 },
 );
