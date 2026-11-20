@@ -21,17 +21,17 @@
  *    single-practitioner aesthetics service loses by definition.
  * 3. HANDOVER-35 §3.2 asked for no medical schema on these pages.
  *
- * `HealthAndBeautyBusiness` is a real schema.org type, sits under
- * LocalBusiness, and describes exactly what this is. Together with `Person`
- * carrying an explicit `hasCredential`, it states the qualification
- * precisely and lets Google weigh it correctly, without claiming a category
- * the business is not in.
+ * Handover 74: the organisation is a plain `Organization`. The interim
+ * `HealthAndBeautyBusiness` sits under LocalBusiness, which describes a place
+ * customers visit; with no address it was incomplete and inaccurate for an
+ * online service. `Person` nodes with an explicit `hasCredential` state the
+ * qualifications.
  *
  * Everything here is typed loosely as `object` on purpose. schema.org is not a
  * closed vocabulary and over-typing it produces friction with no payoff.
  */
 import { CREDENTIALS, SITE, abs, getCredential } from "./site";
-import type { Author } from "./authors";
+import { getAuthor, type Author } from "./authors";
 
 /**
  * The attesting body for the degree node below — see the comment there.
@@ -54,23 +54,42 @@ export function graph(...nodes: object[]) {
  * Physician and MedicalClinic, so the HOTFIX-39 error cannot come back
  * through the studio either.
  */
+/**
+ * Handover 74 Part 3.3: an online service with no premises is an
+ * `Organization`. `HealthAndBeautyBusiness` is a LocalBusiness, which asserts
+ * a place customers visit and is incomplete without an address. A value from
+ * Studio > SEO that names a local or medical type is ignored for the same
+ * reason (and never MedicalBusiness, MedicalClinic or Physician).
+ */
+const ALLOWED_ORG_TYPES = new Set(["Organization", "OnlineBusiness", "Corporation"]);
+
 export function organizationSchema(
   site: { brandName: string; organizationType: string; sameAs: string[] } = {
     brandName: SITE.name,
-    organizationType: "HealthAndBeautyBusiness",
+    organizationType: "Organization",
     sameAs: [...SITE.sameAs],
   },
+  areaServed: string[] = ["Pakistan"],
 ) {
   return {
-    // HOTFIX-39 §3 — was MedicalBusiness. See the note at the top of this
-    // file. One line, sitewide, and the highest-value change in that audit.
-    "@type": site.organizationType,
+    "@type": ALLOWED_ORG_TYPES.has(site.organizationType) ? site.organizationType : "Organization",
     "@id": abs("/#organization"),
     name: site.brandName,
     legalName: SITE.legalName,
     url: SITE.url,
     description: SITE.description,
-    areaServed: { "@type": "Country", name: "Pakistan" },
+    slogan: SITE.slogan,
+    logo: {
+      "@type": "ImageObject",
+      url: abs("/images/brand/logo-color.webp"),
+      width: 307,
+      height: 112,
+    },
+    image: abs("/opengraph-image"),
+    knowsAbout: ["Skincare", "Skin barrier", "Pigmentation", "Acne", "Air quality and skin"],
+    // Generated from the countries a visitor can be quoted a price for
+    // (lib/seo/areaServed.ts), so it follows Studio > Countries.
+    areaServed: areaServed.map((name) => ({ "@type": "Country", name })),
     // Online-only: no storefront is declared, because there isn't one.
     // (An earlier comment here said a Google Business Profile was therefore
     // unavailable to us. That is out of date — a profile exists, and
@@ -249,12 +268,25 @@ export function personSchema(author: Author, facts: PersonFacts = {}) {
         }
       : {}),
     ...(author.knowsAbout?.length ? { knowsAbout: author.knowsAbout } : {}),
+    /*
+     * Handover 74 Part 3.4: the IDS membership number is now in the graph.
+     * As a ProgramMembership (memberOf), not a second hasCredential: IDS
+     * membership is open to anyone who joins, and lib/seo/authors.ts is
+     * explicit that it must never read as an earned certification next to
+     * the HEC-attested degree. ProgramMembership carries the number as
+     * `membershipNumber`, which is exactly what it is.
+     */
     ...(author.memberOf
       ? {
           memberOf: {
-            "@type": "Organization",
-            name: author.memberOf.name,
-            url: author.memberOf.url,
+            "@type": "ProgramMembership",
+            programName: `${author.memberOf.name} membership`,
+            ...(author.memberOf.membershipNo ? { membershipNumber: author.memberOf.membershipNo } : {}),
+            hostingOrganization: {
+              "@type": "Organization",
+              name: author.memberOf.name,
+              url: author.memberOf.url,
+            },
           },
         }
       : {}),
@@ -511,7 +543,10 @@ export function practitionerPersonSchema(p: {
   const reference = p.credentialRef?.match(/Ref\.\s*(.+)$/)?.[1]?.trim() ?? p.credentialRef;
   return {
     "@type": "Person",
-    "@id": abs(`/practitioners/${p.slug}#person`),
+    // Handover 74: one entity per person. A practitioner who is also a
+    // site author (Ayma) keeps the author page's @id, so her directory card
+    // and her byline describe the same Person rather than two.
+    "@id": getAuthor(p.slug) ? abs(`/authors/${p.slug}#person`) : abs(`/practitioners/${p.slug}#person`),
     name: p.name,
     jobTitle: p.role,
     url: abs(`/practitioners/${p.slug}`),

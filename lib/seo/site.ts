@@ -15,10 +15,19 @@ export const SITE = {
   name: "GlamRepairs",
   legalName: "GlamRepairs",
   tagline: "Online skin assessment, read by a certified practitioner",
+  /**
+   * Handover 74 Part 3.1: THE one description of the business. The homepage
+   * meta description, its Open Graph and Twitter descriptions and the
+   * Organization node's `description` all use this exact string, so Google
+   * is never offered competing answers to "what is this company" (it was
+   * quoting the footer disclaimer instead). Studio > SEO cannot override it
+   * on the homepage for the same reason.
+   */
   description:
-    "Answer a few questions, send a few photos, and a certified practitioner " +
-    "reads your skin and writes you a personalised plan you keep. No clinic, " +
-    "no waiting room.",
+    "An online skin assessment read by a named practitioner, not an algorithm. " +
+    "A questionnaire, your photographs, and a routine written by hand within 24 hours.",
+  /** The brand line, also printed on the homepage. */
+  slogan: "We don't scan your skin. We read it.",
   /** Canonical origin. Always www. No trailing slash. */
   url: (process.env.NEXT_PUBLIC_APP_URL || "https://www.glamrepairs.com").replace(
     /\/$/,

@@ -28,6 +28,7 @@ import { AUTHORS, DEFAULT_AUTHOR_SLUG } from "@/lib/seo/authors";
 import { graph, organizationSchema, personSchema, websiteSchema } from "@/lib/seo/schema";
 import { getSeoSettings } from "@/lib/seo/pageSeo";
 import { personFactsFor } from "@/lib/seo/personFacts";
+import { listServedCountries } from "@/lib/seo/areaServed";
 import { SITE } from "@/lib/seo/site";
 import "./globals.css";
 
@@ -186,7 +187,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const practitioner = AUTHORS[DEFAULT_AUTHOR_SLUG];
-  const [seoSettings, practitionerFacts] = await Promise.all([getSeoSettings(), personFactsFor(DEFAULT_AUTHOR_SLUG)]);
+  const [seoSettings, practitionerFacts, served] = await Promise.all([
+    getSeoSettings(),
+    personFactsFor(DEFAULT_AUTHOR_SLUG),
+    listServedCountries(),
+  ]);
 
   return (
     <html
@@ -201,7 +206,7 @@ export default async function RootLayout({
             earns E-E-A-T credit on every YMYL page that references it. */}
         <JsonLd
           data={graph(
-            organizationSchema(seoSettings),
+            organizationSchema(seoSettings, served),
             websiteSchema(seoSettings.brandName),
             personSchema(practitioner, practitionerFacts),
           )}

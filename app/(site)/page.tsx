@@ -29,6 +29,7 @@ import { getServerPricingRegion } from "@/lib/pricing/geo";
 import { formatPlanPrice, getPaidPlan } from "@/lib/plans/plansPublic";
 import { pageH1, pageMetadata } from "@/lib/seo/pageSeo";
 import { faqSchema, graph } from "@/lib/seo/schema";
+import { SITE } from "@/lib/seo/site";
 
 /*
  * HANDOVER-45 — title, description and H1 come from `page_seo` ('/'), edited
@@ -36,14 +37,20 @@ import { faqSchema, graph } from "@/lib/seo/schema";
  * row or a failed read.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  return pageMetadata("/", {
+  // Handover 74 Part 3.1: the homepage description is SITE.description,
+  // identical to the Organization node's, whatever Studio > SEO holds.
+  const meta = await pageMetadata("/", {
     // Brand first (16 Nov 2026): searches for the domain itself were not
     // finding the homepage. Studio > SEO holds the live value.
     title: "Glam Repairs: Skin Assessment, Read by Hand",
-    description:
-      "Answer a few questions, send a few photos, and a certified practitioner " +
-      "reads your skin and writes you a plan you keep. No clinic, no waiting room.",
+    description: SITE.description,
   });
+  return {
+    ...meta,
+    description: SITE.description,
+    openGraph: { ...meta.openGraph, description: SITE.description },
+    twitter: { ...meta.twitter, description: SITE.description },
+  };
 }
 
 export default async function Home() {

@@ -364,7 +364,8 @@ function ExperienceCard() {
   );
 }
 
-const TITLE = "Ayma Arif Credentials: HEC Attested, Verifiable";
+// Handover 74 Part 4: reads as the destination it is.
+const TITLE = "Credentials and Verification: Ayma Arif";
 /* §3.2 — 154 characters, inside the 150-160 target. The wording §3.2
    supplied measured 146, so "her" and "for" are added rather than the
    sentence being rebuilt. */

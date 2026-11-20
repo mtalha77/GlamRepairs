@@ -51,7 +51,9 @@ export async function generateMetadata({
   // is the browser tab and the search result, which is the most-seen place
   // this person's name and title appear together; punctuating it one way
   // there and another way on the page is the drift the stack exists to stop.
-  const title = `${author.name}, ${author.title}`;
+  // Handover 74 Part 4: a destination, not a job title. Google was showing
+  // "Certified Aesthetics Practitioner" as a sitelink, the role alone.
+  const title = `${author.name}: Profile, Credentials and Articles`;
   // HANDOVER-45 — through canonicalOg, which also builds `twitter`. This
   // page declared `openGraph` with no `images` and no `twitter`, so it
   // shared with no image and inherited the homepage's Twitter card.
