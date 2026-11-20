@@ -57,7 +57,7 @@ export type PageSeo = {
 export const DEFAULT_SEO_SETTINGS: SeoSettings = {
   brandName: SITE.name,
   titleSuffix: ` | ${SITE.name}`,
-  organizationType: "HealthAndBeautyBusiness",
+  organizationType: "Organization",
   sameAs: [...SITE.sameAs],
   twitterHandle: null,
   defaultOgImage: null,

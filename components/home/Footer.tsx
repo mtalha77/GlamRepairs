@@ -211,13 +211,20 @@ export default function Footer() {
               <p className="mt-4 font-serif text-base italic text-brand-primary">
                 Based in Pakistan. Reading skin for clients worldwide.
               </p>
-              <p className="mt-2 max-w-full font-sans text-sm leading-relaxed tracking-[0.01em] text-brand-primary/80 sm:max-w-[24rem]">
-                {/* Handover 64 Part 7b: say plainly where the company is.
-                    Handover 61 Part 7.7: this sentence becomes conditional
-                    only once a PMDC-verified doctor's profile is live. */}
-                Glam Repairs is based in Pakistan and provides personalised
-                cosmetic skincare guidance, reviewed by a certified
-                practitioner. We do not diagnose or treat medical conditions.
+              {/*
+                Handover 74 Part 3.2: the disclaimer stays, but subordinate
+                (<small>, after the positioning line) and NOT opening with
+                the company name. "Glam Repairs is based in Pakistan and
+                provides..." read like a boilerplate company description, and
+                Google was quoting it as the homepage snippet. Where the
+                company is based is said by the line above.
+                Handover 61 Part 7.7: this becomes conditional only once a
+                PMDC-verified doctor's profile is live.
+              */}
+              <p className="mt-2 max-w-full sm:max-w-[24rem]">
+                <small className="font-sans text-xs leading-relaxed tracking-[0.01em] text-brand-primary/70">
+                  Cosmetic skincare guidance only. We do not diagnose or treat medical conditions.
+                </small>
               </p>
             </div>
 

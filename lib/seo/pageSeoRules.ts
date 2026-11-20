@@ -11,14 +11,14 @@ export const DESC_MIN = 140;
 export const DESC_MAX = 160;
 const EM_DASH = "—";
 
-/** Organisation types the studio offers. The DB also blocks the medical ones. */
-export const ORGANIZATION_TYPES = [
-  "HealthAndBeautyBusiness",
-  "BeautySalon",
-  "ProfessionalService",
-  "LocalBusiness",
-  "Organization",
-] as const;
+/**
+ * Organisation types the studio offers. Handover 74: an online service with
+ * no premises, so no LocalBusiness subtypes (HealthAndBeautyBusiness,
+ * BeautySalon, ProfessionalService, LocalBusiness all assert a place
+ * customers visit). organizationSchema() ignores anything else. The DB also
+ * blocks the medical ones.
+ */
+export const ORGANIZATION_TYPES = ["Organization", "OnlineBusiness", "Corporation"] as const;
 
 export const BLOCKED_ORGANIZATION_TYPES = ["MedicalBusiness", "Physician", "MedicalClinic"];
 
