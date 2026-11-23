@@ -20,6 +20,12 @@
      is allowed. Tokens rather than hexes so the next icon cannot drift. */
   --brand-lavender-light: #e9e3f4;
   --brand-lavender-deep: #c4b6de;
+  /* The Trust and Privacy eye-off (23 Nov design), matched to the hue of
+     guard_icon.svg and bin_icon.svg rather than the greyer tints above. */
+  --brand-icon-face: #e3d6f9;
+  --brand-icon-body: #c9b3ec;
+  --brand-icon-rim: #f1e9fd;
+  --brand-icon-accent: #a98ed9;
   --brand-cream: #fff3da;
   --brand-cream-light: #fff9e5;
   --brand-cream-card: #fff7e5;
@@ -1257,4 +1263,23 @@ select:autofill {
   border-radius: 0.75rem;
   color: #dc2626;
   font-size: 0.875rem;
+}
+
+/* Trust and Privacy icons: one soft ground ellipse under each (23 Nov).
+   Sized in % of the icon box so the same rule fits the shield, the eye and
+   the bin at both breakpoints. Brand purple at about 20% fading out. */
+.gr-icon-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -5%;
+  width: 46%;
+  height: 9%;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--brand-primary) 20%, transparent) 0%,
+    color-mix(in srgb, var(--brand-primary) 9%, transparent) 60%,
+    transparent 100%
+  );
 }
