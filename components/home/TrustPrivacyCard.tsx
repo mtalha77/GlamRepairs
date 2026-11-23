@@ -31,7 +31,7 @@ export default function TrustPrivacyCard({
         {description}
       </p>
       {icon || illustration ? (
-        <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2">
+        <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 [&>img]:relative [&>img]:z-10 [&>svg]:relative [&>svg]:z-10">
           {icon ? (
             <Image
               src={icon}
@@ -41,8 +41,11 @@ export default function TrustPrivacyCard({
               className="h-[6.5rem] w-auto sm:h-[12rem]"
             />
           ) : (
-            <BrandIllustration name={illustration!} className="h-[6.5rem] w-auto sm:h-[12rem]" />
+            <BrandIllustration name={illustration!} />
           )}
+          {/* Ground shadow (23 Nov): seats the icon without reading as a
+              second object. Scales with the icon box, so it fits all three. */}
+          <span aria-hidden className="gr-icon-shadow" />
         </div>
       ) : null}
     </article>
