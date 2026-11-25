@@ -5,6 +5,7 @@ import { useCallback, useRef, useState, type PointerEvent } from "react";
 import PractitionerCard from "@/components/practitioners/PractitionerCard";
 import { useSectionArrows } from "@/lib/hooks/useSectionArrows";
 import type { CardPractitioner } from "@/lib/practitioners/card";
+import { BOOKING_START_HREF } from "@/components/booking/bookingConfig";
 
 /**
  * The homepage deck (Handover 61 Part 1, placed by Handover 63 Part 1).
@@ -137,7 +138,7 @@ export default function PractitionerDeck({
               <PractitionerCard
                 p={p}
                 actions={{
-                  chooseHref: `/onboarding?practitioner=${encodeURIComponent(p.slug)}`,
+                  chooseHref: `${BOOKING_START_HREF}?practitioner=${encodeURIComponent(p.slug)}`,
                   profileHref: `/practitioners/${p.slug}`,
                 }}
               />

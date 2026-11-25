@@ -1,6 +1,7 @@
 import DirectoryFilters, { type DirectoryEntry } from "@/components/practitioners/DirectoryFilters";
 import PractitionerCard, { type CardActions } from "@/components/practitioners/PractitionerCard";
 import type { CardPractitioner } from "@/lib/practitioners/card";
+import { BOOKING_START_HREF } from "@/components/booking/bookingConfig";
 
 /**
  * The directory: cards plus filters. Not a client component itself (Handover
@@ -16,7 +17,7 @@ export const CARD_HOVER =
 export function directoryEntries(
   practitioners: CardPractitioner[],
   actionsFor: (p: CardPractitioner) => CardActions = (p) => ({
-    chooseHref: `/onboarding?practitioner=${encodeURIComponent(p.slug)}`,
+    chooseHref: `${BOOKING_START_HREF}?practitioner=${encodeURIComponent(p.slug)}`,
     profileHref: `/practitioners/${p.slug}`,
   }),
 ): DirectoryEntry[] {

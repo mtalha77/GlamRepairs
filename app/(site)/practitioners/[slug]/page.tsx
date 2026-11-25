@@ -20,6 +20,7 @@ import { REVIEWS } from "@/lib/reviews";
 import { AUTHORS } from "@/lib/seo/authors";
 import { breadcrumbSchema, graph, practitionerPersonSchema } from "@/lib/seo/schema";
 import { canonicalOg, CREDENTIALS, credentialStatus } from "@/lib/seo/site";
+import { BOOKING_START_HREF } from "@/components/booking/bookingConfig";
 
 /**
  * /practitioners/[slug]: the full profile (Handover 63 Part 2, laid out to
@@ -103,7 +104,7 @@ export default async function PractitionerProfilePage({ params }: Props) {
   const owner = p.slug === OWNER_SLUG;
   const plan = plans.transform;
   const others = all.filter((o) => o.slug !== p.slug);
-  const chooseHref = `/onboarding?practitioner=${encodeURIComponent(p.slug)}`;
+  const chooseHref = `${BOOKING_START_HREF}?practitioner=${encodeURIComponent(p.slug)}`;
 
   const stats = [
     p.years != null ? { value: String(p.years), label: "Years practising" } : null,
