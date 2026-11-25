@@ -5,6 +5,7 @@ import {
   ONBOARDING_PROGRESS,
   ONBOARDING_TOTAL_STEPS,
 } from "@/components/onboarding/onboardingConfig";
+import { BOOKING_START_HREF } from "@/components/booking/bookingConfig";
 
 export default function ProgramIntroScreen() {
   return (
@@ -13,7 +14,7 @@ export default function ProgramIntroScreen() {
       totalSteps={ONBOARDING_TOTAL_STEPS}
       footer={
         <OnboardingIntroNav
-          backHref="/onboarding"
+          backHref={BOOKING_START_HREF}
           nextHref="/onboarding/not-alone"
           gated={false}
         />
