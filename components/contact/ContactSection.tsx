@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChatIcon, PhoneIcon } from "@/components/ui/ContactIcons";
 
 import ContactForm from "@/components/contact/ContactForm";
+import OwnershipBlock from "@/components/legal/OwnershipBlock";
 import { contactReachOut } from "@/components/contact/contactContent";
 import { SITE } from "@/lib/seo/site";
 
@@ -60,6 +61,9 @@ export default function ContactSection() {
                   WhatsApp
                 </a>
               </div>
+
+              {/* Handover 75 Part 2: owner and registered address, from BUSINESS. */}
+              <OwnershipBlock className="mt-8 max-w-md bg-white sm:mt-10" />
             </div>
 
             <div className="min-w-0 w-full rounded-[10px] bg-white px-4 py-6 sm:bg-[#fefaf2] sm:px-8 sm:py-9 lg:px-9 lg:py-10">

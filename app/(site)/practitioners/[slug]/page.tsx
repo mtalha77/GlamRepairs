@@ -301,8 +301,8 @@ export default async function PractitionerProfilePage({ params }: Props) {
               <ul className="mt-2.5 list-disc space-y-1.5 pl-5 text-[14.5px] text-brand-gray">
                 <li>No diagnosis, no prescription, and no treatment of medical conditions</li>
                 <li>
-                  Anything painful, spreading or bleeding, or a mole that has changed shape or colour, is referred to a doctor and your
-                  fee held as a credit
+                  Anything painful, spreading or bleeding, or a mole that has changed shape or colour, is referred to a doctor, with a full
+                  refund or a credit, whichever you choose
                 </li>
                 <li>No brand recommendations, and no commission from anyone. Ingredients and strengths only</li>
                 <li>If a photograph cannot be read properly, {first} will ask for another rather than guess</li>

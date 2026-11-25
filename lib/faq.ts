@@ -1,4 +1,5 @@
 import { PRACTITIONER } from "@/lib/seo/authors";
+import { REFUND_WORKING_DAYS } from "@/lib/legal/refunds";
 
 /**
  * HANDOVER-13 — every FAQ on the site, once.
@@ -216,8 +217,8 @@ export const FAQS: Faq[] = [
     a:
       "No. Glam Repairs provides cosmetic skincare guidance. We do not " +
       "diagnose conditions or prescribe medication. If your concern needs a " +
-      "doctor we will tell you and hold your fee as a credit rather than sell " +
-      "you a routine that cannot help.",
+      "doctor we will tell you, and refund your fee or hold it as a credit, " +
+      "whichever you choose, rather than sell you a routine that cannot help.",
   },
   {
     id: "not-satisfied",
@@ -233,7 +234,8 @@ export const FAQS: Faq[] = [
     a:
       "We'll revise your assessment until the routine makes sense for you and " +
       "you're confident following it. Tell us within 14 days and we'll revise " +
-      "it at no cost.",
+      "it at no cost. Cancel before your practitioner starts and you get a " +
+      `full refund within ${REFUND_WORKING_DAYS} working days.`,
   },
 
   {
@@ -248,7 +250,8 @@ export const FAQS: Faq[] = [
       "you feel unwell with it, see a doctor, and if it is urgent contact your " +
       "local emergency service rather than waiting for us. We give cosmetic " +
       "guidance and do not diagnose. If what we see needs a doctor, we tell " +
-      "you so and hold your fee as a credit rather than write a routine.",
+      "you so, and refund your fee or hold it as a credit, your choice, " +
+      "rather than write a routine.",
   },
 
   /* ── Privacy ───────────────────────────────────────────────────────── */

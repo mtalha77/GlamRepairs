@@ -394,7 +394,7 @@ export default function ReceiptsComparison({
             <Stamp good>
               IF YOU NEED A DOCTOR
               <br />
-              WE SAY SO AND HOLD YOUR FEE AS CREDIT
+              WE SAY SO. REFUND OR CREDIT, YOUR CHOICE
             </Stamp>
             <Barcode faint digits="G R · P A I D · O N C E" />
           </Slip>

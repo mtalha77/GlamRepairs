@@ -18,6 +18,7 @@ export default async function PrivacyPage() {
   return (
     <LegalPage
       title={await pageH1("/privacy", "Privacy Policy")}
+      path="/privacy"
       intro={INTRO}
       lastUpdated={LAST_UPDATED}
       markdown={PRIVACY_MARKDOWN}

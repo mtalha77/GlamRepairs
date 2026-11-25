@@ -121,8 +121,8 @@ export default async function HowAssessmentsWorkPage() {
           <h2 className={H2}>5. When something needs a doctor</h2>
           <p className={`mt-3 ${P}`}>
             This is cosmetic guidance, not medical care. If your answers or photographs suggest a concern that needs a
-            doctor, your practitioner tells you so plainly and does not write a routine for it. Your fee is held as a
-            credit towards a future assessment.
+            doctor, your practitioner tells you so plainly and does not write a routine for it. You choose a full
+            refund or a credit towards a future assessment.
           </p>
           <p className={`mt-3 ${P}`}>
             If your skin is painful, spreading quickly, bleeding or blistering, or you feel unwell with it, do not wait for

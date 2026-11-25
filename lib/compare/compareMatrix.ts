@@ -34,7 +34,7 @@ import {
  * where the author wins every row is marketing; one that concedes the two
  * things a doctor genuinely does better is credible — and it is the same
  * position the rest of the site takes, where a client who needs a doctor is
- * referred, with their fee held as a credit.
+ * referred, with a refund or a credit, their choice.
  *
  * ── And every alternative keeps something ────────────────────────────────
  * A column with nothing good in it is a straw man, and a reader who spots
@@ -277,7 +277,7 @@ export async function buildCompareMatrix(): Promise<CompareMatrix> {
       id: "diagnose",
       label: "Can diagnose skin disease",
       note:
-        "The other. If we think you have one, we say so, refer you, and hold your fee as a credit.",
+        "The other. If we think you have one, we say so, refer you, and refund your fee or hold it as a credit, your choice.",
       cells: {
         clinic: { value: "Yes", tone: "win" },
         onlineDoctor: { value: "Yes", tone: "win" },

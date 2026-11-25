@@ -6,12 +6,12 @@ import { LOGO_ASSET } from "@/components/home/Logo";
 import Link from "next/link";
 
 import { BOOKING_START_HREF } from "@/components/booking/bookingConfig";
-import { SITE } from "@/lib/seo/site";
+import { BUSINESS, SITE } from "@/lib/seo/site";
 
 const CTA_IMAGE = "/images,svgs/cta_ginger_woman.webp";
 const FOOTER_LOGO = LOGO_ASSET.color;
 
-const contactEmail = "glamrepairs@gmail.com";
+const contactEmail = BUSINESS.email;
 
 /*
  * Footer navigation, in two columns.
@@ -295,6 +295,12 @@ export default function Footer() {
                 <p className="mt-2 text-xs leading-relaxed text-brand-primary/70">
                   {SITE.hours.note}
                 </p>
+                {/* Handover 75: the registered address, which Safepay
+                    requires beside the email and phone. From BUSINESS, the
+                    same constant /terms and /contact print. */}
+                <address className="mt-3 text-xs not-italic leading-relaxed">
+                  {BUSINESS.addressLine}
+                </address>
               </div>
               <ul className="mt-4 flex gap-3">
                 {socialLinks.map((social) => (
@@ -323,6 +329,10 @@ export default function Footer() {
                 </Link>
                 <Link href="/terms" className="inline-flex min-h-11 items-center transition-colors hover:text-brand-primary sm:min-h-0">
                   Terms &amp; Conditions
+                </Link>
+                {/* Handover 75: Safepay requires the refund policy to be findable from every page. */}
+                <Link href="/refunds" className="inline-flex min-h-11 items-center transition-colors hover:text-brand-primary sm:min-h-0">
+                  Refunds &amp; cancellations
                 </Link>
                 {/* Practitioner recruitment: the page is noindex, so a link here sends people, not crawl weight. */}
                 <Link
