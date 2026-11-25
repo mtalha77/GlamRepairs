@@ -21,7 +21,17 @@
  * 29 October 2026, requested by Talha ("do all of this", on the audit item):
  * who pays international transfer fees. The sender does, so the full price
  * arrives; a short transfer is raised before work starts.
+ *
+ * 25 November 2026, Handover 75 (Safepay onboarding), approved by Talha the
+ * same day: the ownership and address block under the date; "Revisions and
+ * credits" replaced by "Refunds, cancellations and revisions"; a Complaints
+ * section with stated timelines. Pre-work cancellation is now a full refund,
+ * and a declined case is refund or credit, the client's choice. Every credit
+ * line below that contradicted that was brought into line. The shared
+ * sentences live in lib/legal/refunds.ts so /terms and /refunds cannot
+ * disagree.
  */
+import { DECLINED_FEE_SHORT, REFUND_WORKING_DAYS, TERMS_REFUNDS_SECTION } from "./refunds";
 
 /*
  * HANDOVER-27 §1.4 — moved from 2026-09-03 because the plan structure
@@ -33,7 +43,7 @@
  * plans without moving the date would leave a reader unable to tell which
  * version they agreed to.
  */
-export const LAST_UPDATED = "2026-11-10";
+export const LAST_UPDATED = "2026-11-25";
 
 export const INTRO = `These terms apply when you use glamrepairs.com or purchase a skin consultation from us. By completing an assessment you agree to them, so please read them first.`;
 
@@ -41,7 +51,7 @@ export const TERMS_MARKDOWN = `## What Glam Repairs is
 Glam Repairs provides online skin consultations. You complete a questionnaire, send us photographs, a qualified aesthetics practitioner reviews them, and you receive a written assessment with a suggested routine.
 **Glam Repairs is a cosmetic guidance service. It is not a medical service.**
 We do not diagnose conditions, prescribe medication, or provide treatment. Our assessments are not a substitute for consulting a doctor or dermatologist. If you have a skin condition that is painful, spreading, bleeding, rapidly changing, or otherwise concerning, please see a medical professional.
-Where a practitioner believes your concern needs medical attention rather than cosmetic guidance, they will tell you so and we will not proceed with a routine. We hold your fee as a credit towards a future assessment.
+Where a practitioner believes your concern needs medical attention rather than cosmetic guidance, they will tell you so and we will not proceed with a routine. You may choose a full refund, processed within ${REFUND_WORKING_DAYS} working days, or a credit towards a future assessment.
 **If something is urgent, do not wait for us.** We reply within 24 hours and we are not an emergency service. If your skin is painful, rapidly spreading or blistering, or you feel unwell with it, contact a doctor or your local emergency service straight away.
 ## Who can use the service
 You must be 18 or older to use Glam Repairs. By submitting an assessment you confirm that you are, that the information you give us is accurate to the best of your knowledge, and that the photographs you send are of yourself.
@@ -66,7 +76,7 @@ How we handle photographs is set out in our Privacy Policy.
 We offer two plans. Skin Starter is complimentary and available for a limited period. Skin Transform is paid, and includes a 15 minute video consultation with your practitioner.
 **Paid plans are charged as a single one-time fee. They are not subscriptions and do not renew automatically.**
 - Prices are shown in your local currency where we have set a price for your country, otherwise in US dollars, and include any applicable taxes unless stated otherwise. The price shown when you submit your assessment is the price you pay.
-- **Paying from outside Pakistan:** an international bank transfer works. Message us first and we will send the account details. You pay the fees charged by your bank and by any intermediary bank, so that the full price arrives in our account: ask your bank to send it with all charges paid by the sender (often shown as "OUR"). Your consultation begins once the full amount has arrived. If a transfer arrives short because of fees, we will tell you the difference before we start, and nothing is lost if you would rather not go ahead: we hold what arrived as a credit.
+- **Paying from outside Pakistan:** an international bank transfer works. Message us first and we will send the account details. You pay the fees charged by your bank and by any intermediary bank, so that the full price arrives in our account: ask your bank to send it with all charges paid by the sender (often shown as "OUR"). Your consultation begins once the full amount has arrived. If a transfer arrives short because of fees, we will tell you the difference before we start, and nothing is lost if you would rather not go ahead: we refund what arrived, or hold it as a credit if you prefer.
 - We will give you payment instructions when you book. Your consultation begins once we have confirmed payment and received your completed questionnaire and usable photographs.
 - **Only send payment using the details we give you directly through an official Glam Repairs channel.** We will never ask you to send payment to a different account or number than the one in your official confirmation, and we will never ask for payment through an unexpected channel. If anything looks unusual, stop and contact us at glamrepairs@gmail.com before sending anything.
 - We may change our prices at any time, but the price you were shown at purchase is the price that applies to you.
@@ -80,14 +90,10 @@ If your photographs are unusable (too dark, blurred, filtered, or not showing th
 Where we offer appointments with a practitioner, including video consultations:
 - Appointments are for a scheduled time with a designated practitioner.
 - Please give us reasonable notice if you need to cancel or reschedule so the slot can be reused.
-- If we cancel and cannot offer a suitable alternative, we hold the fee for that appointment as a credit.
+- If we cancel and cannot offer a suitable alternative, you may choose a refund for that appointment or a credit.
 - A video consultation remains cosmetic guidance. It is not a medical appointment, and no diagnosis is given.
 - We do not record consultations unless you agree in advance in writing.
-## Revisions and credits
-If your assessment does not address what you asked about, tell us within 14 days of delivery and we will revise it at no cost. We would rather fix an assessment than leave you without a routine you trust.
-We do not give refunds. Each assessment is prepared individually by a practitioner, so once one has been delivered, revision is the remedy.
-If we have not yet started work on your assessment, you may cancel and we will hold your fee in full as a credit towards a future assessment. The same applies if we are unable to complete your assessment for any reason.
-Nothing in these terms takes away any right you have under the consumer law of the country you live in.
+${TERMS_REFUNDS_SECTION}
 ## What we recommend
 We recommend ingredient categories and product types, for example a niacinamide serum or a ceramide-based moisturiser. We do not recommend specific brands and we do not receive commission, payment or incentives from any brand.
 If that ever changes, we will disclose it clearly. You are free to buy whichever products fit your budget and availability.
@@ -116,7 +122,7 @@ Nothing in these terms limits liability for death or personal injury caused by n
 You keep ownership of the photographs and information you send us. You grant us a limited permission to use them solely to prepare and deliver your assessment, as set out in our Privacy Policy.
 Your report is prepared for you personally. You may keep and use it for your own purposes. Please do not republish or resell it. The website, its content and its branding remain our property.
 ## Suspending access
-We may decline or discontinue service if information is knowingly false, if photographs are not of the person submitting them, if a request falls outside cosmetic guidance and needs medical care, or if someone is abusive toward our practitioners. Where we decline before starting work, we hold your fee in full as a credit.
+We may decline or discontinue service if information is knowingly false, if photographs are not of the person submitting them, if a request falls outside cosmetic guidance and needs medical care, or if someone is abusive toward our practitioners. Where we decline before starting work, we will ${DECLINED_FEE_SHORT}.
 ## Mobile applications
 If we release iOS or Android applications, these terms will apply to them, together with any additional app store terms. We will update this page before any app launches.
 ## Changes and governing law

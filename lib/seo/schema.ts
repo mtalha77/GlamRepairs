@@ -30,7 +30,7 @@
  * Everything here is typed loosely as `object` on purpose. schema.org is not a
  * closed vocabulary and over-typing it produces friction with no payoff.
  */
-import { CREDENTIALS, SITE, abs, getCredential } from "./site";
+import { BUSINESS, CREDENTIALS, SITE, abs, getCredential } from "./site";
 import { getAuthor, type Author } from "./authors";
 
 /**
@@ -112,6 +112,16 @@ export function organizationSchema(
     // phone across sources to decide a business is real, so this has to be
     // the same number as the Google Business Profile, in E.164.
     telephone: SITE.phone.e164,
+    email: BUSINESS.email,
+    // Handover 75: the registered business address Safepay holds on file,
+    // from the same constant /terms and /contact print. A postal address is
+    // not a storefront claim; no opening hours or geo are attached to it.
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: BUSINESS.address.street,
+      addressLocality: BUSINESS.address.locality,
+      addressCountry: BUSINESS.address.countryCode,
+    },
     contactPoint: {
       "@type": "ContactPoint",
       telephone: SITE.phone.e164,

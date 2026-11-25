@@ -38,8 +38,9 @@ export const whatWeAre = {
     "It is cosmetic guidance, and we are precise about that because the " +
       "distinction matters. We do not diagnose conditions, prescribe " +
       "medication or provide treatment. That is a doctor's work, and if " +
-      "your concern needs one, our practitioner will tell you so and hold " +
-      "your fee as a credit rather than sell you a routine that cannot help. " +
+      "your concern needs one, our practitioner will tell you so and we " +
+      "refund your fee or hold it as a credit, your choice, rather than " +
+      "sell you a routine that cannot help. " +
       "What we do is the part most people never get: someone qualified " +
       "looking at your actual skin and explaining what is happening, in " +
       "order, with reasons.",

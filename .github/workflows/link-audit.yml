@@ -1,0 +1,29 @@
+name: Link audit
+
+# Handover 75 Part 6.1. Safepay requires every page and link to work. This
+# crawls every sitemap URL and every internal link on those pages, without
+# following redirects, and fails on anything that is not a direct 200.
+# Runs by hand, and weekly so a broken link is caught before a reviewer
+# finds it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "Origin to audit"
+        required: false
+        default: "https://www.glamrepairs.com"
+  schedule:
+    - cron: "17 4 * * 1"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Crawl
+        run: node scripts/link-audit.mjs --base "${{ github.event.inputs.base || 'https://www.glamrepairs.com' }}"

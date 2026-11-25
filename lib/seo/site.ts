@@ -460,6 +460,33 @@ export const MANAGING_DIRECTOR = {
 } as const;
 
 /**
+ * Handover 75 Part 2: who owns the business and where it is, defined once.
+ *
+ * Safepay's onboarding review requires the legal owner and the registered
+ * address on /terms and /contact, and their reviewers match the ownership
+ * sentence literally, so `ownershipSentence` is verbatim and must not be
+ * reworded. /terms, /refunds, /contact, the footer and the Organization
+ * schema all read from here.
+ *
+ * Address confirmed by Talha on 25 November 2026 as "90 D2, Phase 1, Johar
+ * Town", matching the merchant onboarding form. If the form changes, this
+ * changes with it, or the reviewer sees two addresses.
+ */
+export const BUSINESS = {
+  tradingName: "Glam Repairs",
+  owner: MANAGING_DIRECTOR.name,
+  ownershipSentence: `This website is owned and operated by ${MANAGING_DIRECTOR.name}.`,
+  address: {
+    street: "90 D2, Phase 1, Johar Town",
+    locality: "Lahore",
+    country: "Pakistan",
+    countryCode: "PK",
+  },
+  addressLine: "90 D2, Phase 1, Johar Town, Lahore, Pakistan",
+  email: "glamrepairs@gmail.com",
+} as const;
+
+/**
  * Practitioner and hiring enquiries only. Clients use SITE.phone.
  *
  * Two numbers on purpose (Talha, 19 October 2026), not an inconsistency:

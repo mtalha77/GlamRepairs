@@ -65,6 +65,8 @@ const STATIC_ROUTES: {
   { path: "/how-assessments-work", priority: 0.5, changeFrequency: "monthly" },
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
+  // Handover 75 Part 3: Safepay requires a findable refund policy.
+  { path: "/refunds", priority: 0.3, changeFrequency: "yearly" },
 ];
 
 /**

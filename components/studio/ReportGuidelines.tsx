@@ -151,8 +151,8 @@ export default function ReportGuidelines({
 
         <p className="mt-5 rounded-xl bg-brand-lavender/25 px-4 py-3 text-sm leading-relaxed text-brand-ink">
           <strong className="font-medium">If the case is not suitable</strong>,
-          say so and mark it for credit: the client&apos;s fee is held as a credit, not
-          refunded. Painful cystic acne, spreading rashes,
+          say so and tell the office before writing anything. The client then
+          chooses a full refund or a credit, and the office handles either. Painful cystic acne, spreading rashes,
           suspected steroid damage or anything changing rapidly belongs with a
           doctor. Recognising that is doing the job well, not failing it.
         </p>

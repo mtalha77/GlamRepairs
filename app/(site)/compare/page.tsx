@@ -88,7 +88,7 @@ const FAQS = [
   {
     question: "Can Glam Repairs prescribe medication or diagnose a skin condition?",
     answer:
-      "No. Neither. We are a certified aesthetics practice, not a medical one. If your photographs or answers suggest a medical skin condition, we tell you, refer you to a doctor, and hold your fee as a credit rather than writing you a routine.",
+      "No. Neither. We are a certified aesthetics practice, not a medical one. If your photographs or answers suggest a medical skin condition, we tell you, refer you to a doctor, and refund your fee or hold it as a credit, whichever you choose, rather than writing you a routine.",
   },
   {
     question: "When should I see a doctor instead?",
@@ -317,7 +317,8 @@ export default async function ComparePage() {
               and we are not.
             </strong>{" "}
             If your answers or photographs suggest one, we say so, point you
-            towards a doctor, and hold your fee as a credit. That is not a
+            towards a doctor, and refund your fee or hold it as a credit, your
+            choice. That is not a
             disclaimer at the bottom of a page. It is the outcome we would
             rather have than a sale.
           </p>
@@ -476,7 +477,7 @@ export default async function ComparePage() {
             </ul>
             <p className="mt-auto border-t border-[#f0e4c8] pt-3 text-[0.8125rem] leading-relaxed text-brand-gray">
               <strong className="font-medium text-brand-ink">
-                Tell us any of these and we say so, then hold your fee as a credit.
+                Tell us any of these and we say so, then refund your fee or hold it as a credit, your choice.
               </strong>{" "}
               We would rather lose the sale than write a skincare routine for
               something that needs a doctor.
